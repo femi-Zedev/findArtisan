@@ -1,0 +1,57 @@
+---
+alwaysApply: true
+---
+
+## Styling Guidelines
+STYLING GUIDELINES DOCUMENT
+
+This document outlines the styling principles and guidelines for the FindArtisan web application. The goal is to establish a consistent, user-friendly, and efficient visual identity that supports the app's core functionality and mobile-first MVP nature. We prioritize clarity, speed, and a straightforward user experience to deliver a product that is \"light, straight to the point\" and fast to launch.
+
+1.  DESIGN PHILOSOPHY
+    ------------------
+    FindArtisan's design philosophy is rooted in simplicity, functionality, and performance. We aim for a clean, uncluttered interface that allows users to quickly find the information they need without distraction. The mobile-first approach ensures an optimal experience on smaller screens, while responsiveness scales gracefully to larger devices. Our aesthetic is modern, approachable, and trustworthy.
+
+2.  CORE UI/UX PRINCIPLES
+    -----------------------
+    *   **Clarity & Simplicity**: Ensure every element serves a purpose and is easy to understand. Avoid unnecessary visual noise.
+    *   **Efficiency**: Optimize workflows to help users achieve their goals (finding an artisan, adding an artisan) with minimal effort.
+    *   **Mobile-First**: Design and develop starting with the smallest screen sizes, progressively enhancing for larger viewports.
+    *   **Consistency**: Maintain uniform design elements (colors, typography, spacing, component behavior) across the application for a predictable user experience.
+    *   **Performance**: Prioritize fast loading times and smooth interactions, crucial for a good mobile web experience in varying network conditions.
+    *   **Accessibility**: Strive for a usable experience for all users, including those with disabilities.
+    *  **Light and dark mode**: for eye comfort and preference people can switch between light or dark mode
+
+3.  COLOR PALETTE
+    ---------------
+    Use a color palette that fit the project purpose with predominence of neutral colors
+
+
+4.  TYPOGRAPHY
+    ------------
+    We use the 'Inter' font family, a modern and highly readable sans-serif typeface, ensuring excellent legibility across all screen sizes. Tailwind CSS utility classes will be used to apply these styles consistently.
+
+    *   **Font Family**: `Inter`, sans-serif
+    *   **Headings**:
+        *   `H1` (Page Title): `text-2xl` (mobile), `text-3xl` (desktop) / `font-bold` / `line-height-tight`
+        *   `H2` (Section Title): `text-xl` (mobile), `text-2xl` (desktop) / `font-semibold` / `line-height-snug`
+        *   `H3` (Card/Component Title): `text-lg` (mobile), `text-xl` (desktop) / `font-medium` / `line-height-normal`
+    *   **Body Text**:
+        *   Default Body: `text-base` (`16px`) / `font-normal` / `line-height-relaxed` (`1.6`)
+        *   Small Text: `text-sm` (`14px`) / `font-normal` (for descriptions, meta info, captions)
+    *   **UI Elements**:
+        *   Buttons: `text-base` / `font-semibold`
+        *   Input Labels: `text-sm` / `font-medium`
+
+5.  ICONOGRAPHY
+    -------------
+    Icons should be clear, simple, and universally recognizable. We will primarily utilize an established icon library like lucide react
+
+6.  SPACING & LAYOUT
+    ------------------
+    A consistent spacing system is crucial for visual hierarchy and readability. We will leverage Tailwind CSS's default spacing scale (e.g., `p-4`, `mb-2`) for all padding and margin.
+
+    *   **Base Unit**: Primarily `rem` units (provided by Tailwind CSS) for scalable spacing.
+    *   **Vertical Spacing**: Ensure adequate vertical rhythm between elements and sections.
+    *   **Horizontal Spacing**: Maintain consistent inner padding within components (e.g., buttons, input fields) and horizontal gutters.
+    *   **Containers**: Use `max-w-md` or `max-w-lg` for content containers on larger screens to improve readability, with full width on mobile.
+    *   **Flexbox & Grid**: Utilize Tailwind's `flex` and `grid` utilities for responsive layout structures.

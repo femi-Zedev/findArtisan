@@ -1,0 +1,392 @@
+---
+alwaysApply: true
+---
+# FindArtisan Frontend Rules
+
+## 1. Tech stach and default librairies
+- We will be using NextJs newer version 16.0.1
+- Always refer to the their documentation at https://nextjs.org/docs
+- For UI components we will be using mantine UI 8.3.6 
+- Always refer to the their documentation at https://mantine.dev/
+- We use Tanstack for managing API request
+- You can fallback to shadcn/ui components for complex UI elements when mantine do not cover the specif component we want to use
+- Follow react best practices to write components
+
+## 2. Code Structure and Organization
+
+### File and Directory Naming
+- Use kebab-case for file names: `my-component.tsx`
+- Use PascalCase for component files: `UserProfile.tsx`
+- Use camelCase for utility files: `calendarUtils.ts`
+- Group related features in feature directories (e.g., `src/components/calendar`)
+
+### Component Structure
+- One main component per file
+- Place shared components in `src/components`
+- Feature-specific components go in their feature directory (e.g., `src/components/dashboard`)
+- Use index.ts files for clean exports
+
+## 3. TypeScript and Type Safety
+s
+- Always define proper interfaces and types
+- Place shared types in `src/types` or within feature-specific lib files
+- No usage of `any` type unless absolutely necessary
+- Use proper type imports/exports
+
+## 4. Styling Conventions
+
+- Use Tailwind CSS classes as primary styling method
+- Follow consistent class order: layout → positioning → display → spacing → sizing → typography → visual
+- Custom CSS only when necessary in component-specific modules
+- Maintain responsive design patterns (mobile-first)
+
+## 5. State Management
+
+- Use React hooks for local state
+- Implement proper loading and error states
+- Handle edge cases and empty states
+- Follow existing patterns for form management
+
+
+
+
+# Coding style and patterns to follow
+
+## 1. Authentication and Authorization
+
+- All auth-related logic goes in `src/lib/auth`
+- Implement proper error handling for auth operations
+- Follow existing patterns for protected routes
+- Use middleware for auth checks
+
+## 2. API and Data Handling
+
+- Place API services in `src/lib/services`
+- Implement proper error handling
+- Use toast notifications for request success and errors:
+  ```tsx
+  onSuccess: () => {
+    toast({
+      type: "success",
+      title: "Appointment added",
+      description: "The appointment was added successfully",
+    });
+    // Invalidate relevant queries if using React Query
+  },
+  onError: (error: any) => {
+    toast({
+      type: "error",
+      title: "Something went wrong",
+      description: error.message || "An error occurred",
+    });
+  }
+  ```
+- Use TypeScript interfaces for API responses
+- Follow existing patterns for data fetching
+- Create routes.ts file inside src/lib/ to keep trace of the routes of app to keep maintenance easy
+
+## 3.  State Management Patterns
+
+### Hybrid State Management
+
+The project uses multiple state management approaches based on use case:
+
+#### 1. Zustand (Global State)
+
+Used for:
+- **User State** (`stores/userStore.ts`): Authentication and user data
+- Persisted state with localStorage
+- Simple API with hooks
+
+```typescript
+// stores/userStore.ts
+export const useUserStore = create<UserState & UserActions>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      setUser: (user: User) => set({ user, isAuthenticated: true }),
+      clearUser: () => set({ user: null, isAuthenticated: false }),
+      getToken: () => get().user?.jwt || null,
+    }),
+    { name: 'expert-therapist-user' }
+  )
+);
+```
+
+#### 2. React Query (Server State)
+
+Used for:
+- **API Data Caching**: Automatic caching and invalidation
+- **Optimistic Updates**: Immediate UI updates
+- **Background Refetching**: Keep data fresh
+
+```typescript
+// hooks/useAppointments.ts
+export function useAppointments() {
+  return useQuery({
+    queryKey: appointmentKeys.lists(),
+    queryFn: () => appointmentsService.getAllAppointments(),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+}
+```
+
+**Query Key Structure**:
+```typescript
+const appointmentKeys = {
+  all: ['appointments'] as const,
+  lists: () => [...appointmentKeys.all, 'list'] as const,
+  list: (filters: string) => [...appointmentKeys.lists(), { filters }] as const,
+  details: () => [...appointmentKeys.all, 'detail'] as const,
+  detail: (id: string) => [...appointmentKeys.details(), id] as const,
+};
+```
+
+#### 3. React Context (Feature State)
+
+Used for:
+- **Authentication Context**: Auth state and methods
+- **Drawer/Modal State**: UI state management
+
+#### 4. Local State (Component State)
+
+Used for:
+- Form state (Mantine's `useForm`)
+- Component-specific UI state (`useState`)
+
+### State Management Decision Tree
+
+```
+Is it server data? 
+  ├─ Yes → React Query
+  └─ No
+      ├─ Is it global user state?
+      │   └─ Yes → Zustand
+      │   └─ No
+      │       ├─ Is it feature-wide UI state?
+      │       │   └─ Yes → React Context
+      │       │   └─ No → useState/useReducer
+      │       └─ Is it form state?
+      │           └─ Yes → Mantine useForm
+```
+
+---
+
+## 3. Form Component Pattern
+
+Forms use Mantine's `useForm` hook:
+
+```typescript
+// app/_shared/forms/NewAppointment.form.tsx
+export function NewAppointmentForm({ onSuccess }: FormProps) {
+  const form = useForm<FormData>({
+    initialValues: { /* ... */ },
+    validate: { /* ... */ },
+  });
+
+  const handleSubmit = async (values: FormData) => {
+    // Validation handled by Mantine
+    if (onSuccess) onSuccess(values);
+  };
+
+  return (
+    <form onSubmit={form.onSubmit(handleSubmit)}>
+      {/* Form fields */}
+    </form>
+  );
+}
+```
+- you can use zod with mantine for deeper validation 
+
+
+**Key Points**:
+- Forms are in `_shared/forms/` for reuse
+- Use `.form.tsx` suffix for form components
+- Validation handled by Mantine
+- Success callback pattern for parent handling
+
+
+### 4. Data Table Pattern
+
+We use a special component DataTable that leverale @tanstack/react-table functionalities with column definitions:
+
+```typescript
+// app/therapist/_columns/intake.columns.tsx
+export const intakeColumns: ColumnDef<IntakeRequest>[] = [
+  {
+    accessorKey: "name",
+    header: "Name",
+    cell: ({ row }) => {
+      const request = row.original;
+      return <Profile name={request.name} size="sm" />;
+    },
+  },
+  // More columns...
+];
+```
+
+**Characteristics**:
+- Column definitions in `_columns/` folder
+- Co-located with feature
+- Type-safe with generics
+- Custom cell renderers for complex UI
+
+### 5. Protected Route Pattern
+
+Routes are protected using `AuthGuard`:
+
+```typescript
+// app/therapist/layout.tsx
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthGuard requiredUserType="admin">
+      <div className="flex h-screen">
+        <Sidebar />
+        <main>{children}</main>
+      </div>
+    </AuthGuard>
+  );
+}
+```
+
+### Special Folders
+
+- `_shared/`: Shared resources across features
+- `_components/`: Feature-specific components (co-located)
+- `_columns/`: Table column definitions (co-located)
+- `_components/` inside feature: Feature-specific UI components
+
+---
+
+## Best Practices
+
+### 1. Code Organization
+
+✅ **Do**:
+- Co-locate related files
+- Use consistent naming conventions
+- Group by feature, not by type
+- Separate shared from feature-specific
+
+❌ **Don't**:
+- Create deep folder hierarchies
+- Mix concerns (UI, logic, data)
+- Use inconsistent naming
+
+### 2. Component Design
+
+✅ **Do**:
+- Keep components small and focused
+- Use composition over inheritance
+- Extract reusable logic to hooks
+- Use TypeScript for props
+
+❌ **Don't**:
+- Create overly large components
+- Mix business logic with UI
+- Use `any` types
+- Duplicate code across components
+
+### 3. State Management
+
+✅ **Do**:
+- Choose appropriate state solution for use case
+- Use React Query for server state
+- Use Zustand for global client state
+- Keep local state local
+
+❌ **Don't**:
+- Over-engineer state management
+- Mix concerns (server + client state)
+- Use Context for frequently changing state
+- Store unnecessary data
+
+### 4. Type Safety
+
+✅ **Do**:
+- Define interfaces for all data structures
+- Use generated types from API specs
+- Use type guards when needed
+- Leverage TypeScript inference
+
+❌ **Don't**:
+- Use `any` without justification
+- Skip type definitions
+- Use type assertions unnecessarily
+- Ignore type errors
+
+### 5. Error Handling
+
+✅ **Do**:
+- Handle errors gracefully
+- Provide user-friendly error messages
+- Log errors for debugging
+- Return safe defaults
+
+❌ **Don't**:
+- Swallow errors silently
+- Show technical error messages to users
+- Ignore error states
+- Crash the application
+
+### 6. Performance
+
+✅ **Do**:
+- Use React Query for caching
+- Implement proper loading states
+- Lazy load components when appropriate
+- Optimize images and assets
+
+❌ **Don't**:
+- Fetch data unnecessarily
+- Render unnecessary components
+- Ignore loading states
+- Over-optimize prematurely
+
+### 7. Testing Considerations
+
+While testing is not yet fully implemented, the architecture supports:
+- **Service Layer**: Easy to unit test (pure functions)
+- **Hooks**: Can be tested with React Testing Library
+- **Components**: Isolated and testable
+- **Types**: Compile-time validation
+
+---
+
+## Common Patterns Reference
+
+### Creating a New Feature
+
+1. **Create service** (`services/[feature].service.ts`)
+2. **Create types** (`types/[feature].ts`)
+3. **Create hooks** (`hooks/use[Feature].ts`)
+4. **Create page** (`app/[route]/page.tsx`)
+5. **Create components** (`app/[route]/_components/`)
+6. **Create columns** (if needed) (`app/[route]/_columns/`)
+
+### Creating a Reusable Form
+
+1. **Create form component** (`app/_shared/forms/[Feature].form.tsx`)
+2. **Use Mantine's useForm**
+3. **Define TypeScript interface for form data**
+4. **Implement validation**
+5. **Use callback pattern for submission**
+
+### Adding Protected Routes
+
+1. **Wrap layout with AuthGuard**
+2. **Specify required user type**
+3. **Handle loading states**
+4. **Redirect to login if unauthorized**
+
+---
+
+## Conclusion
+
+This project follows modern React and TypeScript best practices with:
+- **Clear separation of concerns** (UI, logic, data)
+- **Type-safe architecture** throughout
+- **Reusable patterns** for common tasks
+- **Scalable structure** that grows with the application
+
+When adding new features, follow these patterns to maintain consistency and code quality.

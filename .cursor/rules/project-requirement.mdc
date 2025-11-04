@@ -1,0 +1,152 @@
+---
+alwaysApply: true
+---
+
+# FindArtisans - Product Requirements Document
+
+## Project Description
+I want to build a mobile-first MVP web app called "FindArtisan" for discovering local artisans (plumbers, carpenters, electricians, etc.) in Benin Republic. The app should allow users to easily search artisans by profession and location.
+
+
+## Product Requirements Document
+Product Requirements Document: FindArtisans
+
+1.  Introduction
+    The "FindArtisans" project aims to develop a mobile-first Minimum Viable Product (MVP) web application to address the difficulty users in Benin face when searching for local artisans. This initial iteration will focus on discovering professionals like plumbers, carpenters, and electricians in  major cities of Benin Republic. The primary goal is to provide a straightforward, accessible platform for users to find and contact artisans quickly, leveraging a community-driven submission model for artisan profiles.
+
+2.  Goals & Objectives (MVP)
+    *   **Primary Goal:** Enable users to easily search for and find local artisans by profession and location.
+    *   **Objective 1:** Launch a functional, mobile-first web app within a single day.
+    *   **Objective 2:** Provide a simple mechanism for the community to submit new artisan profiles.
+    *   **Objective 3:** Implement an admin interface for reviewing and approving artisan submissions.
+    *   **Objective 4:** Ensure approved artisans are publicly discoverable via search.
+
+3.  Target Audience & Pain Points
+    *   **Target Audience:** Residents and businesses in Benin (Cotonou, Calavi, Porto-Novo, Parakou) who need local professional services (e.g., plumbing, carpentry, electrical work).
+    *   **Pain Point:** The lack of a centralized, reliable, and easy-to-use platform to find local artisans, leading to word-of-mouth reliance or difficulty in emergencies.
+    *   **Artisan Benefit (Indirect MVP):** Artisans will indirectly benefit from increased visibility and job opportunities as the platform gains users. The MVP does not involve artisan accounts or direct onboarding for them.
+
+4.  Scope (MVP - What's In & What's Out)
+
+    **4.1. In Scope for MVP:**
+    *   Mobile-first web application.
+    *   Public-facing search functionality for finding artisans.
+    *   Public-facing results page displaying artisan information.
+    *   Public-facing detailed artisan profile page.
+    *   Public-facing "Add Artisan" submission form.
+    *   Admin dashboard (password protected) for managing artisan submissions.
+    *   Community-submitted profiles visible for public, and admin can remove after review.
+    *   Display of a "Added by the community" message on publicly approved community-submitted profiles.
+
+    **4.2. Out of Scope for MVP (Future Iterations):**
+    *   User accounts or profiles for end-users.
+    *   Artisan accounts or profiles for artisans to manage their own listings.
+    *   User reviews, ratings, or feedback mechanisms.
+    *   Display of certifications, years of experience, or advanced verification.
+    *   Direct monetization features (e.g., paid listings, ads).
+    *   Complex user onboarding or artisan onboarding flows.
+    *   Real-time chat or in-app messaging between users and artisans.
+    *   Advanced filtering beyond profession and zone.
+
+5.  Features & Functionality
+
+    **5.1. Public-Facing Functionality**
+
+    *   **Search Bar:**
+        *   Text input field for searching by `Profession` (e.g., "Plumber", "Electrician", "Carpenter").
+        *   Dropdown menu for selecting `Zone` (e.g., "Akpakpa", "Fidjrossè", "Calavi").
+        *   Search button to initiate the search.
+
+    *   **Results Page:**
+        *   Displays a list of artisans matching the search criteria.
+        *   Each artisan card/entry will show:
+            *   Artisan `Name`
+            *   `Job/Profession`
+            *   `Zone`
+            *   Primary `Phone/WhatsApp number` (clickable to initiate WhatsApp chat or call)
+            *   Short `Description`
+            *   Optional `Social media` links (if provided).
+        *   Clicking on an artisan's entry will navigate to their `Artisan Detail Page`.
+
+    *   **Artisan Detail Page:**
+        *   Displays comprehensive information about a single artisan.
+        *   Includes: `Full Name`, `Profession`, `Zone` (an artisan can cover multiple zones or cities), `WhatsApp/Phone number` (with a prominent "Contact on WhatsApp" button), `Social media` links (Facebook, TikTok, Instagram if applicable), `Description`, `Optional Photo`.
+        *   If the profile was submitted by the community and approved, a message "Added by the community" will be displayed.
+
+    *   **Add Artisan Page (Community Submission Form):**
+        *   A simple form accessible to anyone to submit a new artisan.
+        *   Fields:
+            *   `Full Name` (text input, required)
+            *   `Profession` (text input, required)
+            *   `Zone` (dropdown, required - utilizing the Benin location API for valid zones)
+            *   `WhatsApp/Phone` (text input, required) with just a checkbox to tick if the phone is associated with a whats'app acount. Can add multiple phone numbers up to 4
+            *   `Social Media` (optional text inputs for Facebook, TikTok, Instagram links)
+            *   `Description` (optional text area)
+            *   `Optional Photo Upload` (file input for a single photo).
+        *   Upon submission, the artisan profile will be marked as `isApproved = true` by default, and them admin can review to remove if informations are not correct.
+
+    **5.2. Admin Dashboard Functionality (Password Protected)**
+
+    *   **Access:** Simple password-based access for the admin team.
+    *   **New Submissions View:**
+        *   List by default artisan profiles that have `submited by community`.
+        *   Ability to view full details of each community submission.
+    *   **Artisan Management:**
+        *   **Edit Details:** Modify any field of an artisan's profile (e.g., correct typos, update contact info).
+        *   **Delete:** Permanently remove an artisan's profile from the system.
+    *   **Default Behavior for Community Submissions:** Community-submitted profiles will check for phone number in database to avoid duplicates, when an existing number is found a pop would display that the artisan is already added
+
+6.  User Flows (High-Level)
+
+    *   **Finding an Artisan:**
+        1.  User lands on the app (single page).
+        2.  User enters `Profession` and selects `Zone` in the search bar.
+        3.  User clicks "Search".
+        4.  App displays `Results Page` with matching approved artisans.
+        5.  User clicks on an artisan's entry.
+        6.  App displays `Artisan Detail Page`.
+        7.  User clicks "Contact on WhatsApp" or "Call directly" button to connect.
+
+    *   **Adding an Artisan (Community Submission):**
+        1.  User click on "Add Artisan" button.
+        2.  User fills out the `Add Artisan Form` from modal.
+        3.  User clicks "Submit".
+        4.  App confirms submission (e.g., "Thank you for your submission! It will be reviewed.").
+        5.  Artisan profile is created in the backend
+
+    *   **Admin Review & Approval:**
+        1.  Admin logs into the password-protected Admin Dashboard.
+        2.  Admin navigates to "New Submissions"
+        3.  Admin reviews a pending artisan profile.
+        4.  Admin either `Edits` or `Reject`, the profiles.
+
+7.  Technical Specifications (High-Level)
+
+    *   **Frontend:** Next.js (App Router), Tailwind CSS, Mantine UI.
+    *   **Backend:** Strapi (headless CMS) for managing artisan data and admin dashboard.
+    *   **Location Data:** External API for Benin cities and areas to populate zone dropdowns and ensure data accuracy.
+
+8.  Design & UX Considerations
+
+    *   **Mobile-First:** The primary design focus will be on an optimal experience for mobile devices.
+    *   **Lightweight & Direct:** The UI will be minimalist, intuitive, and "straight to the point" to facilitate quick artisan discovery and submission.
+    *   **Single Page App:** The app will function as a single page application, likely utilizing modals for submission forms or detail views to maintain a fluid user experience.
+    *   **Visuals:** Leveraging Tailwind CSS and Mantine UI for a modern, clean, and consistent look.
+    *   **UX Design Vision:** To be filled later by the UX designer.
+
+9.  Non-Functional Requirements
+
+    *   **Performance:** Fast loading times for all pages and search results. Responsive UI.
+    *   **Scalability:** The architecture should allow for future expansion to cover more artisans, users, and locations without significant re-architecture (Strapi for backend, Next.js for frontend).
+    *   **Offline Capabilities:** The app should implement basic offline capabilities (e.g., caching search results or artisan lists) to provide a usable experience even with intermittent connectivity.
+    *   **Security:** Admin dashboard access will be password-protected. Data integrity for artisan submissions will be maintained.
+
+10. Future Considerations (Post-MVP)
+
+    *   **Monetization:** Explore partnerships with professional companies and shops in home-related services (building, cleaning, maintenance) for potential future monetization strategies.
+    *   **Expanded Features:** Introduction of user accounts, artisan accounts, reviews/ratings, and advanced filtering.
+    *   **Broader Geographic Coverage:** Expand beyond Benin Republic.
+
+11. Timeline & Constraints
+
+    *   **Launch Goal:** "Within a day" – this dictates an absolute bare minimum feature set and an intense focus on core functionality and rapid deployment. The PRD reflects this "ship in hours not days" philosophy by severely limiting scope.
