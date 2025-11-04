@@ -1,0 +1,108 @@
+"use client";
+
+import { ArtisanCard } from "./artisan-card";
+
+// Mock data - will be replaced with API data later
+const mockArtisans = [
+  {
+    id: 1,
+    name: "Jean-Baptiste Koffi",
+    profession: "Plombier",
+    zone: "Akpakpa",
+    description:
+      "Spécialiste en installation et réparation de plomberie. Plus de 10 ans d'expérience.",
+    phone: "+22912345678",
+    whatsapp: true,
+    addedByCommunity: false,
+  },
+  {
+    id: 2,
+    name: "Marie Adjovi",
+    profession: "Électricien",
+    zone: "Fidjrossè",
+    description:
+      "Installation électrique résidentielle et commerciale. Service rapide et professionnel.",
+    phone: "+22923456789",
+    whatsapp: true,
+    addedByCommunity: true,
+  },
+  {
+    id: 3,
+    name: "Serge Dossou",
+    profession: "Menuisier",
+    zone: "Akpakpa",
+    description:
+      "Fabrication de meubles sur mesure, portes, fenêtres et armoires. Travail de qualité garantie.",
+    phone: "+22934567890",
+    whatsapp: true,
+    addedByCommunity: false,
+  },
+  {
+    id: 4,
+    name: "Kossi Agbessi",
+    profession: "Plombier",
+    zone: "Calavi",
+    description:
+      "Intervention rapide pour toutes urgences de plomberie. Disponible 24/7.",
+    phone: "+22945678901",
+    whatsapp: true,
+    addedByCommunity: false,
+  },
+  {
+    id: 5,
+    name: "Fatou Diallo",
+    profession: "Électricien",
+    zone: "Cotonou",
+    description:
+      "Électricité générale, dépannage et installation. Certifié et assuré.",
+    phone: "+22956789012",
+    whatsapp: true,
+    addedByCommunity: true,
+  },
+  {
+    id: 6,
+    name: "Amadou Bamba",
+    profession: "Menuisier",
+    zone: "Porto-Novo",
+    description:
+      "Menuiserie traditionnelle et moderne. Réalisations sur mesure pour particuliers et entreprises.",
+    phone: "+22967890123",
+    whatsapp: true,
+    addedByCommunity: false,
+  },
+];
+
+export function ArtisansSection() {
+  const artisans = mockArtisans;
+  const count = artisans.length;
+
+  return (
+    <section className="w-full px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl">
+        {/* Section Header */}
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+            Ajoutés récemment
+          </h2>
+
+        </div>
+
+        {/* Artisans Grid */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {artisans.map((artisan) => (
+            <ArtisanCard
+              key={artisan.id}
+              name={artisan.name}
+              profession={artisan.profession}
+              zone={artisan.zone}
+              description={artisan.description}
+              phone={artisan.phone}
+              whatsapp={artisan.whatsapp}
+              addedByCommunity={artisan.addedByCommunity}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
