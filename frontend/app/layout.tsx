@@ -4,9 +4,10 @@ import { createTheme, MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
+import "@/styles/mantine-style.css";
 import "./globals.css";
-import { Providers } from "./providers";
 import { ThemeScript } from "./_components/theme-script";
+import { Providers } from "@/providers/global-providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,17 +39,22 @@ const theme = createTheme({
         radius: 'lg', // 16px (1rem)
       },
     },
+    Switch: {
+      defaultProps: {
+        withThumbIndicator: false,
+      },
+    },
     Input: {
       styles: {
         input: {
-          borderRadius: '0.375rem',
+          borderRadius: '0.75rem',
         }
       }
     },
     DateInput: {
       styles: {
         input: {
-          borderRadius: '0.375rem',
+          borderRadius: '0.75rem',
         }
       }
     }

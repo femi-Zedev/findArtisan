@@ -58,6 +58,7 @@ s
 - Implement proper error handling for auth operations
 - Follow existing patterns for protected routes
 - Use middleware for auth checks
+- Use constants file for global constants dont repeat constant values over in files
 
 ## 2. API and Data Handling
 

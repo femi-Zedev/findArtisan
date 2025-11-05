@@ -1,0 +1,46 @@
+.mantine-TextInput-label,
+.mantine-PasswordInput-label,
+.mantine-Select-label,
+.mantine-Autocomplete-label,
+.mantine-RadioGroup-label,
+.mantine-CheckboxGroup-label,
+.mantine-Textarea-label,
+.mantine-MultiSelect-label,
+.mantine-NumberInput-label,
+.mantine-DateInput-label,
+.mantine-DateTimePicker-label,
+.mantine-DatePickerInput-label,
+.mantine-TimeInput-label,
+.mantine-Switch-label {
+  width: 100%;
+  font-size: var(--font-size-text-sm);
+  font-weight: 500;
+  color: var(--color-gray-700);
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+
+.mantine-Input-input {
+  min-height: 40px;
+  text-transform: none;
+  /*padding: 0 8px;
+  */
+}
+
+.mantine-Textarea-input {
+  padding: 8px;
+}
+
+/* mantine drawer */
+.mantine-Paper-root {
+  overflow-y: hidden;
+}
+
+.mantine-Drawer-body {
+  padding: 0 !important;
+  height: 100%;
+}
+
+.mantine-Modal-body {
+  padding: 0 !important;
+}

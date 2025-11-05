@@ -5,10 +5,31 @@ import { Wrench, Plus, Sun, Moon, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "../lib/utils";
 import { useThemeStore } from "../../stores/themeStore";
+import { useDrawerContext } from "@/providers/drawer-provider";
+import { AddArtisanForm } from "./forms/AddArtisan.form";
 
 export function Navbar() {
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
+  const { openDrawer, closeDrawer } = useDrawerContext();
+
+  const handleOpenAddArtisanDrawer = () => {
+    openDrawer({
+      title: "Ajouter un artisan",
+      body: (
+        <AddArtisanForm
+          onSuccess={(values) => {
+            // TODO: Implement API call to submit artisan
+            console.log("Artisan added:", values);
+            closeDrawer();
+            // TODO: Show success toast notification
+          }}
+        />
+      ),
+      size: "xl",
+      bodyClassName: "p-6",
+    });
+  };
 
   return (
     <nav className="sticky top-4 z-50 w-full">
@@ -36,8 +57,7 @@ export function Navbar() {
           {/* Right Side Actions */}
           <div className="flex items-center gap-3">
             <Button
-              component={Link}
-              href="/add-artisan"
+              onClick={handleOpenAddArtisanDrawer}
               rightSection={<ArrowRight className="h-4 w-4" />}
               size="md"
               className="h-10 rounded-full bg-teal-500 px-6 font-semibold text-white transition-all hover:bg-teal-600 shadow-sm hover:shadow-md"
