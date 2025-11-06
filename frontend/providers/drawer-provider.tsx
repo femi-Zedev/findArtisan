@@ -51,6 +51,10 @@ export const DrawerProvider = ({ children }: { children: ReactNode }) => {
             content: "bg-white dark:bg-gray-900",
             body: "bg-white dark:bg-gray-900",
           }}
+          overlayProps={{
+            backgroundOpacity: 0.55,
+            blur: 3,
+          }}
         >
           {/* Wrap the entire content in AnimatePresence and motion.div */}
           <AnimatePresence mode='wait'>

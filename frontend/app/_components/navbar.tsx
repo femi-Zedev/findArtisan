@@ -1,23 +1,40 @@
 "use client";
 
 import { Button } from "@mantine/core";
-import { Wrench, Plus, Sun, Moon, ArrowRight } from "lucide-react";
+import { Wrench, Sun, Moon, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "../lib/utils";
 import { useThemeStore } from "../../stores/themeStore";
+import { useModalContext } from "@/providers/modal-provider";
+import { useUserStore } from "@/stores/userStore";
+import { GoogleLoginModal } from "./modals/GoogleLoginModal";
 import { useDrawerContext } from "@/providers/drawer-provider";
-import { AddArtisanForm } from "./forms/AddArtisan.form";
+import { AddArtisanSelection } from "./forms/AddArtisanSelection";
 
 export function Navbar() {
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
+  const { openModal } = useModalContext();
+  const { isAuthenticated } = useUserStore();
   const { openDrawer, closeDrawer } = useDrawerContext();
 
   const handleOpenAddArtisanDrawer = () => {
+    // If user is not authenticated, show login modal first
+    if (!isAuthenticated) {
+      openModal({
+        title: "Connexion requise",
+        body: <GoogleLoginModal />,
+        size: "md",
+        withCloseButton: true,
+      });
+      return;
+    }
+
+    // If authenticated, open drawer with selection screen
     openDrawer({
       title: "Ajouter un artisan",
       body: (
-        <AddArtisanForm
+        <AddArtisanSelection
           onSuccess={(values) => {
             // TODO: Implement API call to submit artisan
             console.log("Artisan added:", values);
@@ -27,7 +44,7 @@ export function Navbar() {
         />
       ),
       size: "xl",
-      bodyClassName: "p-6",
+      bodyClassName: "p-6 overflow-y-hidden",
     });
   };
 

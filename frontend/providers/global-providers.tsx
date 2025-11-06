@@ -21,11 +21,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ModalProvider>
-        <DrawerProvider>
+      <DrawerProvider>
+        <ModalProvider>
           <ThemeProvider>{children}</ThemeProvider>
-        </DrawerProvider>
-      </ModalProvider>
+        </ModalProvider>
+      </DrawerProvider>
     </QueryClientProvider>
   );
 }
