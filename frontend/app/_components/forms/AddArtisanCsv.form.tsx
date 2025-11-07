@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { Button } from "@mantine/core";
 import { Download } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { InfoBox, FileUploadArea } from "../ui";
@@ -178,20 +179,19 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
       </div>
 
       <div className="shrink-0 py-6 ">
-        <button
+        <Button
           onClick={handleCsvSubmit}
           disabled={!csvState.isValid || isProcessing}
-          className={cn(
-            "w-full px-6 py-3 rounded-lg font-semibold transition-colors",
-            "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2",
-            csvState.isValid && !isProcessing
-              ? "bg-teal-500 hover:bg-teal-600 text-white"
-              : "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-          )}
+          size="lg"
+          radius="lg"
+          fullWidth
+          color="teal"
+          className="font-semibold transition-colors"
+          loading={isProcessing}
           aria-label="Soumettre le fichier CSV"
         >
           {isProcessing ? "Traitement en cours..." : "Soumettre le fichier CSV"}
-        </button>
+        </Button>
       </div>
     </div>
   );

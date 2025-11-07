@@ -1,12 +1,13 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea, Switch, Select, MultiSelect } from "@mantine/core";
+import { Button, Autocomplete, TextInput, Textarea, Switch, Select } from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { Plus, X, Minus, Image } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { zones, professions } from "@/constants";
 import { useState, useCallback } from "react";
+import { MultiSelectCompact } from "../ui/MultiSelectCompact";
 
 interface PhoneNumber {
   number: string;
@@ -282,23 +283,24 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
               }}
               {...form.getInputProps("profession")}
             />
-            <MultiSelect
+            <MultiSelectCompact
               label="Zone"
-              placeholder="Choisir une zone"
-              size="lg"
+              placeholder="Choisir une ou plusieurs zones"
               data={zones}
+              value={form.values.zone}
+              onChange={(value) => form.setFieldValue("zone", value)}
               searchable
               required
+              error={form.errors.zone as string | undefined}
               classNames={{
-                label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
+                label: "text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2",
                 input:
-                  "rounded-lg border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
+                  "border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
                 dropdown:
                   "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
                 option:
                   "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
               }}
-              {...form.getInputProps("zone")}
             />
           </div>
 

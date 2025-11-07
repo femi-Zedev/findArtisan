@@ -38,8 +38,8 @@ export const DrawerProvider = ({ children }: { children: ReactNode }) => {
       {stackedDrawers.map((drawer, index) => (
         <Drawer
           key={drawer.key || index}
-          offset={drawer.offset || 12}
-          radius={drawer.radius || 12}
+          offset={drawer.offset || 16}
+          radius={drawer.radius || 16}
           closeOnEscape
           opened={true}
           onClose={closeDrawer}
