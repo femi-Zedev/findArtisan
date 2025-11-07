@@ -1,11 +1,12 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea, Switch, FileInput, Select, MultiSelect } from "@mantine/core";
+import { Button, Autocomplete, TextInput, Textarea, Switch, Select, MultiSelect } from "@mantine/core";
+import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
-import { Plus, X, Upload, Minus } from "lucide-react";
+import { Plus, X, Minus, Image } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import { zones, professions } from "@/constants";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 interface PhoneNumber {
   number: string;
@@ -37,8 +38,95 @@ const socialPlatforms = [
   { value: "instagram", label: "Instagram" },
 ];
 
+interface PhotoUploadDropzoneProps {
+  photoPreview: string | null;
+  onDrop: (files: File[]) => void;
+  onRemove: (e: React.MouseEvent) => void;
+  error?: string;
+  showLabel?: boolean;
+}
+
+function PhotoUploadDropzone({
+  photoPreview,
+  onDrop,
+  onRemove,
+  error,
+  showLabel = true,
+}: PhotoUploadDropzoneProps) {
+  return (
+    <div className="flex flex-col">
+      {showLabel && (
+        <label className="mantine-TextInput-label">
+          Photo de profil (optionnel)
+        </label>
+      )}
+      <div className="relative">
+        <Dropzone
+          onDrop={onDrop}
+          accept={IMAGE_MIME_TYPE}
+          multiple={false}
+          classNames={{
+            root: cn(
+              "relative w-52 h-32 rounded-2xl border-2 border-dashed",
+              "flex items-center justify-center cursor-pointer transition-all",
+              "border-gray-300 dark:border-gray-600",
+              "bg-gray-50 dark:bg-gray-800/50",
+              "hover:border-teal-500 dark:hover:border-teal-500",
+              "hover:bg-teal-50/50 dark:hover:bg-teal-900/10",
+              photoPreview && "border-solid border-teal-500 dark:border-teal-400"
+            ),
+            inner: "h-full w-full flex items-center justify-center p-0",
+          }}
+          styles={{
+            root: {
+              padding: 0,
+              width: "208px",
+              height: "128px",
+            },
+            inner: {
+              height: "100%",
+              width: "100%",
+              padding: 0,
+            },
+          }}
+        >
+          {photoPreview ? (
+            <>
+              <img
+                src={photoPreview}
+                alt="Photo preview"
+                className="w-full h-full rounded-2xl object-cover"
+              />
+              <button
+                type="button"
+                onClick={onRemove}
+                className={cn(
+                  "absolute -top-1 -right-1 w-8 h-8 rounded-full z-10",
+                  "flex items-center justify-center",
+                  "bg-red-500 hover:bg-red-600 text-white",
+                  "shadow-lg transition-colors"
+                )}
+                aria-label="Supprimer la photo"
+              >
+                <X size={14} />
+              </button>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-2 text-gray-400 dark:text-gray-500 pointer-events-none">
+              <Image className="w-8 h-8" />
+              <span className="text-xs text-center px-2">Cliquez ou glissez-déposez</span>
+            </div>
+          )}
+        </Dropzone>
+      </div>
+      {error && <span className="text-xs text-red-500">{error}</span>}
+    </div>
+  );
+}
+
 export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
   const [hasSocialMedia, setHasSocialMedia] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const form = useForm<AddArtisanFormValues>({
     initialValues: {
@@ -95,6 +183,32 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
     }
   };
 
+  const handlePhotoChange = useCallback((file: File | null) => {
+    form.setFieldValue("photo", file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPhotoPreview(null);
+    }
+  }, [form]);
+
+  const handlePhotoRemove = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    form.setFieldValue("photo", null);
+    setPhotoPreview(null);
+  }, [form]);
+
+  const handleDrop = useCallback((files: File[]) => {
+    const file = files[0];
+    if (file) {
+      handlePhotoChange(file);
+    }
+  }, [handlePhotoChange]);
+
   const handleSubmit = (values: AddArtisanFormValues) => {
     // TODO: Implement API call to submit artisan
     console.log("Add Artisan:", values);
@@ -106,8 +220,35 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
   return (
     <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col h-full overflow-hidden">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
         <div className="flex flex-col gap-6 pr-2">
+          {/* Photo and Description - Inline */}
+          <div className="grid grid-cols-1 md:grid-cols-[208px_1fr] gap-6 items-start">
+            {/* Photo Upload */}
+            <PhotoUploadDropzone
+              photoPreview={photoPreview}
+              onDrop={handleDrop}
+              onRemove={handlePhotoRemove}
+              error={form.errors.photo as string | undefined}
+              showLabel={true}
+            />
+
+            {/* Description */}
+            <Textarea
+              label="Description"
+              placeholder="Décrivez les services offerts par cet artisan..."
+              size="lg"
+              rows={4}
+              required
+              classNames={{
+                label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
+                input:
+                  "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+              }}
+              {...form.getInputProps("description")}
+            />
+          </div>
+
           {/* Full Name */}
           <TextInput
             label="Nom complet"
@@ -163,22 +304,22 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
 
           {/* Phone Numbers */}
           <div className="flex flex-col gap-4">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Numéro de téléphone <span className="text-red-500">*</span>
-            </label>
+
             {form.values.phoneNumbers.map((phone, index) => (
-              <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
                 <TextInput
+                  label="Numéro de téléphone"
                   placeholder="Ex: +229 01 96 09 69 69"
                   size="lg"
                   className="flex-1"
+                  required
                   classNames={{
                     input:
                       "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
                   }}
                   {...form.getInputProps(`phoneNumbers.${index}.number`)}
                 />
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mt-8">
                   <Switch
                     label="Numéro dispo sur WhatsApp ?"
                     size="md"
@@ -225,10 +366,9 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
           {/* Social Media - Toggleable */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Réseaux sociaux (optionnel)
-              </label>
+
               <Switch
+                label="Réseaux sociaux (optionnel)"
                 checked={hasSocialMedia}
                 onChange={(e) => toggleSocialMedia(e.currentTarget.checked)}
                 size="md"
@@ -240,7 +380,7 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
             {hasSocialMedia && (
               <div className="flex flex-col gap-4">
                 {form.values.socialMedia.map((social, index) => (
-                  <div key={index} className="flex gap-2">
+                  <div key={index} className="flex gap-4">
                     <Select
                       placeholder="Plateforme"
                       size="lg"
@@ -270,7 +410,7 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
                       type="button"
                       onClick={() => removeSocialMedia(index)}
                       className={cn(
-                        "p-2 rounded-lg transition-colors flex items-center justify-center",
+                        "py-2 px-4 rounded-lg transition-colors flex items-center justify-center",
                         "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                       )}
                     >
@@ -291,40 +431,11 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
               </div>
             )}
           </div>
-
-          {/* Description */}
-          <Textarea
-            label="Description (optionnel)"
-            placeholder="Décrivez les services offerts par cet artisan..."
-            size="lg"
-            rows={4}
-            classNames={{
-              label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
-              input:
-                "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-            }}
-            {...form.getInputProps("description")}
-          />
-
-          {/* Photo Upload */}
-          <FileInput
-            label="Photo (optionnel)"
-            placeholder="Télécharger une photo"
-            accept="image/*"
-            leftSection={<Upload size={16} />}
-            size="lg"
-            classNames={{
-              label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
-              input:
-                "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-            }}
-            {...form.getInputProps("photo")}
-          />
         </div>
       </div>
 
       {/* Fixed Submit Button */}
-      <div className="shrink-0 p-6 mt-4 border-t border-gray-200 dark:border-gray-800">
+      <div className="shrink-0 mt-4">
         <Button
           type="submit"
           size="lg"

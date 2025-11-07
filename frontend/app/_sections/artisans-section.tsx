@@ -1,6 +1,6 @@
 "use client";
 
-import { ArtisanCard } from "./artisan-card";
+import { ArtisanCard } from "../_components/artisan-card";
 
 // Mock data - will be replaced with API data later
 const mockArtisans = [

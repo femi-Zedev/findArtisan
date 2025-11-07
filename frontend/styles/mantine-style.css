@@ -20,6 +20,25 @@
   text-transform: capitalize;
 }
 
+/* Dark theme support for labels */
+.dark .mantine-TextInput-label,
+.dark .mantine-PasswordInput-label,
+.dark .mantine-Select-label,
+.dark .mantine-Autocomplete-label,
+.dark .mantine-RadioGroup-label,
+.dark .mantine-CheckboxGroup-label,
+.dark .mantine-Textarea-label,
+.dark .mantine-MultiSelect-label,
+.dark .mantine-NumberInput-label,
+.dark .mantine-DateInput-label,
+.dark .mantine-DateTimePicker-label,
+.dark .mantine-DatePickerInput-label,
+.dark .mantine-TimeInput-label,
+.dark .mantine-Switch-label {
+  color: rgb(209 213 219);
+  /* gray-300 for better contrast in dark mode */
+}
+
 .mantine-Input-input {
   min-height: 40px;
   text-transform: none;
