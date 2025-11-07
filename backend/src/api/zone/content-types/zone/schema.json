@@ -1,0 +1,49 @@
+{
+  "kind": "collectionType",
+  "collectionName": "zones",
+  "info": {
+    "singularName": "zone",
+    "pluralName": "zones",
+    "displayName": "Zone",
+    "description": "Cities or districts served by artisans"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "minLength": 2
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "latitude": {
+      "type": "decimal",
+      "min": -90,
+      "max": 90
+    },
+    "longitude": {
+      "type": "decimal",
+      "min": -180,
+      "max": 180
+    },
+    "artisans": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::artisan.artisan",
+      "mappedBy": "zones"
+    }
+  }
+}
+

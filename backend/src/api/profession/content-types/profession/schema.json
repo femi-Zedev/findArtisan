@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "professions",
+  "info": {
+    "singularName": "profession",
+    "pluralName": "professions",
+    "displayName": "Profession",
+    "description": "Artisan profession catalogue"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "minLength": 2
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "search_keywords": {
+      "type": "text"
+    },
+    "artisans": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::artisan.artisan",
+      "mappedBy": "profession"
+    }
+  }
+}
+

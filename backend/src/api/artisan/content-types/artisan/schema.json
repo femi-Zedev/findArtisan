@@ -1,0 +1,104 @@
+{
+  "kind": "collectionType",
+  "collectionName": "artisans",
+  "info": {
+    "singularName": "artisan",
+    "pluralName": "artisans",
+    "displayName": "Artisan",
+    "description": "Registered artisans available in the marketplace"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "full_name": {
+      "type": "string",
+      "required": true,
+      "minLength": 2
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "full_name",
+      "required": true
+    },
+    "description": {
+      "type": "richtext",
+      "required": true
+    },
+    "profile_photo": {
+      "type": "media",
+      "multiple": false,
+      "required": false
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "removed"
+      ],
+      "default": "approved",
+      "required": true
+    },
+    "is_community_submitted": {
+      "type": "boolean",
+      "default": false
+    },
+    "submitted_by_name": {
+      "type": "string"
+    },
+    "submitted_by_email": {
+      "type": "email"
+    },
+    "submitted_at": {
+      "type": "datetime"
+    },
+    "approved_at": {
+      "type": "datetime"
+    },
+    "approved_by_name": {
+      "type": "string"
+    },
+    "rejected_reason": {
+      "type": "text"
+    },
+    "profession": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::profession.profession",
+      "inversedBy": "artisans"
+    },
+    "zones": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::zone.zone",
+      "inversedBy": "artisans"
+    },
+    "phone_numbers": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::phone-number.phone-number",
+      "mappedBy": "artisan"
+    },
+    "social_links": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::social-link.social-link",
+      "mappedBy": "artisan"
+    },
+    "submission": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::community-submission.community-submission",
+      "mappedBy": "artisan"
+    },
+    "import_jobs": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::csv-import-job.csv-import-job",
+      "mappedBy": "artisans"
+    }
+  }
+}
+

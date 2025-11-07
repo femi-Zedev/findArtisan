@@ -1,0 +1,68 @@
+{
+  "kind": "collectionType",
+  "collectionName": "community_submissions",
+  "info": {
+    "singularName": "community-submission",
+    "pluralName": "community-submissions",
+    "displayName": "Community Submission",
+    "description": "Raw artisan submissions from the community"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "source": {
+      "type": "enumeration",
+      "enum": [
+        "form",
+        "csv"
+      ],
+      "default": "form",
+      "required": true
+    },
+    "moderation_status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "duplicate"
+      ],
+      "default": "pending",
+      "required": true
+    },
+    "raw_payload": {
+      "type": "json"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "submitted_by_name": {
+      "type": "string"
+    },
+    "submitted_by_email": {
+      "type": "email"
+    },
+    "submitted_at": {
+      "type": "datetime"
+    },
+    "duplicate_of": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::artisan.artisan"
+    },
+    "artisan": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::artisan.artisan",
+      "inversedBy": "submission"
+    },
+    "import_job": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::csv-import-job.csv-import-job",
+      "inversedBy": "submissions"
+    }
+  }
+}
+

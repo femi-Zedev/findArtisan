@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "csv_import_jobs",
+  "info": {
+    "singularName": "csv-import-job",
+    "pluralName": "csv-import-jobs",
+    "displayName": "CSV Import Job",
+    "description": "Batch CSV uploads for artisan onboarding"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "failed"
+      ],
+      "default": "pending",
+      "required": true
+    },
+    "submitted_by_name": {
+      "type": "string"
+    },
+    "submitted_by_email": {
+      "type": "email"
+    },
+    "submitted_at": {
+      "type": "datetime"
+    },
+    "processed_at": {
+      "type": "datetime"
+    },
+    "error_report": {
+      "type": "text"
+    },
+    "source_file": {
+      "type": "media",
+      "multiple": false,
+      "required": false
+    },
+    "artisans": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::artisan.artisan",
+      "inversedBy": "import_jobs"
+    },
+    "submissions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::community-submission.community-submission",
+      "mappedBy": "import_job"
+    }
+  }
+}
+
