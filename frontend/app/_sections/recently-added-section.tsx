@@ -1,6 +1,13 @@
 "use client";
 
+import { Button } from "@mantine/core";
+import { ArrowRight, Plus } from "lucide-react";
 import { ArtisanCard } from "../_components/artisan-card";
+import { useDrawerContext } from "@/providers/drawer-provider";
+import { useModalContext } from "@/providers/modal-provider";
+import { useUserStore } from "@/stores/userStore";
+import { AddArtisanSelection } from "../_components/forms/AddArtisanSelection";
+import { GoogleLoginModal } from "../_components/modals/GoogleLoginModal";
 
 // Mock data - will be replaced with API data later
 const mockArtisans = [
@@ -72,9 +79,42 @@ const mockArtisans = [
   },
 ];
 
-export function ArtisansSection() {
+export function RecentlyAddedSection() {
   const artisans = mockArtisans;
   const count = artisans.length;
+  const { openDrawer, closeDrawer } = useDrawerContext();
+  const { openModal } = useModalContext();
+  const { isAuthenticated } = useUserStore();
+
+  const handleOpenAddArtisanDrawer = () => {
+    // If user is not authenticated, show login modal first
+    if (!isAuthenticated) {
+      openModal({
+        title: "Connexion requise",
+        body: <GoogleLoginModal />,
+        size: "md",
+        withCloseButton: true,
+      });
+      return;
+    }
+
+    // If authenticated, open drawer with selection screen
+    openDrawer({
+      title: "Ajouter un artisan",
+      body: (
+        <AddArtisanSelection
+          onSuccess={(values) => {
+            // TODO: Implement API call to submit artisan
+            console.log("Artisan added:", values);
+            closeDrawer();
+            // TODO: Show success toast notification
+          }}
+        />
+      ),
+      size: "xl",
+      bodyClassName: "p-6 overflow-y-hidden",
+    });
+  };
 
   return (
     <section className="w-full px-4 py-8 sm:px-6 lg:px-8">
@@ -84,7 +124,15 @@ export function ArtisansSection() {
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
             Ajoutés récemment
           </h2>
-
+          <Button
+            onClick={handleOpenAddArtisanDrawer}
+            rightSection={<ArrowRight className="h-4 w-4" />}
+            size="md"
+            className="h-10 rounded-full bg-teal-500 px-4 font-semibold text-white transition-all hover:bg-teal-600 shadow-sm hover:shadow-md"
+          >
+            <span className="hidden sm:inline">Ajouter un artisan</span>
+            <span className="sm:hidden">Ajouter</span>
+          </Button>
         </div>
 
         {/* Artisans Grid */}

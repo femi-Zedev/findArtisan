@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { createTheme, MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@/styles/mantine-style.css";
 import "./globals.css";
 import { ThemeScript } from "./_components/theme-script";
 import { Providers } from "@/providers/global-providers";
+import { Navbar } from "./_components/navbar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -78,10 +80,15 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <MantineProvider theme={theme}>
-          <Providers>
-            <Notifications />
-            {children}
-          </Providers>
+          <NuqsAdapter>
+            <Providers>
+              <Notifications />
+              <main className="relative min-h-screen bg-linear-to-b from-blue-50 to-gray-50 dark:from-gray-950 dark:to-gray-900">
+                <Navbar />
+                {children}
+              </main>
+            </Providers>
+          </NuqsAdapter>
         </MantineProvider>
       </body>
     </html>

@@ -17,6 +17,7 @@ This document outlines the styling principles and guidelines for the FindArtisan
     *   **Efficiency**: Optimize workflows to help users achieve their goals (finding an artisan, adding an artisan) with minimal effort.
     *   **Mobile-First**: Design and develop starting with the smallest screen sizes, progressively enhancing for larger viewports.
     *   **Consistency**: Maintain uniform design elements (colors, typography, spacing, component behavior) across the application for a predictable user experience.
+    * **UI component**: prefer appliying primary color contouring to UI component (cards, custom inputs etc) on hover rather than shadow
     *   **Performance**: Prioritize fast loading times and smooth interactions, crucial for a good mobile web experience in varying network conditions.
     *   **Accessibility**: Strive for a usable experience for all users, including those with disabilities.
     *  **Light and dark mode**: for eye comfort and preference people can switch between light or dark mode

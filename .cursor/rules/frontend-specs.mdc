@@ -7,6 +7,7 @@ alwaysApply: true
 - We will be using NextJs newer version 16.0.1
 - Always refer to the their documentation at https://nextjs.org/docs
 - For UI components we will be using mantine UI 8.3.6 
+- Use Nuqs for anything related to search params and prefer using it when there is filter involved in the UI to persist the filter in the URL and easily maintain states clean
 - Always refer to the their documentation at https://mantine.dev/
 - We use Tanstack for managing API request
 - You can fallback to shadcn/ui components for complex UI elements when mantine do not cover the specif component we want to use
