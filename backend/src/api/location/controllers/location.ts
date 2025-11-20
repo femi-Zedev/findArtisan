@@ -94,7 +94,7 @@ export default {
     }
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(url.toString(), {
         headers: {
           'User-Agent': DEFAULT_USER_AGENT,
           Accept: 'application/json',
@@ -102,12 +102,15 @@ export default {
       });
 
       if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
         strapi.log.error('OpenStreetMap search failed', {
           status: response.status,
           statusText: response.statusText,
+          url: url.toString(),
+          error: errorText,
         });
 
-        ctx.throw(response.status, 'Failed to fetch locations from OpenStreetMap');
+        ctx.throw(response.status, `Failed to fetch locations from OpenStreetMap: ${response.statusText}`);
         return;
       }
 
@@ -121,8 +124,17 @@ export default {
         },
       };
     } catch (error) {
-      strapi.log.error('OpenStreetMap search error', error);
-      ctx.throw(500, 'Unexpected error fetching locations');
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      
+      strapi.log.error('OpenStreetMap search error', {
+        message: errorMessage,
+        stack: errorStack,
+        url: url.toString(),
+        error,
+      });
+      
+      ctx.throw(500, `Unexpected error fetching locations: ${errorMessage}`);
     }
   },
 };

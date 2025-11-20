@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Suspense } from "react";
 import { createTheme, MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
@@ -84,8 +85,10 @@ export default function RootLayout({
             <Providers>
               <Notifications />
               <main className="relative min-h-screen bg-linear-to-b from-blue-50 to-gray-50 dark:from-gray-950 dark:to-gray-900">
-                <Navbar />
-                {children}
+                <Suspense fallback={null}>
+                  <Navbar />
+                  {children}
+                </Suspense>
               </main>
             </Providers>
           </NuqsAdapter>

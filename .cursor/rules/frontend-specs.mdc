@@ -64,6 +64,66 @@ s
 ## 2. API and Data Handling
 
 - Place API services in `src/lib/services`
+- The project uses `react-query-kit` along side `tanstack/react-query` for data fetching, which provides a thin wrapper around React Query:
+
+```typescript
+// Query pattern
+export const useGetItems = createQuery({
+  queryKey: ['get-items'],
+  fetcher: ({ limit, page, query }: PaginatedRequest): Promise<PaginatedResponse<Item>> => {
+    const queries = paramsBuilder({ limit, page, query });
+    return api.get(`/api/v1/items?${queries}`).then(res => res.data.data);
+  },
+});
+
+// Mutation pattern
+export const useAddItem = createMutation({
+  mutationKey: ['add-item'],
+  mutationFn: (variables: SendItem) => {
+    return api.post(`/api/v1/items`, variables).then(res => res.data);
+  },
+});
+```
+
+### Usage in Components
+
+```typescript
+// Query usage
+const { data, isLoading, error } = useGetItems({
+  variables: { limit: 10, page: 1, query: searchQuery }
+});
+
+// Mutation usage with callbacks
+const addItemMutation = useAddItem({
+  onSuccess: () => {
+    notifications.show({ title: 'Success', message: 'Item added', type: 'success' });
+    queryClient.invalidateQueries();
+  },
+  onError: (error) => {
+    notifications.show({ title: 'Error', message: error.message, type: 'error' });
+  }
+});
+
+// Execute mutation
+addItemMutation.mutate(itemData);
+```
+-use `params-builder.ts`
+Builds URL query strings with proper array handling:
+
+```typescript
+export function paramsBuilder<T>(params: T): string {
+  const searchParams = new URLSearchParams();
+  for (const key in params) {
+    const value = params[key];
+    if (Array.isArray(value)) {
+      value.forEach(v => searchParams.append(key + '[]', String(v)));
+    } else if (value) {
+      searchParams.append(key, String(value));
+    }
+  }
+  return searchParams.toString();
+}
+```
 - Implement proper error handling
 - Use toast notifications for request success and errors:
   ```tsx

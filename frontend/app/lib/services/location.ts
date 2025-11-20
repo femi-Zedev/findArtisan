@@ -1,3 +1,7 @@
+import { createQuery } from 'react-query-kit';
+import { api } from '../api-client';
+import { routes } from '../routes';
+
 export interface LocationSearchParams {
   query: string;
   countryCodes?: string;
@@ -20,50 +24,42 @@ interface LocationSearchResponse {
   };
 }
 
-const DEFAULT_API_BASE_URL = 'http://localhost:1337/api';
-
-const resolveApiBaseUrl = (): string => {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_BASE_URL;
-  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+// Query key structure following the pattern
+export const locationKeys = {
+  all: ['locations'] as const,
+  searches: () => [...locationKeys.all, 'search'] as const,
+  search: (params: LocationSearchParams) => [...locationKeys.searches(), params] as const,
 };
 
-export async function searchLocations(
-  params: LocationSearchParams,
-  init?: RequestInit,
-): Promise<LocationSearchResult[]> {
-  const { query, countryCodes, limit } = params;
+/**
+ * Hook to search locations using OpenStreetMap/Nominatim
+ * Returns locations matching the search query
+ */
+export const useSearchLocations = createQuery({
+  queryKey: locationKeys.searches(),
+  fetcher: async (variables: LocationSearchParams): Promise<LocationSearchResult[]> => {
+    // Return empty array if query is empty
+    if (!variables.query?.trim()) {
+      return [];
+    }
 
-  if (!query.trim()) {
-    return [];
-  }
+    // Build query parameters
+    const params: Record<string, string | number> = {
+      q: variables.query,
+    };
 
-  const baseUrl = resolveApiBaseUrl();
-  const endpoint = new URL(`${baseUrl}/locations/search`);
+    if (variables.countryCodes) {
+      params.countrycodes = variables.countryCodes;
+    }
 
-  endpoint.searchParams.set('q', query);
+    if (variables.limit && variables.limit > 0) {
+      params.limit = variables.limit;
+    }
 
-  if (countryCodes) {
-    endpoint.searchParams.set('countrycodes', countryCodes);
-  }
+    const response = await api.get<LocationSearchResponse>(routes.locations.search, {
+      params,
+    });
 
-  if (typeof limit === 'number' && Number.isFinite(limit) && limit > 0) {
-    endpoint.searchParams.set('limit', `${Math.floor(limit)}`);
-  }
-
-  const response = await fetch(endpoint.toString(), {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch locations');
-  }
-
-  const payload = (await response.json()) as LocationSearchResponse;
-
-  return payload.data;
-}
-
+    return response.data;
+  },
+});

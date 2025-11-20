@@ -2800,6 +2800,11 @@ react-number-format@^5.4.4:
   resolved "https://registry.yarnpkg.com/react-number-format/-/react-number-format-5.4.4.tgz#d31f0e260609431500c8d3f81bbd3ae1fb7cacad"
   integrity sha512-wOmoNZoOpvMminhifQYiYSTCLUDOiUbBunrMrMjA+dV52sY+vck1S4UhR6PkgnoCquvvMSeJjErXZ4qSaWCliA==
 
+react-query-kit@^3.3.2:
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/react-query-kit/-/react-query-kit-3.3.2.tgz#d918d99d68b31221ec38a2c671d0888325e717d2"
+  integrity sha512-2dKF2kKNshfyOcEs7JG3VXCoh8SHmg8VtDb7LMgAKDrV3fFdcOh3efuEOkmD8IZ6PD+DjX9As2pL3uXKsMv2VQ==
+
 react-remove-scroll-bar@^2.3.7:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/react-remove-scroll-bar/-/react-remove-scroll-bar-2.3.8.tgz#99c20f908ee467b385b68a3469b4a3e750012223"

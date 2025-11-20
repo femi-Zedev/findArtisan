@@ -43,7 +43,7 @@ export function ArtisanCard({
     return (
       <div
         className={cn(
-          "group relative flex items-center gap-4 overflow-hidden rounded-xl border p-4 transition-all",
+          "group relative flex items-start  gap-4 overflow-hidden rounded-xl border p-4 transition-all",
           "bg-white border-gray-200 hover:border hover:border-teal-500",
           "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
         )}
@@ -53,12 +53,11 @@ export function ArtisanCard({
           <Avatar
             src={imageUrl}
             alt={name}
-            size={64}
+            size={48}
             radius="xl"
-            color="teal"
-            className="border-2 border-teal-500"
+            name={name}
+            color="initials"
           >
-            {name.charAt(0).toUpperCase()}
           </Avatar>
         </div>
 
@@ -74,12 +73,16 @@ export function ArtisanCard({
                   <Tooltip label="Ajouté par la communauté" position="top" withArrow>
                     <div
                       className={cn(
-                        "flex items-center justify-center h-5 w-5 rounded-full shrink-0",
+                        "flex gap-2 items-center justify-center rounded-md pl-2 pr-1 py-1 shrink-0",
                         "bg-rose-100 text-rose-700",
+                        "text-xs",
                         "dark:bg-rose-900/30 dark:text-rose-400"
                       )}
                     >
-                      <Users className="h-3 w-3" />
+                      <p>ajouté par la communauté</p>
+                      <span className="flex items-center justify-center bg-rose-500 text-white rounded-full p-1">
+                        <Users className="h-3 w-3" />
+                      </span>
                     </div>
                   </Tooltip>
                 )}
@@ -152,12 +155,11 @@ export function ArtisanCard({
             <Avatar
               src={imageUrl}
               alt={name}
-              size={52}
+              size={64}
               radius="xl"
-              color="teal"
-              className="border-2 border-teal-500"
+              name={name}
+              color="initials"
             >
-              {name.charAt(0).toUpperCase()}
             </Avatar>
           </div>
 

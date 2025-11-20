@@ -2,15 +2,8 @@
 
 import { Button, Autocomplete } from "@mantine/core";
 import { useForm } from "@mantine/form";
-
-const zones = [
-  { value: "akpakpa", label: "Akpakpa" },
-  { value: "fidjrosse", label: "Fidjrossè" },
-  { value: "calavi", label: "Calavi" },
-  { value: "cotonou", label: "Cotonou" },
-  { value: "porto-novo", label: "Porto-Novo" },
-  { value: "parakou", label: "Parakou" },
-];
+import { useState, useEffect, useMemo } from "react";
+import { useSearchLocations } from "@/app/lib/services/location";
 
 const professions = [
   { value: "plombier", label: "Plombier" },
@@ -51,6 +44,37 @@ export function FilterArtisanForm({
     },
   });
 
+  const [zoneSearchQuery, setZoneSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(zoneSearchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [zoneSearchQuery]);
+
+  // Use the location search hook
+  const { data: locationResults, isLoading: isLoadingLocations } = useSearchLocations({
+    variables: {
+      query: debouncedQuery,
+      countryCodes: "bj",
+      limit: 10,
+    },
+    enabled: debouncedQuery.trim().length >= 2,
+  });
+
+  // Transform location results to Autocomplete format
+  const zoneOptions = useMemo(() => {
+    if (!locationResults) return [];
+    return locationResults.map((location) => ({
+      value: location.displayName,
+      label: location.displayName,
+    }));
+  }, [locationResults]);
+
   const handleSubmit = (values: FilterValues) => {
     // TODO: Implement filter functionality
     console.log("Filters applied:", values);
@@ -61,9 +85,17 @@ export function FilterArtisanForm({
 
   const handleReset = () => {
     form.reset();
+    setZoneSearchQuery("");
+    setDebouncedQuery("");
     if (onReset) {
       onReset();
     }
+  };
+
+  // Handle zone input change - update both form and search query
+  const handleZoneChange = (value: string) => {
+    form.setFieldValue("zone", value);
+    setZoneSearchQuery(value);
   };
 
   return (
@@ -85,7 +117,9 @@ export function FilterArtisanForm({
       <Autocomplete
         placeholder="Choisir une zone"
         size="lg"
-        data={zones}
+        data={zoneOptions}
+        value={form.values.zone}
+        onChange={handleZoneChange}
         classNames={{
           input:
             "rounded-lg border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
@@ -94,7 +128,6 @@ export function FilterArtisanForm({
           option:
             "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
         }}
-        {...form.getInputProps("zone")}
       />
       <div className="flex gap-3 pt-2">
         <Button
