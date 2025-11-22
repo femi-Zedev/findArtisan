@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { AddArtisanForm } from "./AddArtisan.form";
 import { AddArtisanFormValues } from "./AddArtisan.form";
-import { AddArtisanCsvForm } from "./AddArtisanCsv.form";
+import { AddArtisanCsvForm, ParsedArtisan } from "./AddArtisanCsv.form";
 import { BackButton, InfoBox, MethodCard } from "../ui";
 
 interface AddArtisanSelectionProps {
@@ -18,12 +18,12 @@ export function AddArtisanSelection({ onSuccess, onBack }: AddArtisanSelectionPr
   const [selectedMethod, setSelectedMethod] = useState<SelectionMethod>(null);
 
   const handleCsvSuccess = useCallback(
-    (file: File) => {
-      // TODO: Handle CSV file success
-      console.log("CSV file submitted:", file);
+    (parsedData: ParsedArtisan[]) => {
+      // TODO: Handle CSV parsed data success - submit to API
+      console.log("CSV parsed data submitted:", parsedData);
       if (onSuccess) {
-        // For now, we'll need to adapt this based on how CSV parsing works
-        // This is a placeholder until CSV parsing is implemented
+        // Note: This will need to be adapted based on how the API expects the data
+        // For now, we'll just log it
       }
     },
     [onSuccess]

@@ -11,6 +11,7 @@ import "./globals.css";
 import { ThemeScript } from "./_components/theme-script";
 import { Providers } from "@/providers/global-providers";
 import { Navbar } from "./_components/navbar";
+import { ConditionalFooter } from "./_components/conditional-footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -84,10 +85,13 @@ export default function RootLayout({
           <NuqsAdapter>
             <Providers>
               <Notifications />
-              <main className="relative min-h-screen bg-linear-to-b from-blue-50 to-gray-50 dark:from-gray-950 dark:to-gray-900">
+              <main className="relative min-h-screen bg-linear-to-b from-blue-50 to-gray-50 dark:from-gray-950 dark:to-gray-900 flex flex-col">
                 <Suspense fallback={null}>
                   <Navbar />
-                  {children}
+                  <div className="flex-1">
+                    {children}
+                  </div>
+                  <ConditionalFooter />
                 </Suspense>
               </main>
             </Providers>

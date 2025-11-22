@@ -237,8 +237,12 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
             {/* Description */}
             <Textarea
               label="Description"
-              placeholder="Décrivez les services offerts par cet artisan..."
+              placeholder={`Décrivez les services offerts par cet artisan...
+- Ses spécialités (ex: plombier, électricien, etc.)
+- Si il se déplace ou possède un atelier
+- Donnez le maximum d'informations sur l'artisan`}
               size="lg"
+              maxLength={1200}
               rows={4}
               required
               classNames={{
@@ -253,7 +257,7 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
           {/* Full Name */}
           <TextInput
             label="Nom complet"
-            placeholder="Ex: Jean Dupont"
+            placeholder="Ex: Dodji COMLAN (Prénoms Nom), l'ordre est important !"
             size="lg"
             required
             classNames={{
@@ -267,7 +271,7 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
           {/* Profession and Zone - Same Line */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Autocomplete
-              label="Profession"
+              label="Domaine"
               placeholder="Ex: Plombier"
               size="lg"
               data={professions}

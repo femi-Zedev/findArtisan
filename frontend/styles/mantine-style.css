@@ -17,7 +17,6 @@
   font-weight: 500;
   color: var(--color-gray-700);
   margin-bottom: 8px;
-  text-transform: capitalize;
 }
 
 /* Dark theme support for labels */

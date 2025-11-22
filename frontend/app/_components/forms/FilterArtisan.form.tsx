@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, Autocomplete } from "@mantine/core";
+import { Button, Autocomplete, Loader, Select } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useState, useEffect, useMemo } from "react";
+import { useDebouncedValue } from "@mantine/hooks";
+import { useState, useMemo, useCallback } from "react";
 import { useSearchLocations } from "@/app/lib/services/location";
 
 const professions = [
@@ -45,35 +46,26 @@ export function FilterArtisanForm({
   });
 
   const [zoneSearchQuery, setZoneSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // Debounce search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(zoneSearchQuery);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [zoneSearchQuery]);
-
-  // Use the location search hook
-  const { data: locationResults, isLoading: isLoadingLocations } = useSearchLocations({
+  // Fetch all cities on mount to pre-populate the select
+  const { data: allCities, isLoading: isLoadingLocations } = useSearchLocations({
     variables: {
-      query: debouncedQuery,
-      countryCodes: "bj",
-      limit: 10,
+      pageSize: 100, // Fetch all cities, limit to 100
+      // No query means fetch all cities
     },
-    enabled: debouncedQuery.trim().length >= 2,
+    enabled: true, // Always fetch all cities on mount
   });
 
-  // Transform location results to Autocomplete format
+  // Transform location results to Select format and filter client-side
+  // The Select component with searchable prop will handle filtering
   const zoneOptions = useMemo(() => {
-    if (!locationResults) return [];
-    return locationResults.map((location) => ({
-      value: location.displayName,
-      label: location.displayName,
+    if (!allCities) return [];
+
+    return allCities.map((location) => ({
+      value: location.city,
+      label: location.city,
     }));
-  }, [locationResults]);
+  }, [allCities]);
 
   const handleSubmit = (values: FilterValues) => {
     // TODO: Implement filter functionality
@@ -86,17 +78,16 @@ export function FilterArtisanForm({
   const handleReset = () => {
     form.reset();
     setZoneSearchQuery("");
-    setDebouncedQuery("");
     if (onReset) {
       onReset();
     }
   };
 
-  // Handle zone input change - update both form and search query
-  const handleZoneChange = (value: string) => {
+  // Handle zone selection - update form and clear search query
+  const handleZoneChange = useCallback((value: string) => {
     form.setFieldValue("zone", value);
-    setZoneSearchQuery(value);
-  };
+    setZoneSearchQuery(""); // Clear search when a city is selected
+  }, [form]);
 
   return (
     <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col gap-6">
@@ -114,12 +105,14 @@ export function FilterArtisanForm({
         }}
         {...form.getInputProps("profession")}
       />
-      <Autocomplete
-        placeholder="Choisir une zone"
+      <Select
+        placeholder="Sélectionner une ville"
         size="lg"
         data={zoneOptions}
         value={form.values.zone}
-        onChange={handleZoneChange}
+        searchable
+        onChange={(value) => handleZoneChange(value || "")}
+        rightSection={isLoadingLocations ? <Loader size="1rem" /> : null}
         classNames={{
           input:
             "rounded-lg border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",

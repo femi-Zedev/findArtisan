@@ -1,0 +1,202 @@
+---
+description: Backend API route design specifications and RESTful conventions
+globs:
+alwaysApply: true
+---
+# Backend API Route Specifications
+
+## RESTful Route Design Principles
+
+### Core Principle: Purpose-Agnostic Resource-Based Routes
+
+All API routes should follow RESTful conventions and be purpose-agnostic. This means:
+
+1. **Use standard HTTP methods** (GET, POST, PUT, DELETE) on resource endpoints
+2. **Avoid action-specific routes** (e.g., `/artisans/search`, `/artisans/filter`)
+3. **Use query parameters** for filtering, searching, and pagination
+4. **Keep routes simple and predictable**
+
+### Route Structure
+
+For a resource (e.g., `artisan`), use standard CRUD operations:
+
+```
+GET    /artisans          - List/search/filter artisans (with query params)
+GET    /artisans/:id      - Get single artisan by ID
+POST   /artisans          - Create new artisan
+PUT    /artisans/:id      - Update artisan
+DELETE /artisans/:id      - Delete artisan
+```
+
+### Query Parameters for Filtering and Search
+
+Instead of creating separate endpoints like `/artisans/search`, use query parameters on the standard GET endpoint:
+
+**Example:**
+```
+❌ BAD:  GET /artisans/search?profession=plumber&zone=cotonou
+✅ GOOD: GET /artisans?profession=plumber&zone=cotonou
+```
+
+**Common Query Parameters:**
+- `q` - General search query (searches across multiple fields)
+- `profession` - Filter by profession name
+- `zone` - Filter by zone/city name
+- `page` - Page number for pagination
+- `pageSize` - Number of items per page (default: 20)
+- Resource-specific filters as needed
+
+### Implementation Pattern
+
+#### Controller Pattern
+
+Override the default `find` method in Strapi controllers to add custom filtering logic:
+
+```typescript
+// backend/src/api/artisan/controllers/artisan.ts
+export default factories.createCoreController('api::artisan.artisan', ({ strapi }) => ({
+  async find(ctx: Context) {
+    const { profession, zone, q, page, pageSize } = ctx.query;
+
+    // Build filters based on query parameters
+    const filters: Record<string, unknown> = {
+      status: 'approved', // Default filters
+    };
+
+    // Add conditional filters
+    if (profession) {
+      filters.profession = {
+        name: { $containsi: profession },
+      };
+    }
+
+    if (zone) {
+      filters.zones = {
+        name: { $containsi: zone },
+      };
+    }
+
+    if (q) {
+      filters.$or = [
+        { full_name: { $containsi: q } },
+        { description: { $containsi: q } },
+      ];
+    }
+
+    // Query with filters
+    const { results, pagination } = await strapi.entityService.findPage('api::artisan.artisan', {
+      filters,
+      populate: { /* relations */ },
+      pagination: {
+        page: parseNumber(page, 1),
+        pageSize: parseNumber(pageSize, 20),
+      },
+    });
+
+    // Transform and return
+    ctx.body = {
+      data: transformResults(results),
+      meta: { pagination },
+    };
+  },
+}));
+```
+
+#### Route Configuration
+
+Use standard Strapi core router with public access configuration:
+
+```typescript
+// backend/src/api/artisan/routes/artisan.ts
+import { factories } from '@strapi/strapi';
+
+export default factories.createCoreRouter('api::artisan.artisan' as any, {
+  config: {
+    find: { auth: false },      // Public access
+    findOne: { auth: false },   // Public access
+    // Other methods can require auth
+  },
+});
+```
+
+### Benefits
+
+1. **Predictable API**: Standard REST conventions make the API intuitive
+2. **Flexible**: Query parameters can be combined for complex filtering
+3. **Maintainable**: Single endpoint handles all list/search/filter operations
+4. **Scalable**: Easy to add new filters without creating new routes
+5. **Cacheable**: Standard GET endpoints are easily cacheable
+
+### Examples
+
+#### Simple List
+```
+GET /artisans
+```
+
+#### Filter by Profession
+```
+GET /artisans?profession=plumber
+```
+
+#### Filter by Multiple Criteria
+```
+GET /artisans?profession=plumber&zone=cotonou
+```
+
+#### Search with Pagination
+```
+GET /artisans?q=electrician&page=2&pageSize=10
+```
+
+#### Combined Filters
+```
+GET /artisans?profession=carpenter&zone=calavi&q=door&page=1&pageSize=20
+```
+
+### Frontend Integration
+
+Frontend services should use the standard resource endpoint with query parameters:
+
+```typescript
+// frontend/app/lib/services/artisan.ts
+export const useGetArtisans = createQuery({
+  queryKey: artisanKeys.searches(),
+  fetcher: async (variables: ArtisanSearchParams): Promise<ArtisanSearchResponse> => {
+    const queryString = paramsBuilder({
+      profession: variables.profession,
+      zone: variables.zone,
+      q: variables.q,
+      page: variables.page,
+      pageSize: variables.limit,
+    });
+
+    const url = queryString 
+      ? `${routes.artisans.base}?${queryString}`
+      : routes.artisans.base;
+
+    return await api.get<ArtisanSearchResponse>(url);
+  },
+});
+```
+
+### Route Definitions
+
+Keep route definitions simple in `frontend/app/lib/routes.ts`:
+
+```typescript
+export const routes = {
+  artisans: {
+    base: '/artisans',  // No /search suffix needed
+  },
+} as const;
+```
+
+### When to Break This Rule
+
+Only create custom routes when:
+1. **Complex operations** that don't fit standard CRUD (e.g., `/artisans/:id/approve`)
+2. **Bulk operations** (e.g., `/artisans/bulk-delete`)
+3. **Nested resources** (e.g., `/artisans/:id/reviews`)
+
+Even in these cases, prefer query parameters or request body over action-specific routes when possible.

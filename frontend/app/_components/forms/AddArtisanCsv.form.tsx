@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Button } from "@mantine/core";
-import { Download } from "lucide-react";
+import { Button, Table, Badge, Alert } from "@mantine/core";
+import { Download, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import { cn } from "@/app/lib/utils";
 import { InfoBox, FileUploadArea } from "../ui";
 
 const CSV_TEMPLATE_HEADERS = [
-  "Nom complet",
-  "Profession",
-  "Zone",
-  "Numéro de téléphone",
+  "Nom complet *",
+  "Profession *",
+  "Zone *",
+  "Numéro de téléphone *",
   "WhatsApp",
   "Description",
   "Facebook",
@@ -19,28 +21,80 @@ const CSV_TEMPLATE_HEADERS = [
 ];
 
 const CSV_TEMPLATE_EXAMPLE = [
-  "Exemple: Jean Dupont",
-  "Exemple: Plombier",
-  "Exemple: Akpakpa",
-  "Exemple: +229 01 96 09 69 69",
+  "Jean-Baptiste Koffi",
+  "Plombier",
+  "Akpakpa",
+  "+229 01 96 09 69 69",
   "Oui",
-  "Exemple: Description",
-  "Exemple: https://facebook.com/...",
-  "Exemple: https://tiktok.com/...",
-  "Exemple: https://instagram.com/...",
+  "Spécialiste en installation et réparation de plomberie",
+  "https://facebook.com/jean.koffi",
+  "https://tiktok.com/jean.koffi",
+  "https://instagram.com/jean.koffi",
 ];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+// Helper function to normalize headers (remove asterisks and trim)
+function normalizeHeader(header: string): string {
+  return header.replace(/\s*\*\s*$/, "").trim();
+}
+
+export interface ParsedArtisan {
+  "Nom complet": string;
+  Profession: string;
+  Zone: string;
+  "Numéro de téléphone": string;
+  WhatsApp: string;
+  Description: string;
+  Facebook: string;
+  TikTok: string;
+  Instagram: string;
+  _rowIndex?: number;
+  _errors?: string[];
+}
 
 interface CsvUploadState {
   file: File | null;
   error: string | null;
   isValid: boolean;
+  parsedData: ParsedArtisan[];
+  validationErrors: Array<{ row: number; errors: string[] }>;
 }
 
 interface AddArtisanCsvFormProps {
-  onSuccess?: (file: File) => void;
+  onSuccess?: (parsedData: ParsedArtisan[]) => void;
   onError?: (error: string) => void;
+}
+
+function validateParsedData(data: ParsedArtisan[]): Array<{ row: number; errors: string[] }> {
+  const errors: Array<{ row: number; errors: string[] }> = [];
+
+  data.forEach((row, index) => {
+    const rowErrors: string[] = [];
+    const rowNumber = index + 2; // +2 because index 0 is header, so first data row is 2
+
+    if (!row["Nom complet"]?.trim()) {
+      rowErrors.push("Le nom complet est requis");
+    }
+    if (!row.Profession?.trim()) {
+      rowErrors.push("La profession est requise");
+    }
+    if (!row.Zone?.trim()) {
+      rowErrors.push("La zone est requise");
+    }
+    if (!row["Numéro de téléphone"]?.trim()) {
+      rowErrors.push("Le numéro de téléphone est requis");
+    }
+    if (row.WhatsApp && !["Oui", "Non", "oui", "non", "OUI", "NON", ""].includes(row.WhatsApp)) {
+      rowErrors.push('WhatsApp doit être "Oui" ou "Non"');
+    }
+
+    if (rowErrors.length > 0) {
+      errors.push({ row: rowNumber, errors: rowErrors });
+    }
+  });
+
+  return errors;
 }
 
 export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps) {
@@ -48,41 +102,265 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
     file: null,
     error: null,
     isValid: false,
+    parsedData: [],
+    validationErrors: [],
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const handleDownloadTemplate = useCallback(() => {
-    const csvContent = [
-      CSV_TEMPLATE_HEADERS.join(","),
-      CSV_TEMPLATE_EXAMPLE.join(","),
-    ].join("\n");
+    // Generate Excel file with proper formatting
+    const workbook = XLSX.utils.book_new();
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "template-artisans.csv");
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Create worksheet data with headers and example row
+    const worksheetData = [
+      CSV_TEMPLATE_HEADERS,
+      CSV_TEMPLATE_EXAMPLE,
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Set column widths for better readability
+    const columnWidths = [
+      { wch: 25 }, // Nom complet
+      { wch: 15 }, // Profession
+      { wch: 15 }, // Zone
+      { wch: 20 }, // Numéro de téléphone
+      { wch: 10 }, // WhatsApp
+      { wch: 40 }, // Description
+      { wch: 30 }, // Facebook
+      { wch: 30 }, // TikTok
+      { wch: 30 }, // Instagram
+    ];
+    worksheet["!cols"] = columnWidths;
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Artisans");
+
+    // Generate Excel file and download
+    XLSX.writeFile(workbook, "template-artisans.xlsx");
   }, []);
+
+  const parseExcelFile = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+
+        // Get first worksheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+
+        // Convert to JSON with header row (returns array of arrays)
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1,
+          defval: "",
+        }) as string[][];
+
+        if (jsonData.length < 2) {
+          throw new Error("Le fichier Excel doit contenir au moins une ligne d'en-tête et une ligne de données");
+        }
+
+        // Get headers from first row and normalize them
+        const rawHeaders = (jsonData[0] as string[]).map((h) => String(h).trim());
+        const normalizedHeaders = rawHeaders.map(normalizeHeader);
+        const requiredHeaders = CSV_TEMPLATE_HEADERS.map(normalizeHeader);
+        const missingHeaders = requiredHeaders.filter((h) => !normalizedHeaders.includes(h));
+
+        if (missingHeaders.length > 0) {
+          throw new Error(
+            `En-têtes manquants: ${missingHeaders.join(", ")}. Veuillez utiliser le modèle fourni.`
+          );
+        }
+
+        // Parse data rows (skip header row)
+        const parsedData: ParsedArtisan[] = jsonData.slice(1).map((row, index) => {
+          const rowArray = row as string[];
+          const artisan: ParsedArtisan = {
+            "Nom complet": String(rowArray[normalizedHeaders.indexOf("Nom complet")] || "").trim(),
+            Profession: String(rowArray[normalizedHeaders.indexOf("Profession")] || "").trim(),
+            Zone: String(rowArray[normalizedHeaders.indexOf("Zone")] || "").trim(),
+            "Numéro de téléphone": String(rowArray[normalizedHeaders.indexOf("Numéro de téléphone")] || "").trim(),
+            WhatsApp: String(rowArray[normalizedHeaders.indexOf("WhatsApp")] || "").trim(),
+            Description: String(rowArray[normalizedHeaders.indexOf("Description")] || "").trim(),
+            Facebook: String(rowArray[normalizedHeaders.indexOf("Facebook")] || "").trim(),
+            TikTok: String(rowArray[normalizedHeaders.indexOf("TikTok")] || "").trim(),
+            Instagram: String(rowArray[normalizedHeaders.indexOf("Instagram")] || "").trim(),
+            _rowIndex: index + 2, // +2 because index 0 is header, so first data row is 2
+          };
+          return artisan;
+        }).filter((artisan) => {
+          // Filter out completely empty rows
+          return artisan["Nom complet"] || artisan.Profession || artisan.Zone;
+        });
+
+        if (parsedData.length === 0) {
+          throw new Error("Le fichier Excel ne contient aucune donnée valide");
+        }
+
+        // Validate data
+        const validationErrors = validateParsedData(parsedData);
+        const isValid = validationErrors.length === 0 && parsedData.length > 0;
+
+        setCsvState({
+          file,
+          error: isValid ? null : `Erreurs de validation trouvées dans ${validationErrors.length} ligne(s)`,
+          isValid,
+          parsedData,
+          validationErrors,
+        });
+
+        if (!isValid && onError) {
+          onError(`Erreurs de validation trouvées dans ${validationErrors.length} ligne(s)`);
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Erreur lors de la lecture du fichier Excel";
+        setCsvState({
+          file: null,
+          error: errorMessage,
+          isValid: false,
+          parsedData: [],
+          validationErrors: [],
+        });
+        if (onError) onError(errorMessage);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }, [onError]);
+
+  const parseAndValidateCSV = useCallback((file: File) => {
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      encoding: "UTF-8",
+      complete: (results) => {
+        try {
+          if (results.errors.length > 0) {
+            const parseErrors = results.errors
+              .filter((err) => err.type === "Quotes" || err.type === "Delimiter")
+              .map((err) => `Ligne ${err.row}: ${err.message}`)
+              .join(", ");
+
+            if (parseErrors) {
+              throw new Error(`Erreurs de parsing CSV: ${parseErrors}`);
+            }
+          }
+
+          const data = results.data as Record<string, string>[];
+
+          if (data.length === 0) {
+            throw new Error("Le fichier CSV ne contient aucune donnée");
+          }
+
+          // Check headers (normalize to handle asterisks)
+          const rawHeaders = results.meta.fields || [];
+          const normalizedHeaders = rawHeaders.map(normalizeHeader);
+          const requiredHeaders = CSV_TEMPLATE_HEADERS.map(normalizeHeader);
+          const missingHeaders = requiredHeaders.filter((h) => !normalizedHeaders.includes(h));
+
+          if (missingHeaders.length > 0) {
+            throw new Error(
+              `En-têtes manquants: ${missingHeaders.join(", ")}. Veuillez utiliser le modèle fourni.`
+            );
+          }
+
+          // Create a mapping from normalized headers to raw headers for data access
+          const headerMap = new Map<string, string>();
+          rawHeaders.forEach((rawHeader, index) => {
+            const normalized = normalizeHeader(rawHeader);
+            if (!headerMap.has(normalized)) {
+              headerMap.set(normalized, rawHeader);
+            }
+          });
+
+          // Parse data rows
+          const parsedData: ParsedArtisan[] = data.map((row, index) => {
+            const artisan: ParsedArtisan = {
+              "Nom complet": (row[headerMap.get("Nom complet") || "Nom complet"] || "").trim(),
+              Profession: (row[headerMap.get("Profession") || "Profession"] || "").trim(),
+              Zone: (row[headerMap.get("Zone") || "Zone"] || "").trim(),
+              "Numéro de téléphone": (row[headerMap.get("Numéro de téléphone") || "Numéro de téléphone"] || "").trim(),
+              WhatsApp: (row[headerMap.get("WhatsApp") || "WhatsApp"] || "").trim(),
+              Description: (row[headerMap.get("Description") || "Description"] || "").trim(),
+              Facebook: (row[headerMap.get("Facebook") || "Facebook"] || "").trim(),
+              TikTok: (row[headerMap.get("TikTok") || "TikTok"] || "").trim(),
+              Instagram: (row[headerMap.get("Instagram") || "Instagram"] || "").trim(),
+              _rowIndex: index + 2, // +2 because index 0 is header, so first data row is 2
+            };
+            return artisan;
+          });
+
+          // Validate data
+          const validationErrors = validateParsedData(parsedData);
+          const isValid = validationErrors.length === 0 && parsedData.length > 0;
+
+          setCsvState({
+            file,
+            error: isValid ? null : `Erreurs de validation trouvées dans ${validationErrors.length} ligne(s)`,
+            isValid,
+            parsedData,
+            validationErrors,
+          });
+
+          if (!isValid && onError) {
+            onError(`Erreurs de validation trouvées dans ${validationErrors.length} ligne(s)`);
+          }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Erreur lors de la lecture du fichier CSV";
+          setCsvState({
+            file: null,
+            error: errorMessage,
+            isValid: false,
+            parsedData: [],
+            validationErrors: [],
+          });
+          if (onError) onError(errorMessage);
+        }
+      },
+      error: (error) => {
+        const errorMessage = `Erreur lors de la lecture du fichier CSV: ${error.message}`;
+        setCsvState({
+          file: null,
+          error: errorMessage,
+          isValid: false,
+          parsedData: [],
+          validationErrors: [],
+        });
+        if (onError) onError(errorMessage);
+      },
+    });
+  }, [onError]);
 
   const handleCsvFileSelect = useCallback(
     (file: File | null) => {
       if (!file) {
-        setCsvState({ file: null, error: null, isValid: false });
+        setCsvState({
+          file: null,
+          error: null,
+          isValid: false,
+          parsedData: [],
+          validationErrors: [],
+        });
+        setShowPreview(false);
         return;
       }
 
-      // Validate file
-      if (!file.name.toLowerCase().endsWith(".csv")) {
-        const error = "Le fichier doit être au format CSV";
+      // Validate file type
+      const fileName = file.name.toLowerCase();
+      const isExcel = fileName.endsWith(".xlsx") || fileName.endsWith(".xls");
+      const isCsv = fileName.endsWith(".csv");
+
+      if (!isExcel && !isCsv) {
+        const error = "Le fichier doit être au format Excel (.xlsx, .xls) ou CSV (.csv)";
         setCsvState({
           file: null,
           error,
           isValid: false,
+          parsedData: [],
+          validationErrors: [],
         });
         if (onError) onError(error);
         return;
@@ -94,32 +372,35 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
           file: null,
           error,
           isValid: false,
+          parsedData: [],
+          validationErrors: [],
         });
         if (onError) onError(error);
         return;
       }
 
-      setCsvState({
-        file,
-        error: null,
-        isValid: true,
-      });
+      // Parse and validate based on file type
+      if (isExcel) {
+        parseExcelFile(file);
+      } else {
+        parseAndValidateCSV(file);
+      }
     },
-    [onError]
+    [onError, parseAndValidateCSV, parseExcelFile]
   );
 
   const handleCsvSubmit = useCallback(async () => {
-    if (!csvState.file || !csvState.isValid) return;
+    if (!csvState.file || !csvState.isValid || csvState.parsedData.length === 0) return;
 
     setIsProcessing(true);
     try {
-      // TODO: Parse CSV and submit to API
-      console.log("CSV file:", csvState.file);
+      // TODO: Submit parsed data to API
+      console.log("Parsed artisans:", csvState.parsedData);
       // Simulate processing
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       if (onSuccess) {
-        onSuccess(csvState.file);
+        onSuccess(csvState.parsedData);
       }
     } catch (error) {
       const errorMessage = "Une erreur est survenue lors du traitement du fichier";
@@ -131,69 +412,228 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
     } finally {
       setIsProcessing(false);
     }
-  }, [csvState.file, csvState.isValid, onSuccess, onError]);
+  }, [csvState.file, csvState.isValid, csvState.parsedData, onSuccess, onError]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 -mr-2">
         <div className="flex flex-col gap-6 pr-2">
-          <InfoBox title="Instructions pour l'upload CSV" variant="blue">
-            <ol className="space-y-1 list-decimal list-inside">
-              <li>Téléchargez le modèle CSV ci-dessous</li>
-              <li>Remplissez le fichier avec les informations des artisans</li>
-              <li>Uploadez le fichier rempli</li>
-              <li>Soumettez pour ajouter tous les artisans</li>
+          <InfoBox title="Instructions pour l'upload en lot" variant="blue">
+            <ol className="space-y-2 list-decimal list-inside text-sm">
+              <li>Téléchargez le modèle Excel (.xlsx) ci-dessous</li>
+              <li>Ouvrez le fichier avec Excel ou Google Sheets</li>
+              <li>Remplissez le fichier avec les informations des artisans (une ligne par artisan)</li>
+              <li>Enregistrez le fichier (Excel ou CSV)</li>
+              <li>Uploadez le fichier rempli (Excel ou CSV accepté)</li>
+              <li>Vérifiez l'aperçu des données avant de soumettre</li>
             </ol>
           </InfoBox>
 
+          {/* Format Example */}
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Format attendu:
+            </h4>
+            <div className="overflow-x-auto -mx-4 px-4">
+              <div className="min-w-full inline-block">
+                <Table striped highlightOnHover withTableBorder withColumnBorders className="min-w-full">
+                  <Table.Thead>
+                    <Table.Tr>
+                      {CSV_TEMPLATE_HEADERS.map((header) => {
+                        const hasAsterisk = header.endsWith(" *");
+                        const headerText = hasAsterisk ? header.slice(0, -2) : header;
+                        return (
+                          <Table.Th key={header} className="text-xs whitespace-nowrap">
+                            {headerText}
+                            {hasAsterisk && <span className="text-red-500 ml-0.5">*</span>}
+                          </Table.Th>
+                        );
+                      })}
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    <Table.Tr>
+                      {CSV_TEMPLATE_EXAMPLE.map((value, idx) => (
+                        <Table.Td key={idx} className="text-xs whitespace-nowrap">
+                          {value || <span className="text-gray-400">(optionnel)</span>}
+                        </Table.Td>
+                      ))}
+                    </Table.Tr>
+                  </Table.Tbody>
+                </Table>
+              </div>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+              💡 Chaque ligne représente un artisan. Les colonnes avec "*" sont obligatoires à remplir.
+            </p>
+          </div>
 
           <div className="flex flex-col gap-2">
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Étape 1: Télécharger le modèle
+              Étape 1: Télécharger le modèle Excel
             </label>
             <button
               onClick={handleDownloadTemplate}
               className={cn(
-                "flex items-center justify-center gap-2 px-4 py-3 rounded-lg",
+                "flex items-center justify-center gap-2 px-4 py-3 rounded-lg cursor-pointer",
                 "bg-white dark:bg-gray-800 border-2 border-teal-500",
                 "text-teal-600 dark:text-teal-400 font-semibold",
                 "hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors",
-                "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                "focus:outline-none focus:ring-teal-500 focus:ring-offset-2"
               )}
-              aria-label="Télécharger le modèle CSV"
+              aria-label="Télécharger le modèle Excel"
             >
               <Download className="h-5 w-5" />
-              Télécharger le modèle CSV
+              Télécharger le modèle Excel (.xlsx)
             </button>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              💡 Le modèle s'ouvre avec les colonnes correctement formatées dans Excel ou Google Sheets
+            </p>
           </div>
 
           <FileUploadArea
             onFileSelect={handleCsvFileSelect}
             file={csvState.file}
             error={csvState.error}
-            label="Étape 2: Uploader votre fichier CSV rempli"
-            accept=".csv"
+            label="Étape 2: Uploader votre fichier rempli (Excel ou CSV)"
+            accept=".xlsx,.xls,.csv"
             maxSize={MAX_FILE_SIZE}
           />
+
+          {/* Validation Errors */}
+          {csvState.validationErrors.length > 0 && (
+            <Alert
+              icon={<AlertCircle className="h-4 w-4" />}
+              title="Erreurs de validation"
+              color="red"
+              variant="light"
+            >
+              <div className="space-y-2">
+                {csvState.validationErrors.map((error, idx) => (
+                  <div key={idx} className="text-sm">
+                    <strong>Ligne {error.row}:</strong> {error.errors.join(", ")}
+                  </div>
+                ))}
+              </div>
+            </Alert>
+          )}
+
+          {/* Preview Section */}
+          {csvState.parsedData.length > 0 && (
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    {csvState.parsedData.length} artisan(s) trouvé(s)
+                  </h4>
+                </div>
+                <button
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="flex items-center gap-1 text-xs text-teal-600 dark:text-teal-400 hover:underline cursor-pointer"
+                >
+                  {showPreview ? (
+                    <>
+                      <EyeOff className="h-4 w-4" />
+                      Masquer l'aperçu
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4" />
+                      Afficher l'aperçu
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {showPreview && (
+                <div className="overflow-x-auto max-h-64 overflow-y-auto -mx-4 px-4">
+                  <div className="min-w-full inline-block">
+                    <Table striped highlightOnHover withTableBorder withColumnBorders className="min-w-full">
+                      <Table.Thead>
+                        <Table.Tr>
+                          {CSV_TEMPLATE_HEADERS.map((header) => {
+                            const hasAsterisk = header.endsWith(" *");
+                            const headerText = hasAsterisk ? header.slice(0, -2) : header;
+                            // Shorten header names for preview
+                            const shortHeader = headerText === "Nom complet" ? "Nom" :
+                              headerText === "Numéro de téléphone" ? "Téléphone" :
+                                headerText;
+                            return (
+                              <Table.Th key={header} className="text-xs whitespace-nowrap">
+                                {shortHeader}
+                                {hasAsterisk && <span className="text-red-500 ml-0.5">*</span>}
+                              </Table.Th>
+                            );
+                          })}
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {csvState.parsedData.slice(0, 10).map((artisan, idx) => (
+                          <Table.Tr key={idx}>
+                            <Table.Td className="text-xs whitespace-nowrap">{artisan["Nom complet"]}</Table.Td>
+                            <Table.Td className="text-xs whitespace-nowrap">{artisan.Profession}</Table.Td>
+                            <Table.Td className="text-xs whitespace-nowrap">{artisan.Zone}</Table.Td>
+                            <Table.Td className="text-xs whitespace-nowrap">{artisan["Numéro de téléphone"]}</Table.Td>
+                            <Table.Td className="text-xs whitespace-nowrap">
+                              {artisan.WhatsApp && artisan.WhatsApp.toLowerCase() === "oui" ? (
+                                <Badge size="xs" color="green">
+                                  Oui
+                                </Badge>
+                              ) : artisan.WhatsApp && artisan.WhatsApp.toLowerCase() === "non" ? (
+                                <Badge size="xs" color="gray">
+                                  Non
+                                </Badge>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </Table.Td>
+                            <Table.Td className="text-xs whitespace-nowrap max-w-xs truncate" title={artisan.Description}>
+                              {artisan.Description || <span className="text-gray-400">-</span>}
+                            </Table.Td>
+                            <Table.Td className="text-xs whitespace-nowrap max-w-xs truncate" title={artisan.Facebook}>
+                              {artisan.Facebook || <span className="text-gray-400">-</span>}
+                            </Table.Td>
+                            <Table.Td className="text-xs whitespace-nowrap max-w-xs truncate" title={artisan.TikTok}>
+                              {artisan.TikTok || <span className="text-gray-400">-</span>}
+                            </Table.Td>
+                            <Table.Td className="text-xs whitespace-nowrap max-w-xs truncate" title={artisan.Instagram}>
+                              {artisan.Instagram || <span className="text-gray-400">-</span>}
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </div>
+                  {csvState.parsedData.length > 10 && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                      ... et {csvState.parsedData.length - 10} autre(s) artisan(s)
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="shrink-0 py-6 ">
+      <div className="shrink-0 py-6">
         <Button
           onClick={handleCsvSubmit}
-          disabled={!csvState.isValid || isProcessing}
+          disabled={!csvState.isValid || isProcessing || csvState.parsedData.length === 0}
           size="lg"
           radius="lg"
           fullWidth
           color="teal"
           className="font-semibold transition-colors"
           loading={isProcessing}
-          aria-label="Soumettre le fichier CSV"
+          aria-label="Soumettre le fichier"
         >
-          {isProcessing ? "Traitement en cours..." : "Soumettre le fichier CSV"}
+          {isProcessing
+            ? "Traitement en cours..."
+            : `Soumettre ${csvState.parsedData.length > 0 ? `${csvState.parsedData.length} artisan(s)` : "le fichier"}`}
         </Button>
       </div>
     </div>
   );
 }
-

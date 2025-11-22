@@ -38,103 +38,210 @@ export function ArtisanCard({
     window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
   };
 
-  // Horizontal Layout
+  // Horizontal Layout - shows vertical layout on mobile
   if (layout === "horizontal") {
     return (
-      <div
-        className={cn(
-          "group relative flex items-start  gap-4 overflow-hidden rounded-xl border p-4 transition-all",
-          "bg-white border-gray-200 hover:border hover:border-teal-500",
-          "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
-        )}
-      >
-        {/* Left: Avatar */}
-        <div className="shrink-0 ring-2 ring-teal-500/20 rounded-full">
-          <Avatar
-            src={imageUrl}
-            alt={name}
-            size={48}
-            radius="xl"
-            name={name}
-            color="initials"
-          >
-          </Avatar>
+      <>
+        {/* Mobile: Vertical Layout */}
+        <div className="sm:hidden">
+          {(() => {
+            // Render vertical layout for mobile
+            return (
+              <div
+                className={cn(
+                  "group relative flex flex-col overflow-hidden rounded-2xl border p-4 transition-all",
+                  "bg-white border-gray-200 hover:border hover:border-teal-500",
+                  "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
+                )}
+              >
+                {/* Top Section: Avatar + Name + Profession on left, Badge on right */}
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {/* Avatar */}
+                    <div className="shrink-0 ring-2 ring-teal-500/20 rounded-full">
+                      <Avatar
+                        src={imageUrl}
+                        alt={name}
+                        size={48}
+                        radius="xl"
+                        name={name}
+                        color="initials"
+                      >
+                      </Avatar>
+                    </div>
+
+                    {/* Name and Profession */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                        {name}
+                      </h3>
+                      <Badge
+                        variant="light"
+                        className={cn(
+                          "bg-gray-100 text-gray-700 border-gray-300 text-[10px] mt-1",
+                          "dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                        )}
+                      >
+                        {profession}
+                      </Badge>
+                    </div>
+                  </div>
+
+
+                </div>
+
+                {/* Locations Block - Full width */}
+                <div className="mb-3 flex items-center gap-2 rounded-lg bg-gray-50 p-2 dark:bg-gray-800/50">
+                  <MapPin className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    {zone}
+                  </span>
+                </div>
+
+                {/* Description Block - Full width */}
+                <div className="flex-1">
+                  <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
+                    {description}
+                  </p>
+                </div>
+
+                {/* Community Badge - Right side */}
+                {addedByCommunity && (
+                  <div className="shrink-0 flex items-center gap-2  dark:bg-rose-900/30 bg-rose-100 rounded-md px-2 py-1.5 my-4 w-fit" >
+                    <span className="flex items-center justify-center bg-rose-500 text-white rounded-full p-1">
+                      <Users className="h-3 w-3" />
+                    </span>
+                    <p className="text-xs text-rose-700 dark:text-rose-300">ajouté par la communauté</p>
+
+                  </div>
+                )}
+
+                {/* Action Buttons - Bottom */}
+                <div className="flex gap-2 border-gray-200 dark:border-gray-800">
+                  <Button
+                    variant="outline"
+                    leftSection={<Phone className="h-3.5 w-3.5" />}
+                    onClick={handleCall}
+                    size="sm"
+                    className={cn(
+                      "flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 text-xs",
+                      "dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:border-gray-600"
+                    )}
+                  >
+                    Appeler
+                  </Button>
+                  {whatsapp && (
+                    <Button
+                      leftSection={<MessageCircle className="h-3.5 w-3.5" />}
+                      onClick={handleWhatsApp}
+                      size="sm"
+                      className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs"
+                    >
+                      WhatsApp
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
-        {/* Middle: Name, Profession, Zone, Description */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">
-                  {name}
-                </h3>
-                {addedByCommunity && (
-                  <Tooltip label="Ajouté par la communauté" position="top" withArrow>
-                    <div
-                      className={cn(
-                        "flex gap-2 items-center justify-center rounded-md pl-2 pr-1 py-1 shrink-0",
-                        "bg-rose-100 text-rose-700",
-                        "text-xs",
-                        "dark:bg-rose-900/30 dark:text-rose-400"
-                      )}
-                    >
-                      <p>ajouté par la communauté</p>
-                      <span className="flex items-center justify-center bg-rose-500 text-white rounded-full p-1">
-                        <Users className="h-3 w-3" />
-                      </span>
-                    </div>
-                  </Tooltip>
-                )}
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge
-                  variant="light"
-                  className={cn(
-                    "bg-gray-100 text-gray-700 border-gray-300 text-xs",
-                    "dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+        {/* Desktop: Horizontal Layout */}
+        <div
+          className={cn(
+            "hidden sm:flex group relative items-start gap-4 overflow-hidden rounded-xl border p-4 transition-all",
+            "bg-white border-gray-200 hover:border hover:border-teal-500",
+            "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
+          )}
+        >
+          {/* Left: Avatar */}
+          <div className="shrink-0 ring-2 ring-teal-500/20 rounded-full">
+            <Avatar
+              src={imageUrl}
+              alt={name}
+              size={48}
+              radius="xl"
+              name={name}
+              color="initials"
+            >
+            </Avatar>
+          </div>
+
+          {/* Middle: Name, Profession, Zone, Description */}
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">
+                    {name}
+                  </h3>
+                  {addedByCommunity && (
+                    <Tooltip label="Ajouté par la communauté" position="top" withArrow>
+                      <div
+                        className={cn(
+                          "flex gap-2 items-center justify-center rounded-md pl-2 pr-1 py-1 shrink-0",
+                          "bg-rose-100 text-rose-700",
+                          "text-xs",
+                          "dark:bg-rose-900/30 dark:text-rose-400"
+                        )}
+                      >
+                        <p>ajouté par la communauté</p>
+                        <span className="flex items-center justify-center bg-rose-500 text-white rounded-full p-1">
+                          <Users className="h-3 w-3" />
+                        </span>
+                      </div>
+                    </Tooltip>
                   )}
-                >
-                  {profession}
-                </Badge>
-                <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
-                  <MapPin className="h-3 w-3" />
-                  <span>{zone}</span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge
+                    variant="light"
+                    className={cn(
+                      "bg-gray-100 text-gray-700 border-gray-300 text-xs",
+                      "dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700"
+                    )}
+                  >
+                    {profession}
+                  </Badge>
+                  <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                    <MapPin className="h-3 w-3" />
+                    <span>{zone}</span>
+                  </div>
                 </div>
               </div>
             </div>
+            <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
+              {description}
+            </p>
           </div>
-          <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
-            {description}
-          </p>
-        </div>
 
-        {/* Right: Action Buttons */}
-        <div className="shrink-0 flex flex-col gap-2">
-          {whatsapp && (
-            <Button
-              leftSection={<MessageCircle className="h-4 w-4" />}
-              onClick={handleWhatsApp}
-              size="sm"
-              className="bg-green-500 hover:bg-green-600 text-white whitespace-nowrap"
-            >
-              WhatsApp
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            leftSection={<Phone className="h-4 w-4" />}
-            onClick={handleCall}
-            size="sm"
-            className={cn(
-              "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 whitespace-nowrap",
-              "dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:border-gray-600"
+          {/* Right: Action Buttons */}
+          <div className="shrink-0 flex flex-col gap-2">
+            {whatsapp && (
+              <Button
+                leftSection={<MessageCircle className="h-4 w-4" />}
+                onClick={handleWhatsApp}
+                size="sm"
+                className="bg-green-500 hover:bg-green-600 text-white whitespace-nowrap"
+              >
+                WhatsApp
+              </Button>
             )}
-          >
-            Appeler
-          </Button>
+            <Button
+              variant="outline"
+              leftSection={<Phone className="h-4 w-4" />}
+              onClick={handleCall}
+              size="sm"
+              className={cn(
+                "border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 whitespace-nowrap",
+                "dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:border-gray-600"
+              )}
+            >
+              Appeler
+            </Button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -155,7 +262,7 @@ export function ArtisanCard({
             <Avatar
               src={imageUrl}
               alt={name}
-              size={64}
+              size={52}
               radius="xl"
               name={name}
               color="initials"

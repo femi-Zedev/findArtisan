@@ -5,7 +5,10 @@
 
 export const routes = {
   locations: {
-    search: '/locations/search',
+    base: '/locations',
+  },
+  artisans: {
+    base: '/artisans',
   },
 } as const;
 

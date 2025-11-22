@@ -56,3 +56,7 @@ This document outlines the styling principles and guidelines for the FindArtisan
     *   **Horizontal Spacing**: Maintain consistent inner padding within components (e.g., buttons, input fields) and horizontal gutters.
     *   **Containers**: Use `max-w-md` or `max-w-lg` for content containers on larger screens to improve readability, with full width on mobile.
     *   **Flexbox & Grid**: Utilize Tailwind's `flex` and `grid` utilities for responsive layout structures.
+
+7.  DO & DONT
+    ------------------
+    * Add "cursor-pointer" by default to buttons and links 

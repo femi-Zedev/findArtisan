@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Navbar } from "../_components/navbar";
 import { ArtisanCard } from "../_components/artisan-card";
 import { FilterArtisanForm, FilterValues } from "../_components/forms/FilterArtisan.form";
-import { Autocomplete } from "@mantine/core";
+import { Autocomplete, Button, ScrollArea, TextInput } from "@mantine/core";
+import { Search } from "lucide-react";
+import { Switch } from "../_components/ui";
+import { BackButton } from "../_components/ui";
 import { cn } from "../lib/utils";
 
 // Mock data - will be replaced with API data later
@@ -105,11 +108,13 @@ const professions = [
 
 function SearchContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [filterValues, setFilterValues] = useState<FilterValues>({
     profession: searchParams.get("profession") || "",
     zone: searchParams.get("zone") || "",
   });
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [hideCommunityAdded, setHideCommunityAdded] = useState(false);
 
   // Update filters when URL params change
   useEffect(() => {
@@ -133,8 +138,10 @@ function SearchContent() {
       artisan.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       artisan.profession.toLowerCase().includes(searchQuery.toLowerCase()) ||
       artisan.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCommunity =
+      !hideCommunityAdded || artisan.addedByCommunity === false;
 
-    return matchesProfession && matchesZone && matchesSearch;
+    return matchesProfession && matchesZone && matchesSearch && matchesCommunity;
   });
 
   const resultCount = filteredArtisans.length;
@@ -149,12 +156,27 @@ function SearchContent() {
 
   const handleResetFilters = () => {
     setFilterValues({ profession: "", zone: "" });
+    setSearchQuery("");
+    setHideCommunityAdded(false);
   };
 
-  const hasActiveFilters = filterValues.profession || filterValues.zone;
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+  };
+
+  const hasActiveFilters = filterValues.profession || filterValues.zone || searchQuery || hideCommunityAdded;
+
+  const handleBack = () => {
+    router.push("/");
+  };
 
   return (
-    <section className="w-full h-full px-4 py-8 sm:px-6 lg:px-8 mt-14 mx-auto max-w-280 flex flex-col overflow-hidden">
+    <section className="w-full h-[calc(100vh-5rem)] px-4 py-8 sm:px-6 lg:px-8 mt-14 mx-auto max-w-6xl flex flex-col">
+      {/* Back Button */}
+      <div className="mb-4 shrink-0">
+        <BackButton onClick={handleBack} label="Retour à l'accueil" />
+      </div>
+
       {/* Fixed Title Section */}
       <div className="mb-6 shrink-0">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
@@ -163,11 +185,14 @@ function SearchContent() {
       </div>
 
       {/* Fixed Filters Row */}
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center shrink-0">
-        <div className="flex-1 w-full sm:w-auto flex flex-col sm:flex-row gap-3">
+      <div className="mb-6 space-y-4">
+
+        <div className="flex-1 items-center w-full sm:w-auto flex flex-col sm:flex-row gap-3">
+
           <Autocomplete
             placeholder="Quel métier cherchez-vous? (ex: plombier)"
-            size="md"
+            size="lg"
+            clearable
             data={professions}
             value={filterValues.profession}
             onChange={(value) => handleFilterChange("profession", value || "")}
@@ -179,11 +204,12 @@ function SearchContent() {
               option:
                 "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
             }}
-            className="flex-1 min-w-[200px]"
+            className="flex-1 min-w-[150px]"
           />
           <Autocomplete
             placeholder="Choisir une zone"
-            size="md"
+            size="lg"
+            clearable
             data={zones}
             value={filterValues.zone}
             onChange={(value) => handleFilterChange("zone", value || "")}
@@ -195,47 +221,69 @@ function SearchContent() {
               option:
                 "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
             }}
-            className="flex-1 min-w-[200px]"
+            className="flex-1 min-w-[150px]"
+          />
+          <div className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20">
+            <Switch
+              checked={hideCommunityAdded}
+              onCheckedChange={setHideCommunityAdded}
+            />
+            <label
+              onClick={() => setHideCommunityAdded(!hideCommunityAdded)}
+              className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none"
+            >
+              Masquer les ajouts communautaires
+            </label>
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={handleResetFilters}
+              className="text-gray-700 hover:bg-blue-50 dark:text-gray-300 dark:hover:bg-gray-800 border border-gray-300 dark:border-gray-700 px-4 py-3 text-sm font-medium rounded-xl transition-colors cursor-pointer"
+            >
+              Réinitialiser
+            </button>
+          )}
+        </div>
+        <div className="flex w-full justify-end items-center  sm:w-auto  flex-col sm:flex-row gap-3">
+          <TextInput
+            placeholder="Rechercher par mot clé"
+            size="lg"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            leftSection={<Search className="h-5 w-5 " />}
+            classNames={{
+              input: "rounded-lg min-w-[520px] border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+            }}
           />
         </div>
-        {hasActiveFilters && (
-          <button
-            onClick={handleResetFilters}
-            className={cn(
-              "px-4 py-2 text-sm font-medium rounded-lg transition-colors",
-              "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
-              "border border-gray-300 dark:border-gray-700"
-            )}
-          >
-            Réinitialiser
-          </button>
-        )}
       </div>
 
       {/* Scrollable Results List */}
-      <div className="flex flex-col gap-4 overflow-y-auto grow pb-4">
-        {filteredArtisans.length > 0 ? (
-          filteredArtisans.map((artisan) => (
-            <ArtisanCard
-              key={artisan.id}
-              name={artisan.name}
-              profession={artisan.profession}
-              zone={artisan.zone}
-              description={artisan.description}
-              phone={artisan.phone}
-              whatsapp={artisan.whatsapp}
-              addedByCommunity={artisan.addedByCommunity}
-              layout="horizontal"
-            />
-          ))
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">
-              Aucun artisan trouvé avec ces critères de recherche.
-            </p>
-          </div>
-        )}
-      </div>
+      <ScrollArea h="calc(100vh - 25rem)" className="flex-1">
+        <div className="flex flex-col gap-4 pr-4">
+          {filteredArtisans.length > 0 ? (
+            filteredArtisans.map((artisan) => (
+              <ArtisanCard
+                key={artisan.id}
+                name={artisan.name}
+                profession={artisan.profession}
+                zone={artisan.zone}
+                description={artisan.description}
+                phone={artisan.phone}
+                whatsapp={artisan.whatsapp}
+                addedByCommunity={artisan.addedByCommunity}
+                layout="horizontal"
+              />
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600 dark:text-gray-400">
+                Aucun artisan trouvé avec ces critères de recherche.
+              </p>
+            </div>
+          )}
+        </div>
+      </ScrollArea>
     </section>
   );
 }
@@ -243,7 +291,6 @@ function SearchContent() {
 export default function SearchPage() {
   return (
     <Suspense fallback={
-
       <section className="w-full px-4 py-8 sm:px-6 lg:px-8 mt-14">
         <div className="mx-auto max-w-6xl">
           <div className="text-center py-12">

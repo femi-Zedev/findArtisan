@@ -97,7 +97,11 @@ export function FileUploadArea({
               : "Cliquez pour uploader ou glissez-déposez"}
           </span>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {accept && `Fichier ${accept.toUpperCase()} uniquement`} (max {displayMaxSize})
+            {accept && (
+              accept.includes(",")
+                ? `Formats acceptés: ${accept.split(",").map(ext => ext.trim().toUpperCase()).join(", ")}`
+                : `Fichier ${accept.toUpperCase()} uniquement`
+            )} (max {displayMaxSize})
           </p>
         </div>
         <input
