@@ -10,6 +10,12 @@ export const routes = {
   artisans: {
     base: '/artisans',
   },
+  communitySubmissions: {
+    base: '/community-submissions',
+  },
+  upload: {
+    base: '/upload',
+  },
 } as const;
 
 

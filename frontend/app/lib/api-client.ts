@@ -78,7 +78,18 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      let errorMessage = `API request failed: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.error?.message) {
+          errorMessage = errorData.error.message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        // If error response is not JSON, use status text
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -118,6 +129,30 @@ class ApiClient {
 
     if (!response.ok) {
       throw new Error(`API request failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  }
+
+  async uploadFile<T>(endpoint: string, file: File, options?: Omit<ApiClientOptions, 'body'>): Promise<T> {
+    const url = this.buildUrl(endpoint, options?.params);
+    const formData = new FormData();
+    formData.append('files', file);
+
+    const response = await fetch(url, {
+      ...options,
+      method: 'POST',
+      headers: {
+        // Don't set Content-Type for FormData, browser will set it with boundary
+        ...options?.headers,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`File upload failed: ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();

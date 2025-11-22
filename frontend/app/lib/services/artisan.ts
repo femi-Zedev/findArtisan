@@ -135,3 +135,70 @@ export const useGetRecentlyAdded = createQuery({
   refetchOnWindowFocus: false,
 });
 
+// Types for creating artisan
+export interface CreateArtisanPayload {
+  full_name: string;
+  description: string;
+  profession?: string; // Profession slug or name
+  zones?: string[]; // Zone slugs
+  phone_numbers?: Array<{
+    number: string;
+    is_whatsapp: boolean;
+  }>;
+  social_links?: Array<{
+    platform: string;
+    link: string;
+  }>;
+  profile_photo?: File;
+  is_community_submitted?: boolean;
+  status?: string;
+}
+
+export interface CreateArtisanResponse {
+  data: Artisan;
+}
+
+/**
+ * Hook to create a new artisan (via community submission)
+ * Handles file upload and artisan creation
+ */
+export const useCreateArtisan = createMutation({
+  mutationKey: ['artisans', 'create'],
+  mutationFn: async (payload: CreateArtisanPayload): Promise<CreateArtisanResponse> => {
+    let profilePhotoId: number | undefined;
+
+    // Upload photo first if provided
+    if (payload.profile_photo) {
+      const uploadResponse = await api.uploadFile<Array<{ id: number }>>(
+        routes.upload.base,
+        payload.profile_photo
+      );
+      profilePhotoId = uploadResponse[0]?.id;
+    }
+
+    // Prepare the artisan data
+    const artisanData = {
+      data: {
+        full_name: payload.full_name,
+        description: payload.description,
+        profession: payload.profession, // Backend will need to resolve this to ID
+        zones: payload.zones, // Backend will need to resolve these to IDs
+        phone_numbers: payload.phone_numbers?.map((phone) => ({
+          number: phone.number,
+          is_whatsapp: phone.is_whatsapp,
+        })),
+        social_links: payload.social_links?.map((social) => ({
+          platform: social.platform,
+          link: social.link,
+        })),
+        profile_photo: profilePhotoId,
+        is_community_submitted: payload.is_community_submitted ?? true,
+        status: payload.status ?? 'approved',
+      },
+    };
+
+    const response = await api.post<CreateArtisanResponse>(routes.artisans.base, artisanData);
+    return response;
+  },
+});
+

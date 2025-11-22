@@ -5,9 +5,12 @@ import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { Plus, X, Minus, Image } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import { zones, professions } from "@/constants";
-import { useState, useCallback } from "react";
+import { professions } from "@/constants";
+import { useState, useCallback, useMemo } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
+import { useSearchLocations } from "@/app/lib/services/location";
+import { useCreateArtisan } from "@/app/lib/services/artisan";
+import { notifications } from "@mantine/notifications";
 
 interface PhoneNumber {
   number: string;
@@ -129,6 +132,22 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
   const [hasSocialMedia, setHasSocialMedia] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
+  // Fetch all locations on mount
+  const { data: locations = [], isLoading: isLoadingLocations } = useSearchLocations({
+    variables: {
+      pageSize: 100, // Fetch all cities
+    },
+    enabled: true,
+  });
+
+  // Transform locations to MultiSelectCompact format
+  const zoneOptions = useMemo(() => {
+    return locations.map((location) => ({
+      value: location.slug || location.city.toLowerCase().replace(/\s+/g, "-"), // Use slug if available, otherwise create from city name
+      label: location.city,
+    }));
+  }, [locations]);
+
   const form = useForm<AddArtisanFormValues>({
     initialValues: {
       fullName: "",
@@ -210,11 +229,60 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
     }
   }, [handlePhotoChange]);
 
-  const handleSubmit = (values: AddArtisanFormValues) => {
-    // TODO: Implement API call to submit artisan
-    console.log("Add Artisan:", values);
-    if (onSuccess) {
-      onSuccess(values);
+  const createArtisanMutation = useCreateArtisan({
+    onSuccess: () => {
+      notifications.show({
+        title: "Succès",
+        message: "L'artisan a été ajouté avec succès !",
+        color: "teal",
+      });
+      // Reset form
+      form.reset();
+      setPhotoPreview(null);
+      setHasSocialMedia(false);
+      if (onSuccess) {
+        onSuccess(form.values);
+      }
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: "Erreur",
+        message: error.message || "Une erreur est survenue lors de l'ajout de l'artisan",
+        color: "red",
+      });
+    },
+  });
+
+  const handleSubmit = async (values: AddArtisanFormValues) => {
+    try {
+      // Transform form values to API payload
+      await createArtisanMutation.mutateAsync({
+        full_name: values.fullName,
+        description: values.description || "",
+        profession: values.profession,
+        zones: values.zone,
+        phone_numbers: values.phoneNumbers
+          .filter((phone) => phone.number.trim() !== "")
+          .map((phone) => ({
+            number: phone.number.trim(),
+            is_whatsapp: phone.isWhatsApp,
+          })),
+        social_links:
+          values.socialMedia.length > 0
+            ? values.socialMedia
+              .filter((social) => social.platform && social.link)
+              .map((social) => ({
+                platform: social.platform,
+                link: social.link.trim(),
+              }))
+            : undefined,
+        profile_photo: values.photo || undefined,
+        is_community_submitted: true,
+        status: "approved",
+      });
+    } catch (error) {
+      // Error is handled by onError callback
+      console.error("Error creating artisan:", error);
     }
   };
 
@@ -238,7 +306,7 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
             <Textarea
               label="Description"
               placeholder={`Décrivez les services offerts par cet artisan...
-- Ses spécialités (ex: plombier, électricien, etc.)
+- Ses spécialités (ex: plombierie, décoration d'intérieur, etc.), années d'expérience
 - Si il se déplace ou possède un atelier
 - Donnez le maximum d'informations sur l'artisan`}
               size="lg"
@@ -289,8 +357,8 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
             />
             <MultiSelectCompact
               label="Zone"
-              placeholder="Choisir une ou plusieurs zones"
-              data={zones}
+              placeholder={isLoadingLocations ? "Chargement des zones..." : "Choisir une ou plusieurs zones"}
+              data={zoneOptions}
               value={form.values.zone}
               onChange={(value) => form.setFieldValue("zone", value)}
               searchable
@@ -316,6 +384,8 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
                 <TextInput
                   label="Numéro de téléphone"
                   placeholder="Ex: +229 01 96 09 69 69"
+                  prefix="+229"
+                  type="tel"
                   size="lg"
                   className="flex-1"
                   required
@@ -446,9 +516,11 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
           type="submit"
           size="lg"
           fullWidth
+          loading={createArtisanMutation.isPending}
+          disabled={createArtisanMutation.isPending}
           className="bg-teal-500 hover:bg-teal-600 text-white font-semibold"
         >
-          Ajouter l'artisan
+          {createArtisanMutation.isPending ? "Ajout en cours..." : "Ajouter l'artisan"}
         </Button>
       </div>
     </form>
