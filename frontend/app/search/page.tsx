@@ -3,22 +3,25 @@
 import { useState, Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryState, parseAsString } from "nuqs";
-import { useDebouncedValue } from "@mantine/hooks";
-import { Navbar } from "../_components/navbar";
+import { useDebouncedValue, useMediaQuery } from "@mantine/hooks";
 import { ArtisanCard } from "../_components/artisan-card";
-import { FilterValues } from "../_components/forms/FilterArtisan.form";
 import { Autocomplete, ScrollArea, TextInput, Skeleton } from "@mantine/core";
-import { Search, SearchX, Loader2 } from "lucide-react";
+import { Search, SearchX, Loader2, Filter, SlidersHorizontal } from "lucide-react";
 import { Switch } from "../_components/ui";
 import { BackButton } from "../_components/ui";
+import { Button } from "@mantine/core";
 import { useGetArtisans } from "../lib/services/artisan";
 import { useSearchLocations } from "../lib/services/location";
 import { professions } from "@/constants";
+import { useModalContext } from "@/providers/modal-provider";
+import { Badge } from "@mantine/core";
 
 
 
 function SearchContent() {
   const router = useRouter();
+  const { openModal, closeModal } = useModalContext();
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   // Use nuqs for URL state management
   const [profession, setProfession] = useQueryState("profession", parseAsString.withDefault(""));
@@ -90,14 +93,6 @@ function SearchContent() {
 
   const resultCount = filteredArtisans.length;
 
-  const handleFilterChange = (field: keyof FilterValues, value: string) => {
-    if (field === "profession") {
-      setProfession(value || null);
-    } else if (field === "zone") {
-      setZone(value || null);
-    }
-  };
-
   const handleResetFilters = () => {
     setProfession(null);
     setZone(null);
@@ -109,10 +104,101 @@ function SearchContent() {
     setSearchQuery(value || null);
   };
 
-  const hasActiveFilters = profession || zone || searchQuery || hideCommunityAdded;
+  const hasActiveFilters = profession || zone || hideCommunityAdded;
+  const activeFiltersCount = [profession, zone, hideCommunityAdded].filter(Boolean).length;
 
   const handleBack = () => {
     router.push("/");
+  };
+
+  const handleOpenFiltersModal = () => {
+    openModal({
+      title: "Filtres de recherche",
+      subtitle: activeFiltersCount > 0 ? `${activeFiltersCount} filtre(s) actif(s)` : undefined,
+      body: (
+        <div className="px-6 py-4 space-y-6">
+
+          <Autocomplete
+            placeholder="Filtrer par métier"
+            size="md"
+            clearable
+            data={professions}
+            value={profession}
+            onChange={(value) => {
+              setProfession(value || null);
+            }}
+            classNames={{
+              input:
+                "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+              dropdown:
+                "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
+              option:
+                "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
+            }}
+          />
+
+          <Autocomplete
+            placeholder="Filtrer par zone"
+            size="md"
+            clearable
+            data={zoneOptions}
+            value={zone}
+            onChange={(value) => {
+              setZone(value || null);
+            }}
+            rightSection={isLoadingLocations ?? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />}
+            classNames={{
+              input:
+                "rounded-lg border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
+              dropdown:
+                "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
+              option:
+                "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
+            }}
+          />
+
+
+          <div className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-800 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20">
+            <Switch
+              checked={hideCommunityAdded}
+              onCheckedChange={setHideCommunityAdded}
+            />
+            <label
+              onClick={() => setHideCommunityAdded(!hideCommunityAdded)}
+              className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none"
+            >
+              Par la communauté
+            </label>
+          </div>
+
+          {/* Reset and Cancel Buttons */}
+          <div className="pt-4 border-gray-200 dark:border-gray-800 flex gap-3">
+            <Button
+              onClick={() => {
+                closeModal();
+              }}
+              variant="outline"
+              color="gray"
+              radius="md"
+              className="flex-1 bg-teal-500 hover:bg-teal-600"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={() => {
+                handleResetFilters();
+              }}
+              radius="md"
+              className="flex-1"
+            >
+              Réinitialiser
+            </Button>
+          </div>
+        </div>
+      ),
+      size: "md",
+      modalContentClassName: "px-0",
+    });
   };
 
   return (
@@ -133,93 +219,146 @@ function SearchContent() {
         )}
       </div>
 
-      {/* Fixed Filters Row */}
+      {/* Search Bar with Filter Icon (Mobile) or Filters (Desktop) */}
       <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4 shrink-0">
-        {/* Search by keyword - Full width on mobile */}
-        <div className="w-full">
-          <TextInput
-            placeholder="Rechercher par mot clé"
-            size="md"
-            value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            leftSection={<Search className="h-4 w-4 sm:h-5 sm:w-5" />}
-            rightSection={
-              isTyping ? (
-                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-              ) : null
-            }
-            classNames={{
-              input: "rounded-lg w-full sm:min-w-[520px] border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-            }}
-          />
-        </div>
+        {/* Search Bar - Mobile: with filter icon, Desktop: full width */}
+        <div className="flex items-center gap-2 w-full">
 
-        {/* Filters Row */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full">
-          <Autocomplete
-            placeholder="Chercher par métier"
-            size="md"
-            clearable
-            data={professions}
-            value={profession}
-            onChange={(value) => handleFilterChange("profession", value || "")}
-            classNames={{
-              input:
-                "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-              dropdown:
-                "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
-              option:
-                "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
-            }}
-            className="flex-1 w-full sm:min-w-[150px]"
-          />
-          <Autocomplete
-            placeholder="Chercher par zone"
-            size="md"
-            clearable
-            data={zoneOptions}
-            value={zone}
-            onChange={(value) => handleFilterChange("zone", value || "")}
-            rightSection={isLoadingLocations ? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : null}
-            classNames={{
-              input:
-                "rounded-lg border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
-              dropdown:
-                "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
-              option:
-                "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
-            }}
-            className="flex-1 w-full sm:min-w-[150px]"
-          />
-        </div>
-
-        {/* Switch and Reset Button Row */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 sm:px-4 sm:py-3 dark:border-gray-700 dark:bg-gray-800 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20 w-full sm:w-auto">
-            <Switch
-              checked={hideCommunityAdded}
-              onCheckedChange={setHideCommunityAdded}
-            />
-            <label
-              onClick={() => setHideCommunityAdded(!hideCommunityAdded)}
-              className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none"
-            >
-              Masquer les ajouts communautaires
-            </label>
-          </div>
-          {hasActiveFilters && (
-            <button
-              onClick={handleResetFilters}
-              className="text-xs sm:text-sm text-gray-700 hover:bg-blue-50 dark:text-gray-300 dark:hover:bg-gray-800 border border-gray-300 dark:border-gray-700 px-3 py-2 sm:px-4 sm:py-3 font-medium rounded-xl transition-colors cursor-pointer w-full sm:w-auto"
-            >
-              Réinitialiser
-            </button>
+          {/* Filter Button with Badge - Mobile only */}
+          {isMobile && (
+            <>
+              <div className="flex-1">
+                <TextInput
+                  placeholder="Rechercher par mot clé"
+                  size="md"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  leftSection={<Search className="h-4 w-4 sm:h-5 sm:w-5" />}
+                  rightSection={
+                    isTyping ? (
+                      <Loader2 className="h-5 w-5 animate-spin text-teal-700" />
+                    ) : null
+                  }
+                  classNames={{
+                    input: "rounded-lg w-full border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+                  }}
+                />
+              </div>
+              <button
+                onClick={handleOpenFiltersModal}
+                className="relative shrink-0 h-[42px] w-[42px] flex items-center justify-center rounded-xl border border-gray-300 bg-white hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors"
+                aria-label="Ouvrir les filtres"
+              >
+                <SlidersHorizontal className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                {activeFiltersCount > 0 && (
+                  <Badge
+                    size="xs"
+                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-teal-500 text-white border-2 border-white dark:border-gray-800"
+                  >
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </button>
+            </>
           )}
         </div>
+
+        {/* Desktop Filters - Always visible on desktop */}
+        {!isMobile && (
+          <div className="space-y-3">
+            {/* Filters Row */}
+            <div className="flex flex-row gap-3 w-full">
+              <Autocomplete
+                placeholder="Chercher par métier"
+                size="lg"
+                clearable
+                data={professions}
+                value={profession}
+                onChange={(value) => {
+                  setProfession(value || null);
+                }}
+                classNames={{
+                  input:
+                    "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+                  dropdown:
+                    "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
+                  option:
+                    "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
+                }}
+                className="flex-1 min-w-[150px]"
+              />
+              <Autocomplete
+                placeholder="Chercher par zone"
+                size="lg"
+                clearable
+                data={zoneOptions}
+                value={zone}
+                onChange={(value) => {
+                  setZone(value || null);
+                }}
+                rightSection={isLoadingLocations ?? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />}
+                classNames={{
+                  input:
+                    "rounded-lg border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
+                  dropdown:
+                    "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
+                  option:
+                    "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
+                }}
+                className="flex-1 min-w-[150px]"
+              />
+              {/* Switch and Reset Button Row */}
+              <div className="flex flex-row gap-3 items-center">
+                <div className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-500/20">
+                  <Switch
+                    checked={hideCommunityAdded}
+                    onCheckedChange={setHideCommunityAdded}
+                  />
+                  <label
+                    onClick={() => setHideCommunityAdded(!hideCommunityAdded)}
+                    className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none"
+                  >
+                    Masquer les ajouts communautaires
+                  </label>
+                </div>
+                {hasActiveFilters && (
+                  <button
+                    onClick={handleResetFilters}
+                    className="text-sm text-gray-700 hover:bg-blue-50 dark:text-gray-300 dark:hover:bg-gray-800 border border-gray-300 dark:border-gray-700 px-4 py-3 font-medium rounded-xl transition-colors cursor-pointer"
+                  >
+                    Réinitialiser
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="w-full flex justify-end">
+              <TextInput
+                placeholder="Rechercher par mot clé"
+                size="lg"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                leftSection={<Search className="h-4 w-4 sm:h-5 sm:w-5" />}
+                rightSection={
+                  isTyping ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-teal-700" />
+                  ) : null
+                }
+                classNames={{
+                  input: "max-w-[400px] rounded-lg w-full border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+                }}
+              />
+            </div>
+
+          </div>
+        )}
       </div>
 
       {/* Scrollable Results List */}
-      <ScrollArea h="calc(100vh - 28rem)" className="sm:h-[calc(100vh - 25rem)] flex-1">
+      <ScrollArea
+        h="calc(100vh - 20rem)"
+        className="sm:h-[calc(100vh - 25rem)] flex-1"
+      >
         <div className="flex flex-col gap-3 sm:gap-4 pr-2 sm:pr-4">
           {showLoading ? (
             // Loading skeletons
