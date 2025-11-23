@@ -44,4 +44,3 @@ const artisanRoutes = {
 } as const;
 
 export default artisanRoutes;
-
