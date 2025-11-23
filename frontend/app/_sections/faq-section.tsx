@@ -38,7 +38,7 @@ const faqs: FAQItem[] = [
   {
     question: "Dans quelles villes le service est-il disponible ?",
     answer:
-      "FindArtisan couvre actuellement les principales villes du Bénin, notamment Cotonou, Calavi, Porto-Novo, Parakou et leurs zones environnantes. Nous continuons d'étendre notre couverture.",
+      "FindArtisan ambitionne couvrir toute les zones du Bénin. Vous pouvez nous aider en ajoutant les artisans de votre zone en cliquant sur le bouton 'Ajouter un artisan' en haut de la page.",
   },
 ];
 

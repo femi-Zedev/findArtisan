@@ -206,7 +206,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
-          
+
           const newProfession = await strapi.entityService.create('api::profession.profession' as any, {
             data: {
               name: professionName,
@@ -222,7 +222,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
       if (data.zones && Array.isArray(data.zones) && data.zones.length > 0) {
         for (const zoneSlug of data.zones) {
           if (!zoneSlug || !zoneSlug.trim()) continue;
-          
+
           const zone = await strapi.entityService.findMany('api::zone.zone' as any, {
             filters: {
               $or: [
@@ -243,7 +243,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
               .replace(/[\u0300-\u036f]/g, '')
               .replace(/[^a-z0-9]+/g, '-')
               .replace(/^-+|-+$/g, '');
-            
+
             try {
               const newZone = await strapi.entityService.create('api::zone.zone' as any, {
                 data: {
@@ -471,7 +471,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
       // Process each artisan sequentially
       for (let i = 0; i < data.length; i++) {
         const rowData = data[i];
-        const rowNumber = i + 1; // 1-based row number (accounting for header in CSV)
+        const rowNumber = i + 2; // 2-based row number (accounting for header row in CSV/Excel: row 1 = header, row 2 = first data)
         const errors: string[] = [];
 
         // Validate required fields
@@ -563,7 +563,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
                 .replace(/[\u0300-\u036f]/g, '')
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-+|-+$/g, '');
-              
+
               const newProfession = await strapi.entityService.create('api::profession.profession' as any, {
                 data: {
                   name: professionName,
@@ -579,7 +579,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
           if (rowData.zones && Array.isArray(rowData.zones) && rowData.zones.length > 0) {
             for (const zoneSlug of rowData.zones) {
               if (!zoneSlug || !String(zoneSlug).trim()) continue;
-              
+
               const zone = await strapi.entityService.findMany('api::zone.zone' as any, {
                 filters: {
                   $or: [
@@ -599,7 +599,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
                   .replace(/[\u0300-\u036f]/g, '')
                   .replace(/[^a-z0-9]+/g, '-')
                   .replace(/^-+|-+$/g, '');
-                
+
                 try {
                   const newZone = await strapi.entityService.create('api::zone.zone' as any, {
                     data: {
