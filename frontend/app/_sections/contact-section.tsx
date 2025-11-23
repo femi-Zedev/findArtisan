@@ -83,7 +83,7 @@ export function ContactSection() {
         </div>
 
         {/* Additional Info */}
-        <div className="mt-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-6 text-center">
+        {/* <div className="mt-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-6 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Vous avez un problème à signaler ou une suggestion d'amélioration ?{" "}
             <a
@@ -93,7 +93,7 @@ export function ContactSection() {
               Contactez notre équipe de support
             </a>
           </p>
-        </div>
+        </div> */}
       </div>
     </section>
   );

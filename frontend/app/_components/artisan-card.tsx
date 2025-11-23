@@ -7,7 +7,7 @@ import { cn } from "../lib/utils";
 interface ArtisanCardProps {
   name: string;
   profession: string;
-  zone: string;
+  zone: string | string[];
   description: string;
   phone: string;
   whatsapp?: boolean;
@@ -37,6 +37,11 @@ export function ArtisanCard({
     );
     window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
   };
+
+  // Normalize zones to array
+  const zones = Array.isArray(zone) ? zone : [zone];
+  const displayedZones = zones.slice(0, 2);
+  const remainingZones = zones.slice(2);
 
   // Horizontal Layout - shows vertical layout on mobile
   if (layout === "horizontal") {
@@ -93,9 +98,31 @@ export function ArtisanCard({
                 {/* Locations Block - Full width */}
                 <div className="mb-3 flex items-center gap-2 rounded-lg bg-gray-50 p-2 dark:bg-gray-800/50">
                   <MapPin className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    {zone}
-                  </span>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {displayedZones.map((z, idx) => (
+                      <span key={idx} className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {z}
+                        {idx < displayedZones.length - 1 && <span className="mx-1">,</span>}
+                      </span>
+                    ))}
+                    {remainingZones.length > 0 && (
+                      <Tooltip
+                        label={
+                          <div className="flex flex-col gap-1">
+                            {remainingZones.map((z, idx) => (
+                              <span key={idx}>{z}</span>
+                            ))}
+                          </div>
+                        }
+                        position="top"
+                        withArrow
+                      >
+                        <span className="text-xs font-medium text-teal-600 dark:text-teal-400 cursor-help">
+                          +{remainingZones.length}
+                        </span>
+                      </Tooltip>
+                    )}
+                  </div>
                 </div>
 
                 {/* Description Block - Full width */}
@@ -203,9 +230,31 @@ export function ArtisanCard({
                   >
                     {profession}
                   </Badge>
-                  <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
-                    <MapPin className="h-3 w-3" />
-                    <span>{zone}</span>
+                  <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 flex-wrap">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    {displayedZones.map((z, idx) => (
+                      <span key={idx}>
+                        {z}
+                        {idx < displayedZones.length - 1 && <span className="mx-1">,</span>}
+                      </span>
+                    ))}
+                    {remainingZones.length > 0 && (
+                      <Tooltip
+                        label={
+                          <div className="flex flex-col gap-1">
+                            {remainingZones.map((z, idx) => (
+                              <span key={idx}>{z}</span>
+                            ))}
+                          </div>
+                        }
+                        position="top"
+                        withArrow
+                      >
+                        <span className="text-teal-600 dark:text-teal-400 cursor-help">
+                          +{remainingZones.length}
+                        </span>
+                      </Tooltip>
+                    )}
                   </div>
                 </div>
               </div>
@@ -311,9 +360,31 @@ export function ArtisanCard({
       {/* Locations Block - Full width */}
       <div className="mb-4 flex items-center gap-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
         <MapPin className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {zone}
-        </span>
+        <div className="flex items-center gap-1 flex-wrap">
+          {displayedZones.map((z, idx) => (
+            <span key={idx} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {z}
+              {idx < displayedZones.length - 1 && <span className="mx-1">,</span>}
+            </span>
+          ))}
+          {remainingZones.length > 0 && (
+            <Tooltip
+              label={
+                <div className="flex flex-col gap-1">
+                  {remainingZones.map((z, idx) => (
+                    <span key={idx}>{z}</span>
+                  ))}
+                </div>
+              }
+              position="top"
+              withArrow
+            >
+              <span className="text-sm font-medium text-teal-600 dark:text-teal-400 cursor-help">
+                +{remainingZones.length}
+              </span>
+            </Tooltip>
+          )}
+        </div>
       </div>
 
       {/* Description Block - Full width */}

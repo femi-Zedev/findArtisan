@@ -2,11 +2,13 @@
 
 import { useState, useCallback } from "react";
 import { Button, Table, Badge, Alert } from "@mantine/core";
-import { Download, AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
-import Papa from "papaparse";
+import { Download, AlertCircle, CheckCircle2, Eye, EyeOff, FileDown } from "lucide-react";
+import * as Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { cn } from "@/app/lib/utils";
 import { InfoBox, FileUploadArea } from "../ui";
+import { useCreateBatchArtisans, type CreateBatchArtisanPayload, type BatchCreateArtisanResponse } from "@/app/lib/services/artisan";
+import { notifications } from "@mantine/notifications";
 
 const CSV_TEMPLATE_HEADERS = [
   "Nom complet *",
@@ -37,6 +39,130 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 // Helper function to normalize headers (remove asterisks and trim)
 function normalizeHeader(header: string): string {
   return header.replace(/\s*\*\s*$/, "").trim();
+}
+
+// Helper function to ensure URL has protocol
+function ensureUrlProtocol(url: string): string {
+  if (!url) return url;
+  const trimmed = url.trim();
+  if (!trimmed.match(/^https?:\/\//i)) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+}
+
+// Transform parsed CSV data to API format
+function transformParsedDataToApiFormat(
+  parsedData: ParsedArtisan[]
+): CreateBatchArtisanPayload[] {
+  return parsedData.map((row) => {
+    // Transform phone number
+    const phoneNumbers = [];
+    if (row["Numéro de téléphone"]?.trim()) {
+      phoneNumbers.push({
+        number: row["Numéro de téléphone"].trim(),
+        is_whatsapp: row.WhatsApp?.toLowerCase() === "oui",
+      });
+    }
+
+    // Transform social links
+    const socialLinks = [];
+    if (row.Facebook?.trim()) {
+      socialLinks.push({
+        platform: "facebook",
+        link: ensureUrlProtocol(row.Facebook.trim()),
+      });
+    }
+    if (row.TikTok?.trim()) {
+      socialLinks.push({
+        platform: "tiktok",
+        link: ensureUrlProtocol(row.TikTok.trim()),
+      });
+    }
+    if (row.Instagram?.trim()) {
+      socialLinks.push({
+        platform: "instagram",
+        link: ensureUrlProtocol(row.Instagram.trim()),
+      });
+    }
+
+    // Transform zones (split by comma if multiple)
+    const zones = row.Zone?.split(",").map((z) => z.trim()).filter(Boolean) || [];
+
+    return {
+      full_name: row["Nom complet"].trim(),
+      description: row.Description?.trim() || "",
+      profession: row.Profession?.trim(),
+      zones: zones.length > 0 ? zones : undefined,
+      phone_numbers: phoneNumbers.length > 0 ? phoneNumbers : undefined,
+      social_links: socialLinks.length > 0 ? socialLinks : undefined,
+      is_community_submitted: true,
+      status: "approved",
+    };
+  });
+}
+
+// Generate error report XLS file with failed rows
+function generateErrorReport(
+  failedRows: ParsedArtisan[],
+  batchResults: BatchCreateArtisanResponse
+): void {
+  // Create a map of row index to errors
+  const errorMap = new Map<number, string[]>();
+  batchResults.results.forEach((result) => {
+    if (!result.success && result.errors) {
+      errorMap.set(result.index, result.errors);
+    }
+  });
+
+  // Prepare data for Excel
+  const headers = [...CSV_TEMPLATE_HEADERS, "Erreurs"];
+  const rows = failedRows.map((row) => {
+    const rowIndex = row._rowIndex || 0;
+    const errors = errorMap.get(rowIndex) || [];
+    return [
+      row["Nom complet"] || "",
+      row.Profession || "",
+      row.Zone || "",
+      row["Numéro de téléphone"] || "",
+      row.WhatsApp || "",
+      row.Description || "",
+      row.Facebook || "",
+      row.TikTok || "",
+      row.Instagram || "",
+      errors.join("; "), // Join multiple errors with semicolon
+    ];
+  });
+
+  // Create workbook
+  const workbook = XLSX.utils.book_new();
+  const worksheetData = [headers, ...rows];
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+  // Set column widths
+  const columnWidths = [
+    { wch: 25 }, // Nom complet
+    { wch: 15 }, // Profession
+    { wch: 15 }, // Zone
+    { wch: 20 }, // Numéro de téléphone
+    { wch: 10 }, // WhatsApp
+    { wch: 40 }, // Description
+    { wch: 30 }, // Facebook
+    { wch: 30 }, // TikTok
+    { wch: 30 }, // Instagram
+    { wch: 50 }, // Erreurs
+  ];
+  worksheet["!cols"] = columnWidths;
+
+  // Add worksheet to workbook
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Lignes en erreur");
+
+  // Generate filename with timestamp
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
+  const filename = `erreurs-import-${timestamp}.xlsx`;
+
+  // Download file
+  XLSX.writeFile(workbook, filename);
 }
 
 export interface ParsedArtisan {
@@ -107,6 +233,51 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [batchResult, setBatchResult] = useState<BatchCreateArtisanResponse | null>(null);
+
+  const batchMutation = useCreateBatchArtisans({
+    onSuccess: (response) => {
+      setBatchResult(response);
+
+      if (response.created > 0) {
+        notifications.show({
+          title: 'Import terminé avec succès',
+          message: `${response.created} artisan(s) créé(s) sur ${response.total}`,
+          color: 'green',
+          autoClose: 5000,
+        });
+      }
+
+      if (response.failed > 0) {
+        notifications.show({
+          title: 'Import partiel',
+          message: `${response.failed} ligne(s) ont échoué. Téléchargez le rapport d'erreurs.`,
+          color: 'orange',
+          autoClose: 7000,
+        });
+      }
+
+      // If all succeeded, close drawer after showing success message
+      if (response.failed === 0) {
+        // Show success message briefly, then close drawer
+        setTimeout(() => {
+          if (onSuccess) {
+            onSuccess(csvState.parsedData);
+          }
+        }, 2000); // 2 second delay to show success message
+      }
+    },
+    onError: (error: any) => {
+      const errorMessage = error?.message || error?.response?.data?.error?.message || 'Une erreur est survenue lors de l\'import';
+      notifications.show({
+        title: 'Erreur lors de l\'import',
+        message: errorMessage,
+        color: 'red',
+        autoClose: 7000,
+      });
+      if (onError) onError(errorMessage);
+    },
+  });
 
   const handleDownloadTemplate = useCallback(() => {
     // Generate Excel file with proper formatting
@@ -393,115 +564,136 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
     if (!csvState.file || !csvState.isValid || csvState.parsedData.length === 0) return;
 
     setIsProcessing(true);
-    try {
-      // TODO: Submit parsed data to API
-      console.log("Parsed artisans:", csvState.parsedData);
-      // Simulate processing
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    setBatchResult(null);
 
-      if (onSuccess) {
-        onSuccess(csvState.parsedData);
-      }
+    try {
+      // Transform parsed data to API format
+      const apiPayload = transformParsedDataToApiFormat(csvState.parsedData);
+
+      // Submit batch
+      await batchMutation.mutateAsync(apiPayload);
     } catch (error) {
-      const errorMessage = "Une erreur est survenue lors du traitement du fichier";
-      setCsvState((prev) => ({
-        ...prev,
-        error: errorMessage,
-      }));
-      if (onError) onError(errorMessage);
+      // Error handled in onError callback
     } finally {
       setIsProcessing(false);
     }
-  }, [csvState.file, csvState.isValid, csvState.parsedData, onSuccess, onError]);
+  }, [csvState.file, csvState.isValid, csvState.parsedData, batchMutation]);
+
+  const handleDownloadErrorReport = useCallback(() => {
+    if (!batchResult || !csvState.parsedData.length) return;
+
+    // Get failed rows based on batch results
+    const failedIndices = new Set(
+      batchResult.results
+        .filter((r) => !r.success)
+        .map((r) => r.index)
+    );
+
+    const failedRows = csvState.parsedData.filter((row) => {
+      const rowIndex = row._rowIndex || 0;
+      return failedIndices.has(rowIndex);
+    });
+
+    if (failedRows.length > 0) {
+      generateErrorReport(failedRows, batchResult);
+    }
+  }, [batchResult, csvState.parsedData]);
+
+  // Determine if we should show the upload sections (hide during/after submission)
+  const showUploadSections = !isProcessing && !batchResult;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 -mr-2">
         <div className="flex flex-col gap-6 pr-2">
-          <InfoBox title="Instructions pour l'upload en lot" variant="blue">
-            <ol className="space-y-2 list-decimal list-inside text-sm">
-              <li>Téléchargez le modèle Excel (.xlsx) ci-dessous</li>
-              <li>Ouvrez le fichier avec Excel ou Google Sheets</li>
-              <li>Remplissez le fichier avec les informations des artisans (une ligne par artisan)</li>
-              <li>Enregistrez le fichier (Excel ou CSV)</li>
-              <li>Uploadez le fichier rempli (Excel ou CSV accepté)</li>
-              <li>Vérifiez l'aperçu des données avant de soumettre</li>
-            </ol>
-          </InfoBox>
+          {showUploadSections && (
+            <>
+              <InfoBox title="Instructions pour l'upload en lot" variant="blue">
+                <ol className="space-y-2 list-decimal list-inside text-sm">
+                  <li>Téléchargez le modèle Excel (.xlsx) ci-dessous</li>
+                  <li>Ouvrez le fichier avec Excel ou Google Sheets</li>
+                  <li>Remplissez le fichier avec les informations des artisans (une ligne par artisan)</li>
+                  <li>Enregistrez le fichier (Excel ou CSV)</li>
+                  <li>Uploadez le fichier rempli (Excel ou CSV accepté)</li>
+                  <li>Vérifiez l'aperçu des données avant de soumettre</li>
+                </ol>
+              </InfoBox>
 
-          {/* Format Example */}
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-              Format attendu:
-            </h4>
-            <div className="overflow-x-auto -mx-4 px-4">
-              <div className="min-w-full inline-block">
-                <Table striped highlightOnHover withTableBorder withColumnBorders className="min-w-full">
-                  <Table.Thead>
-                    <Table.Tr>
-                      {CSV_TEMPLATE_HEADERS.map((header) => {
-                        const hasAsterisk = header.endsWith(" *");
-                        const headerText = hasAsterisk ? header.slice(0, -2) : header;
-                        return (
-                          <Table.Th key={header} className="text-xs whitespace-nowrap">
-                            {headerText}
-                            {hasAsterisk && <span className="text-red-500 ml-0.5">*</span>}
-                          </Table.Th>
-                        );
-                      })}
-                    </Table.Tr>
-                  </Table.Thead>
-                  <Table.Tbody>
-                    <Table.Tr>
-                      {CSV_TEMPLATE_EXAMPLE.map((value, idx) => (
-                        <Table.Td key={idx} className="text-xs whitespace-nowrap">
-                          {value || <span className="text-gray-400">(optionnel)</span>}
-                        </Table.Td>
-                      ))}
-                    </Table.Tr>
-                  </Table.Tbody>
-                </Table>
+              {/* Format Example */}
+              <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-4">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                  Format attendu:
+                </h4>
+                <div className="overflow-x-auto -mx-4 px-4">
+                  <div className="min-w-full inline-block">
+                    <Table striped highlightOnHover withTableBorder withColumnBorders className="min-w-full">
+                      <Table.Thead>
+                        <Table.Tr>
+                          {CSV_TEMPLATE_HEADERS.map((header) => {
+                            const hasAsterisk = header.endsWith(" *");
+                            const headerText = hasAsterisk ? header.slice(0, -2) : header;
+                            return (
+                              <Table.Th key={header} className="text-xs whitespace-nowrap">
+                                {headerText}
+                                {hasAsterisk && <span className="text-red-500 ml-0.5">*</span>}
+                              </Table.Th>
+                            );
+                          })}
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        <Table.Tr>
+                          {CSV_TEMPLATE_EXAMPLE.map((value, idx) => (
+                            <Table.Td key={idx} className="text-xs whitespace-nowrap">
+                              {value || <span className="text-gray-400">(optionnel)</span>}
+                            </Table.Td>
+                          ))}
+                        </Table.Tr>
+                      </Table.Tbody>
+                    </Table>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                  💡 Chaque ligne représente un artisan. Les colonnes avec "<span className="text-red-500">*</span>" sont obligatoires à remplir.
+                </p>
               </div>
-            </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-              💡 Chaque ligne représente un artisan. Les colonnes avec "*" sont obligatoires à remplir.
-            </p>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Étape 1: Télécharger le modèle Excel
-            </label>
-            <button
-              onClick={handleDownloadTemplate}
-              className={cn(
-                "flex items-center justify-center gap-2 px-4 py-3 rounded-lg cursor-pointer",
-                "bg-white dark:bg-gray-800 border-2 border-teal-500",
-                "text-teal-600 dark:text-teal-400 font-semibold",
-                "hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors",
-                "focus:outline-none focus:ring-teal-500 focus:ring-offset-2"
-              )}
-              aria-label="Télécharger le modèle Excel"
-            >
-              <Download className="h-5 w-5" />
-              Télécharger le modèle Excel (.xlsx)
-            </button>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              💡 Le modèle s'ouvre avec les colonnes correctement formatées dans Excel ou Google Sheets
-            </p>
-          </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Étape 1: Télécharger le modèle Excel
+                </label>
+                <button
+                  onClick={handleDownloadTemplate}
+                  className={cn(
+                    "flex items-center justify-center gap-2 px-4 py-3 rounded-lg cursor-pointer",
+                    "bg-white dark:bg-gray-800 border-2 border-teal-500",
+                    "text-teal-600 dark:text-teal-400 font-semibold",
+                    "hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors",
+                    "focus:outline-none focus:ring-teal-500 focus:ring-offset-2"
+                  )}
+                  aria-label="Télécharger le modèle Excel"
+                >
+                  <Download className="h-5 w-5" />
+                  Télécharger le modèle Excel (.xlsx)
+                </button>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  💡 Le modèle s'ouvre avec les colonnes correctement formatées dans Excel ou Google Sheets
+                </p>
+              </div>
 
-          <FileUploadArea
-            onFileSelect={handleCsvFileSelect}
-            file={csvState.file}
-            error={csvState.error}
-            label="Étape 2: Uploader votre fichier rempli (Excel ou CSV)"
-            accept=".xlsx,.xls,.csv"
-            maxSize={MAX_FILE_SIZE}
-          />
+              <FileUploadArea
+                onFileSelect={handleCsvFileSelect}
+                file={csvState.file}
+                error={csvState.error}
+                label="Étape 2: Uploader votre fichier rempli (Excel ou CSV)"
+                accept=".xlsx,.xls,.csv"
+                maxSize={MAX_FILE_SIZE}
+              />
+            </>
+          )}
 
-          {/* Validation Errors */}
-          {csvState.validationErrors.length > 0 && (
+          {/* Validation Errors - only show before submission */}
+          {showUploadSections && csvState.validationErrors.length > 0 && (
             <Alert
               icon={<AlertCircle className="h-4 w-4" />}
               title="Erreurs de validation"
@@ -514,6 +706,52 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
                     <strong>Ligne {error.row}:</strong> {error.errors.join(", ")}
                   </div>
                 ))}
+              </div>
+            </Alert>
+          )}
+
+          {/* Batch Results */}
+          {batchResult && (
+            <Alert
+              icon={batchResult.failed === 0 ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+              title={batchResult.failed === 0 ? "Import réussi" : "Import partiel"}
+              color={batchResult.failed === 0 ? "green" : "orange"}
+              variant="light"
+            >
+              <div className="space-y-3">
+                <div className="text-sm">
+                  <strong>{batchResult.created}</strong> artisan(s) créé(s) sur <strong>{batchResult.total}</strong>
+                  {batchResult.failed > 0 && (
+                    <span className="text-orange-600 dark:text-orange-400">
+                      {" "}({batchResult.failed} échec(s))
+                    </span>
+                  )}
+                </div>
+
+                {batchResult.failed > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-sm font-semibold">Détails des erreurs:</div>
+                    <div className="max-h-48 overflow-y-auto space-y-1">
+                      {batchResult.results
+                        .filter((r) => !r.success)
+                        .map((result, idx) => (
+                          <div key={idx} className="text-xs bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                            <strong>Ligne {result.index}:</strong> {result.errorMessage || result.errors?.join(", ")}
+                          </div>
+                        ))}
+                    </div>
+                    <Button
+                      leftSection={<FileDown className="h-4 w-4" />}
+                      onClick={handleDownloadErrorReport}
+                      variant="light"
+                      color="orange"
+                      size="sm"
+                      className="mt-2"
+                    >
+                      Voir les lignes en erreur (XLS)
+                    </Button>
+                  </div>
+                )}
               </div>
             </Alert>
           )}
@@ -546,7 +784,7 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
                 </button>
               </div>
 
-              {showPreview && (
+              {showPreview && !isProcessing && !batchResult && (
                 <div className="overflow-x-auto max-h-64 overflow-y-auto -mx-4 px-4">
                   <div className="min-w-full inline-block">
                     <Table striped highlightOnHover withTableBorder withColumnBorders className="min-w-full">
@@ -617,22 +855,47 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
         </div>
       </div>
 
-      <div className="shrink-0 py-6">
-        <Button
-          onClick={handleCsvSubmit}
-          disabled={!csvState.isValid || isProcessing || csvState.parsedData.length === 0}
-          size="lg"
-          radius="lg"
-          fullWidth
-          color="teal"
-          className="font-semibold transition-colors"
-          loading={isProcessing}
-          aria-label="Soumettre le fichier"
-        >
-          {isProcessing
-            ? "Traitement en cours..."
-            : `Soumettre ${csvState.parsedData.length > 0 ? `${csvState.parsedData.length} artisan(s)` : "le fichier"}`}
-        </Button>
+      <div className="shrink-0 py-6 space-y-3">
+        {batchResult && (
+          <Button
+            onClick={() => {
+              setCsvState({
+                file: null,
+                error: null,
+                isValid: false,
+                parsedData: [],
+                validationErrors: [],
+              });
+              setShowPreview(false);
+              setBatchResult(null);
+            }}
+            variant="light"
+            size="md"
+            radius="lg"
+            fullWidth
+            color="gray"
+            className="font-semibold"
+          >
+            Réinitialiser et recommencer
+          </Button>
+        )}
+        {showUploadSections && (
+          <Button
+            onClick={handleCsvSubmit}
+            disabled={!csvState.isValid || isProcessing || csvState.parsedData.length === 0}
+            size="lg"
+            radius="lg"
+            fullWidth
+            color="teal"
+            className="font-semibold transition-colors"
+            loading={isProcessing}
+            aria-label="Soumettre le fichier"
+          >
+            {isProcessing
+              ? "Traitement en cours..."
+              : `Soumettre ${csvState.parsedData.length > 0 ? `${csvState.parsedData.length} artisan(s)` : "le fichier"}`}
+          </Button>
+        )}
       </div>
     </div>
   );

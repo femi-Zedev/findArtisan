@@ -202,3 +202,53 @@ export const useCreateArtisan = createMutation({
   },
 });
 
+// Types for batch creation
+export interface CreateBatchArtisanPayload {
+  full_name: string;
+  description?: string;
+  profession?: string;
+  zones?: string[];
+  phone_numbers?: Array<{
+    number: string;
+    is_whatsapp: boolean;
+  }>;
+  social_links?: Array<{
+    platform: string;
+    link: string;
+  }>;
+  is_community_submitted?: boolean;
+  status?: string;
+}
+
+export interface BatchCreateResult {
+  index: number;
+  success: boolean;
+  artisan?: Artisan;
+  errors?: string[];
+  errorMessage?: string;
+}
+
+export interface BatchCreateArtisanResponse {
+  success: boolean;
+  total: number;
+  created: number;
+  failed: number;
+  results: BatchCreateResult[];
+}
+
+/**
+ * Hook to create multiple artisans in batch (via CSV/Excel upload)
+ */
+export const useCreateBatchArtisans = createMutation({
+  mutationKey: ['artisans', 'create-batch'],
+  mutationFn: async (
+    payload: CreateBatchArtisanPayload[]
+  ): Promise<BatchCreateArtisanResponse> => {
+    const response = await api.post<BatchCreateArtisanResponse>(
+      `${routes.artisans.base}/batch`,
+      { data: payload }
+    );
+    return response;
+  },
+});
+

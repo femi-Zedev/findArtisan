@@ -19,11 +19,11 @@ export function AddArtisanSelection({ onSuccess, onBack }: AddArtisanSelectionPr
 
   const handleCsvSuccess = useCallback(
     (parsedData: ParsedArtisan[]) => {
-      // TODO: Handle CSV parsed data success - submit to API
-      console.log("CSV parsed data submitted:", parsedData);
+      // CSV batch submission was successful, close drawer by calling parent onSuccess
       if (onSuccess) {
-        // Note: This will need to be adapted based on how the API expects the data
-        // For now, we'll just log it
+        // Call parent onSuccess to trigger drawer close
+        // The parent component (e.g., recently-added-section) will handle closing the drawer
+        onSuccess({} as AddArtisanFormValues); // Pass empty object as placeholder
       }
     },
     [onSuccess]
