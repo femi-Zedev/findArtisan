@@ -118,9 +118,9 @@ export function RecentlyAddedSection() {
         )}
 
         {/* Add Artisan CTA - After showing value */}
-        <div className="mt-12 flex flex-col items-center justify-center gap-4 py-8">
+        <div className="mt-12 flex  flex-col items-center justify-center gap-8 py-8">
           <span className="text-center text-lg text-gray-600 dark:text-gray-300 sm:text-xl">
-            Tu connais un artisan fiable ? Aide ta communauté en l'ajoutant 👇
+            Tu connais un artisan fiable ? <br /> Aide ta communauté en l'ajoutant <br />👇
           </span>
           <Button
             onClick={handleOpenAddArtisanDrawer}

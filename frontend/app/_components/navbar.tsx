@@ -85,28 +85,6 @@ export function Navbar() {
             </span>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden sm:flex items-center gap-6">
-            <Link
-              href="/search"
-              className="text-[15px] font-medium text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-            >
-              Recherche
-            </Link>
-            <Link
-              href="/#faq"
-              className="text-[15px] font-medium text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-            >
-              FAQs
-            </Link>
-            <Link
-              href="/#contact"
-              className="text-[15px] font-medium text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-            >
-              Contact
-            </Link>
-          </div>
-
           {/* Desktop Right Side Actions */}
           <div className="hidden sm:flex items-center gap-3">
             <Button
@@ -171,20 +149,6 @@ export function Navbar() {
               {/* Menu Links with arrow design */}
               <div className="space-y-0">
                 <Link
-                  href="/search"
-                  onClick={handleLinkClick}
-                  className={cn(
-                    "flex items-center justify-between px-4 py-3",
-                    "text-gray-900 dark:text-white",
-                    "hover:bg-gray-100 dark:hover:bg-gray-800",
-                    "transition-colors font-medium",
-                    "border-b border-gray-200/50 dark:border-gray-800/50"
-                  )}
-                >
-                  <span>Recherche</span>
-                  <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                </Link>
-                <Link
                   href="/#faq"
                   onClick={handleLinkClick}
                   className={cn(
@@ -212,6 +176,8 @@ export function Navbar() {
                   <span>Contact</span>
                   <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                 </Link>
+
+
               </div>
 
               {/* Theme Toggle Dropdown */}

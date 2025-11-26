@@ -10,6 +10,8 @@ import "@/styles/mantine-style.css";
 import "@/app/globals.css";
 import { Providers } from "@/providers/global-providers";
 import { ThemeScript } from "@/app/_components/theme-script";
+import { Navbar } from "@/app/_components/navbar";
+import { ConditionalFooter } from "@/app/_components/conditional-footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -74,22 +76,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <ThemeScript />
-      </head>
-      <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
-        <MantineProvider theme={theme}>
-          <NuqsAdapter>
-            <Providers>
-              <Notifications />
-              <Suspense fallback={null}>
-                {children}
-              </Suspense>
-            </Providers>
-          </NuqsAdapter>
-        </MantineProvider>
-      </body>
-    </html>
+
+    <main className="relative min-h-screen bg-linear-to-b from-blue-50 to-gray-50 dark:from-gray-950 dark:to-gray-900 flex flex-col">
+      <Suspense fallback={null}>
+        <Navbar />
+        <div className="flex-1">
+          {children}
+        </div>
+        <ConditionalFooter />
+      </Suspense>
+    </main>
+
   );
 }
