@@ -2,7 +2,7 @@
 
 import { useUserStore } from "@/stores/userStore";
 import { Card, Text, Title, Group, Badge } from "@mantine/core";
-import { LayoutDashboard, Users, FileText, TrendingUp } from "lucide-react";
+import { Users, FileText, TrendingUp } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, getUserType, isAdmin } = useUserStore();

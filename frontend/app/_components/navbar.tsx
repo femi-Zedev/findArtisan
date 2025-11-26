@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Wrench, Sun, Moon, ArrowRight, Menu, X, ChevronRight } from "lucide-react";
@@ -15,6 +15,20 @@ import { AddArtisanSelection } from "./forms/AddArtisanSelection";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const { openModal } = useModalContext();
@@ -85,6 +99,31 @@ export function Navbar() {
             </span>
           </Link>
 
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link
+              href="/search"
+              onClick={handleLinkClick}
+              className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+            >
+              Recherche
+            </Link>
+            <Link
+              href="/#faq"
+              onClick={handleLinkClick}
+              className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+            >
+              FAQs
+            </Link>
+            <Link
+              href="/#contact"
+              onClick={handleLinkClick}
+              className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+            >
+              Contact
+            </Link>
+          </div>
+
           {/* Desktop Right Side Actions */}
           <div className="hidden sm:flex items-center gap-3">
             <Button
@@ -138,7 +177,7 @@ export function Navbar() {
         {isMobileMenuOpen && (
           <div
             className={cn(
-              "sm:hidden fixed inset-0 top-16 z-40",
+              "sm:hidden fixed inset-0 top-16 z-40 overflow-y-auto",
               "bg-blue-50/80 backdrop-blur-md dark:bg-gray-950/80",
               "border-t border-gray-200/30 dark:border-gray-800/30",
               "flex flex-col"
@@ -148,6 +187,20 @@ export function Navbar() {
 
               {/* Menu Links with arrow design */}
               <div className="space-y-0">
+                <Link
+                  href="/search"
+                  onClick={handleLinkClick}
+                  className={cn(
+                    "flex items-center justify-between px-4 py-3",
+                    "text-gray-900 dark:text-white",
+                    "hover:bg-gray-100 dark:hover:bg-gray-800",
+                    "transition-colors font-medium",
+                    "border-b border-gray-200/50 dark:border-gray-800/50"
+                  )}
+                >
+                  <span>Recherche</span>
+                  <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                </Link>
                 <Link
                   href="/#faq"
                   onClick={handleLinkClick}
@@ -176,8 +229,6 @@ export function Navbar() {
                   <span>Contact</span>
                   <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                 </Link>
-
-
               </div>
 
               {/* Theme Toggle Dropdown */}
