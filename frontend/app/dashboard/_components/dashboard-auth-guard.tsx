@@ -17,9 +17,9 @@ interface DashboardAuthGuardProps {
  * Currently checks user state from Zustand store.
  * TODO: Replace with actual authentication check against Strapi backend.
  */
-export function DashboardAuthGuard({ 
-  children, 
-  allowedUserTypes = ["admin", "contributor"] 
+export function DashboardAuthGuard({
+  children,
+  allowedUserTypes = ["admin", "contributor"]
 }: DashboardAuthGuardProps) {
   const router = useRouter();
   const { isAuthenticated, canAccessDashboard, getUserType } = useUserStore();
@@ -98,27 +98,30 @@ export function DashboardAuthGuard({
 
   // Check if user type is allowed for this specific route
   const userType = getUserType();
-  if (userType && !allowedUserTypes.includes(userType)) {
-    return (
-      <Center className="min-h-screen">
-        <div className="text-center max-w-md p-6">
-          <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <Text size="xl" fw={600} mb="sm">
-            Permissions insuffisantes
-          </Text>
-          <Text size="sm" c="dimmed" mb="lg">
-            Votre type de compte ({userType === "admin" ? "Administrateur" : userType === "contributor" ? "Contributeur" : "Utilisateur"}) n'a pas accès à cette section.
-          </Text>
-          <Button
-            onClick={() => router.push("/dashboard")}
-            color="teal"
-            variant="light"
-          >
-            Retour au tableau de bord
-          </Button>
-        </div>
-      </Center>
-    );
+  // Type guard: ensure userType is admin or contributor before checking includes
+  if (userType === "admin" || userType === "contributor") {
+    if (!allowedUserTypes.includes(userType)) {
+      return (
+        <Center className="min-h-screen">
+          <div className="text-center max-w-md p-6">
+            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+            <Text size="xl" fw={600} mb="sm">
+              Permissions insuffisantes
+            </Text>
+            <Text size="sm" c="dimmed" mb="lg">
+              Votre type de compte ({userType === "admin" ? "Administrateur" : "Contributeur"}) n'a pas accès à cette section.
+            </Text>
+            <Button
+              onClick={() => router.push("/dashboard")}
+              color="teal"
+              variant="light"
+            >
+              Retour au tableau de bord
+            </Button>
+          </div>
+        </Center>
+      );
+    }
   }
 
   // User is authenticated and authorized
