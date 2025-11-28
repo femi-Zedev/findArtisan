@@ -16,7 +16,7 @@ export default function DashboardPage() {
       color: "teal",
     },
     {
-      label: userType == "contributor" ? "Soumissions rejétées" : "Soumissions récentes",
+      label: userType === "user" ? "Mes Contributions" : "Soumissions récentes",
       value: "0",
       icon: FileText,
       color: "yellow",
@@ -42,7 +42,7 @@ export default function DashboardPage() {
             : "Gérez vos contributions et ajoutez de nouveaux artisans à la plateforme."}
         </Text>
         <Badge color="teal" variant="light" mt="sm">
-          {userType === "admin" ? "Administrateur" : "Contributeur"}
+          {userType === "admin" ? "Administrateur" : "Utilisateur"}
         </Badge>
       </div>
 

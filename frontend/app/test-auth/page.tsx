@@ -2,7 +2,7 @@
 
 import { useUserStore } from "@/stores/userStore";
 import { Button, Card, Title, Text, Group, Badge, Stack } from "@mantine/core";
-import { User, Shield, UserCheck, LogOut } from "lucide-react";
+import { User, Shield, LogOut } from "lucide-react";
 
 export default function TestAuthPage() {
   const { user, isAuthenticated, setUser, clearUser, getUserType } = useUserStore();
@@ -14,15 +14,6 @@ export default function TestAuthPage() {
       name: "Admin Test",
       email: "admin@test.com",
       userType: "admin",
-    });
-  };
-
-  const setContributorUser = () => {
-    setUser({
-      id: "contributor_1",
-      name: "Contributeur Test",
-      email: "contributor@test.com",
-      userType: "contributor",
     });
   };
 
@@ -84,16 +75,12 @@ export default function TestAuthPage() {
                     color={
                       userType === "admin"
                         ? "red"
-                        : userType === "contributor"
-                          ? "blue"
-                          : "gray"
+                        : "gray"
                     }
                   >
                     {userType === "admin"
                       ? "Administrateur"
-                      : userType === "contributor"
-                        ? "Contributeur"
-                        : "Utilisateur"}
+                      : "Utilisateur"}
                   </Badge>
                 </Group>
               </>
@@ -122,31 +109,17 @@ export default function TestAuthPage() {
             </Text>
 
             <Button
-              leftSection={<UserCheck className="h-4 w-4" />}
-              onClick={setContributorUser}
+              leftSection={<User className="h-4 w-4" />}
+              onClick={setRegularUser}
               color="blue"
               variant="light"
               fullWidth
               size="md"
             >
-              Définir comme Contributeur
+              Définir comme Utilisateur
             </Button>
             <Text size="xs" c="dimmed">
               Accès au tableau de bord pour gérer ses contributions et ajouter des artisans
-            </Text>
-
-            <Button
-              leftSection={<User className="h-4 w-4" />}
-              onClick={setRegularUser}
-              color="gray"
-              variant="light"
-              fullWidth
-              size="md"
-            >
-              Définir comme Utilisateur Régulier
-            </Button>
-            <Text size="xs" c="dimmed">
-              Pas d'accès au tableau de bord
             </Text>
 
             {isAuthenticated && (
@@ -174,7 +147,7 @@ export default function TestAuthPage() {
           </Title>
           <Stack gap="xs">
             <Text size="sm">
-              • Une fois un administrateur ou contributeur défini, vous pouvez accéder au{" "}
+              • Une fois un administrateur ou utilisateur défini, vous pouvez accéder au{" "}
               <a
                 href="/dashboard"
                 className="text-teal-600 dark:text-teal-400 hover:underline font-medium"
@@ -183,7 +156,10 @@ export default function TestAuthPage() {
               </a>
             </Text>
             <Text size="sm">
-              • Les utilisateurs réguliers ne peuvent pas accéder au tableau de bord
+              • Les utilisateurs peuvent gérer leurs contributions et ajouter des artisans
+            </Text>
+            <Text size="sm">
+              • Les administrateurs ont accès complet à toutes les fonctionnalités
             </Text>
             <Text size="sm">
               • Cette page devrait être supprimée ou protégée en production

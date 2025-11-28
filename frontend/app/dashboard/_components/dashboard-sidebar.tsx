@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/app/lib/utils";
@@ -8,19 +7,17 @@ import {
   LayoutDashboard,
   Table,
   UserPlus,
-  HelpCircle,
   Wrench,
   FileText,
   X,
 } from "lucide-react";
 import { useUserStore } from "@/stores/userStore";
-import { Button } from "@mantine/core";
 
 interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  userTypes: ("admin" | "contributor")[];
+  userTypes: ("admin" | "user")[];
 }
 
 const adminNavItems: NavItem[] = [
@@ -44,24 +41,24 @@ const adminNavItems: NavItem[] = [
   },
 ];
 
-const contributorNavItems: NavItem[] = [
+const userNavItems: NavItem[] = [
   {
     label: "Tableau de bord",
     href: "/dashboard",
     icon: LayoutDashboard,
-    userTypes: ["contributor"],
+    userTypes: ["user"],
   },
   {
     label: "Mes Contributions",
     href: "/dashboard/contributions",
     icon: Wrench,
-    userTypes: ["contributor"],
+    userTypes: ["user"],
   },
   {
     label: "Ajouter un Artisan",
     href: "/dashboard/add-artisan",
     icon: UserPlus,
-    userTypes: ["contributor"],
+    userTypes: ["user"],
   },
 ];
 
@@ -72,16 +69,17 @@ interface DashboardSidebarProps {
 
 export function DashboardSidebar({ isMobileOpen, onMobileClose }: DashboardSidebarProps) {
   const pathname = usePathname();
-  const { user, getUserType, isAdmin, isContributor } = useUserStore();
+  const { user, getUserType, isAdmin } = useUserStore();
   const userType = getUserType();
 
   // Filter nav items based on user type
   const getNavItems = (): NavItem[] => {
     if (isAdmin()) {
-      return [...adminNavItems, ...contributorNavItems.filter((item) => item.userTypes.includes("admin"))];
+      // Admin sees admin nav items + user nav items that are also available to admin
+      return [...adminNavItems, ...userNavItems.filter((item) => item.userTypes.includes("admin"))];
     }
-    if (isContributor()) {
-      return contributorNavItems;
+    if (userType === "user") {
+      return userNavItems;
     }
     return [];
   };

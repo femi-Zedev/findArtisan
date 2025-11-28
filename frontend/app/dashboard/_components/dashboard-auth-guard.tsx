@@ -8,7 +8,7 @@ import { AlertCircle } from "lucide-react";
 
 interface DashboardAuthGuardProps {
   children: React.ReactNode;
-  allowedUserTypes?: ("admin" | "contributor")[];
+  allowedUserTypes?: ("admin" | "user")[];
 }
 
 /**
@@ -19,7 +19,7 @@ interface DashboardAuthGuardProps {
  */
 export function DashboardAuthGuard({
   children,
-  allowedUserTypes = ["admin", "contributor"]
+  allowedUserTypes = ["admin", "user"]
 }: DashboardAuthGuardProps) {
   const router = useRouter();
   const { isAuthenticated, canAccessDashboard, getUserType } = useUserStore();
@@ -72,7 +72,7 @@ export function DashboardAuthGuard({
     );
   }
 
-  // Check if user can access dashboard (admin or contributor)
+  // Check if user can access dashboard (admin or user)
   if (!canAccessDashboard()) {
     return (
       <Center className="min-h-screen">
@@ -82,7 +82,7 @@ export function DashboardAuthGuard({
             Accès refusé
           </Text>
           <Text size="sm" c="dimmed" mb="lg">
-            Vous n'avez pas la permission d'accéder au tableau de bord. Seuls les administrateurs et les contributeurs peuvent accéder à cette zone.
+            Vous devez être authentifié pour accéder au tableau de bord.
           </Text>
           <Button
             onClick={() => router.push("/")}
@@ -98,8 +98,8 @@ export function DashboardAuthGuard({
 
   // Check if user type is allowed for this specific route
   const userType = getUserType();
-  // Type guard: ensure userType is admin or contributor before checking includes
-  if (userType === "admin" || userType === "contributor") {
+  // Type guard: ensure userType is admin or user before checking includes
+  if (userType === "admin" || userType === "user") {
     if (!allowedUserTypes.includes(userType)) {
       return (
         <Center className="min-h-screen">
@@ -109,7 +109,7 @@ export function DashboardAuthGuard({
               Permissions insuffisantes
             </Text>
             <Text size="sm" c="dimmed" mb="lg">
-              Votre type de compte ({userType === "admin" ? "Administrateur" : "Contributeur"}) n'a pas accès à cette section.
+              Votre type de compte ({userType === "admin" ? "Administrateur" : "Utilisateur"}) n'a pas accès à cette section.
             </Text>
             <Button
               onClick={() => router.push("/dashboard")}

@@ -1,14 +1,14 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type UserType = 'user' | 'admin' | 'contributor';
+export type UserType = 'user' | 'admin';
 
 export interface User {
   id: string;
   name: string;
   email: string;
   image?: string;
-  userType?: UserType; // user, admin, or contributor
+  userType?: UserType; // user or admin
 }
 
 interface UserState {
@@ -18,7 +18,6 @@ interface UserState {
   clearUser: () => void;
   getUserType: () => UserType | null;
   isAdmin: () => boolean;
-  isContributor: () => boolean;
   canAccessDashboard: () => boolean;
 }
 
@@ -37,13 +36,9 @@ export const useUserStore = create<UserState>()(
         const state = get();
         return state.user?.userType === 'admin';
       },
-      isContributor: () => {
-        const state = get();
-        return state.user?.userType === 'contributor';
-      },
       canAccessDashboard: () => {
         const state = get();
-        return state.isAuthenticated && (state.user?.userType === 'admin' || state.user?.userType === 'contributor');
+        return state.isAuthenticated && (state.user?.userType === 'admin' || state.user?.userType === 'user');
       },
     }),
     { name: "findartisan-user" }
