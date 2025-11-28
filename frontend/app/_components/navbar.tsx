@@ -177,7 +177,7 @@ export function Navbar() {
         {isMobileMenuOpen && (
           <div
             className={cn(
-              "sm:hidden fixed inset-0 top-16 z-40 overflow-y-auto",
+              "sm:hidden fixed inset-0 top-16 z-40",
               "bg-blue-50/80 backdrop-blur-md dark:bg-gray-950/80",
               "border-t border-gray-200/30 dark:border-gray-800/30",
               "flex flex-col"
