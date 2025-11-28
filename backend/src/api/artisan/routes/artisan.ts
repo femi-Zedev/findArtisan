@@ -12,6 +12,16 @@ const artisanRoutes = {
     },
     {
       method: 'GET',
+      path: '/artisans/stats',
+      handler: 'api::artisan.artisan.stats',
+      config: {
+        auth: {},
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
       path: '/artisans/:id',
       handler: 'api::artisan.artisan.findOne',
       config: {

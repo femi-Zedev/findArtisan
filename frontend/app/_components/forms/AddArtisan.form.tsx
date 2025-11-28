@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea, Switch, Select } from "@mantine/core";
+import { Button, Autocomplete, TextInput, Textarea, Switch, Select, Tooltip } from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { Plus, X, Minus, Image } from "lucide-react";
@@ -303,23 +303,59 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
             />
 
             {/* Description */}
-            <Textarea
-              label="Description"
-              placeholder={`Décrivez les services offerts par cet artisan...
-- Ses spécialités (ex: plombierie, décoration d'intérieur, etc.), années d'expérience
-- Si il se déplace ou possède un atelier
-- Donnez le maximum d'informations sur l'artisan`}
-              size="lg"
-              maxLength={1200}
-              rows={4}
-              required
-              classNames={{
-                label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
-                input:
-                  "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-              }}
-              {...form.getInputProps("description")}
-            />
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Description
+                </label>
+                <Tooltip
+                  label={<p className="text-sm">Décrivez les services offerts par cet artisan... <br />
+                    - Ses délais de réalisation, la qualité de ses travaux, etc. <br />
+                    - Possède un atelier ou non, ses finissions, etc. <br />
+                    - Ses prix, abordables ou cher, etc. <br />
+                    - Ses horaires d'ouverture, etc.</p>}
+                  multiline
+                  w={300}
+                  withArrow
+                >
+                  <button
+                    type="button"
+                    className="cursor-pointer text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                    aria-label="Aide pour la description"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </button>
+                </Tooltip>
+                <span className="text-red-500">*</span>
+              </div>
+              <Textarea
+                placeholder={`Décrivez les services de cet artisan:
+- Ses délais de réalisation, la qualité de ses travaux, ses finissions,
+- Possède un atelier ou non, ses horaires d'ouverture, etc.
+- Ses prix, abordables ou cher, etc.`}
+                size="lg"
+                maxLength={1200}
+                rows={4}
+                required
+                classNames={{
+                  input:
+                    "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+                }}
+                {...form.getInputProps("description")}
+              />
+            </div>
           </div>
 
           {/* Full Name */}

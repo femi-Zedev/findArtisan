@@ -824,5 +824,99 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
       ctx.throw(500, `Failed to create artisans in batch: ${errorMessage}`);
     }
   },
+
+  async stats(ctx: Context) {
+    try {
+      const { user } = ctx.state;
+
+      if (!user) {
+        ctx.throw(401, 'Authentication required');
+      }
+
+      // Get current month start date
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      // Total approved artisans
+      const totalArtisans = await strapi.entityService.count('api::artisan.artisan' as any, {
+        filters: { status: 'approved' } as any,
+      });
+
+      // Get user with role populated
+      const userWithRole = await strapi.entityService.findOne(
+        'plugin::users-permissions.user' as any,
+        user.id,
+        {
+          populate: ['role'],
+        }
+      );
+
+      if (!userWithRole) {
+        ctx.throw(404, 'User not found');
+      }
+
+      const isAdmin = userWithRole?.role?.type === 'admin';
+      const userEmail = userWithRole.email;
+
+      if (!userEmail) {
+        ctx.throw(400, 'User email not found');
+      }
+
+      // Admin-specific stats
+      if (isAdmin) {
+        // Pending submissions
+        const pendingSubmissions = await strapi.entityService.count(
+          'api::community-submission.community-submission' as any,
+          {
+            filters: { moderation_status: 'pending' } as any,
+          }
+        );
+
+        // Artisans created this month
+        const thisMonth = await strapi.entityService.count('api::artisan.artisan' as any, {
+          filters: {
+            createdAt: { $gte: startOfMonth.toISOString() },
+          } as any,
+        });
+
+        ctx.body = {
+          totalArtisans,
+          pendingSubmissions,
+          thisMonth,
+        };
+        return;
+      }
+
+      // User-specific stats
+      // User's contributions (approved only)
+      const myContributions = await strapi.entityService.count('api::artisan.artisan' as any, {
+        filters: {
+          submitted_by_email: userEmail,
+          status: 'approved',
+        } as any,
+      });
+
+      // User's contributions this month
+      const thisMonth = await strapi.entityService.count('api::artisan.artisan' as any, {
+        filters: {
+          submitted_by_email: userEmail,
+          createdAt: { $gte: startOfMonth.toISOString() },
+        } as any,
+      });
+
+      ctx.body = {
+        totalArtisans,
+        myContributions,
+        thisMonth,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      strapi.log.error('Stats error', {
+        message: errorMessage,
+        error,
+      });
+      ctx.throw(500, `Failed to fetch stats: ${errorMessage}`);
+    }
+  },
 }));
 

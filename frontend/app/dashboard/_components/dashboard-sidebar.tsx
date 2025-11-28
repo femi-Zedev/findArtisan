@@ -10,8 +10,12 @@ import {
   Wrench,
   FileText,
   X,
+  Home,
+  LogOut,
 } from "lucide-react";
+import { Menu } from "@mantine/core";
 import { useUserStore } from "@/stores/userStore";
+import { handleLogout } from "@/app/lib/utils/auth";
 
 interface NavItem {
   label: string;
@@ -166,38 +170,63 @@ export function DashboardSidebar({ isMobileOpen, onMobileClose }: DashboardSideb
           </div>
         </nav>
 
+        {/* Home Button */}
+        <div className="px-4 pb-2">
+          <Link
+            href="/"
+            onClick={onMobileClose}
+            className="cursor-pointer flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Home className="h-5 w-5" />
+            <span>Retour à l'accueil</span>
+          </Link>
+        </div>
+
         {/* Profile Card */}
         {user && (
           <div className="p-4">
-            <Link
-              href="/dashboard/profile"
-              onClick={onMobileClose}
-              className="cursor-pointer block"
-            >
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <div className="flex items-center gap-3">
-                  {user.image ? (
-                    <img
-                      src={user.image}
-                      alt={user.name}
-                      className="h-10 w-10 rounded-full"
-                    />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-teal-500 flex items-center justify-center text-white text-sm font-semibold">
-                      {user.name.charAt(0).toUpperCase()}
+            <Menu position="top" offset={8} width={200}>
+              <Menu.Target>
+                <button
+                  onClick={onMobileClose}
+                  className="cursor-pointer w-full"
+                >
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <div className="flex items-center gap-3">
+                      {user.image ? (
+                        <img
+                          src={user.image}
+                          alt={user.name}
+                          className="h-10 w-10 rounded-full"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-teal-500 flex items-center justify-center text-white text-sm font-semibold">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {user.email}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {user.email}
-                    </p>
                   </div>
-                </div>
-              </div>
-            </Link>
+                </button>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<LogOut className="h-4 w-4" />}
+                  onClick={handleLogout}
+                  className="cursor-pointer text-red-600 dark:text-red-400"
+                >
+                  Se déconnecter
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
           </div>
         )}
 

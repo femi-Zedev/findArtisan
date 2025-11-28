@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Search, Bell, Menu, Sun, Moon } from "lucide-react";
+import Link from "next/link";
+import { Search, Bell, Menu, Sun, Moon, Home } from "lucide-react";
 import { Button, TextInput } from "@mantine/core";
 import { cn } from "@/app/lib/utils";
 import { useThemeStore } from "@/stores/themeStore";
@@ -54,6 +55,13 @@ export function DashboardHeader({ onMobileMenuToggle, isMobileMenuOpen }: Dashbo
             >
               <Menu className="h-5 w-5" />
             </button>
+            <Link
+              href="/"
+              className="cursor-pointer p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
+              aria-label="Retour à l'accueil"
+            >
+              <Home className="h-5 w-5" />
+            </Link>
             <div className="hidden sm:block">
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {generateBreadcrumbs()}

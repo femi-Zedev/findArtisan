@@ -56,7 +56,7 @@ export function GoogleLoginModal() {
       {/* Google Login Button */}
       <button
         onClick={handleGoogleLogin}
-        className="w-full flex items-center gap-3 p-[3px] bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-700 text-white rounded-xl transition-colors duration-200"
+        className="w-full cursor-pointer flex items-center gap-3 p-[3px] bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-700 text-white rounded-xl transition-colors duration-200"
       >
         {/* White rounded container with Google logo */}
         <div className="flex items-center justify-center w-11 h-10 bg-white dark:bg-gray-100 rounded-l-xl rounded-r-sm shrink-0">
