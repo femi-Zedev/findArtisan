@@ -1,47 +1,23 @@
 "use client";
 
-import { useDrawerContext } from "@/providers/drawer-provider";
+import { signIn } from "next-auth/react";
 import { useModalContext } from "@/providers/modal-provider";
-import { useUserStore } from "@/stores/userStore";
-import { AddArtisanSelection } from "../forms/AddArtisanSelection";
 
 export function GoogleLoginModal() {
   const { closeModal } = useModalContext();
-  const { setUser } = useUserStore();
-  const { openDrawer, closeDrawer } = useDrawerContext();
 
   const handleGoogleLogin = async () => {
     try {
-      // TODO: Implement Google OAuth flow
-      // For now, we'll simulate a successful login
-      // In production, this should call your auth API endpoint
-
-      // Simulated user data - replace with actual OAuth response
-      const mockUser = {
-        id: "user_123",
-        name: "John Doe",
-        email: "john.doe@example.com",
-        image: "https://via.placeholder.com/150",
-      };
-
-      setUser(mockUser);
+      // Close modal first
       closeModal();
 
-      // Open the AddArtisan drawer after successful login
-      openDrawer({
-        title: "Ajouter un artisan",
-        body: (
-          <AddArtisanSelection
-            onSuccess={(values) => {
-              // TODO: Implement API call to submit artisan
-              console.log("Artisan added:", values);
-              closeDrawer();
-              // TODO: Show success toast notification
-            }}
-          />
-        ),
-        size: "xl",
-        bodyClassName: "p-6 overflow-y-hidden",
+      // Sign in with Google using NextAuth
+      // Use redirect: true and set callbackUrl with query parameter to open drawer
+      const callbackUrl = `${window.location.origin}${window.location.pathname}?openDrawer=addArtisan`;
+
+      await signIn("google", {
+        redirect: true,
+        callbackUrl: callbackUrl,
       });
     } catch (error) {
       console.error("Login error:", error);

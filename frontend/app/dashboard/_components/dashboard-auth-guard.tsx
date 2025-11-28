@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUserStore } from "@/stores/userStore";
+import { useAuth } from "@/app/lib/hooks/useAuth";
 import { Loader, Center, Text, Button } from "@mantine/core";
 import { AlertCircle } from "lucide-react";
 
@@ -12,30 +11,19 @@ interface DashboardAuthGuardProps {
 }
 
 /**
- * Dummy Auth Guard Component
+ * Auth Guard Component
  * 
- * Currently checks user state from Zustand store.
- * TODO: Replace with actual authentication check against Strapi backend.
+ * Checks NextAuth session and user permissions for dashboard access
  */
 export function DashboardAuthGuard({
   children,
   allowedUserTypes = ["admin", "user"]
 }: DashboardAuthGuardProps) {
   const router = useRouter();
-  const { isAuthenticated, canAccessDashboard, getUserType } = useUserStore();
-  const [isChecking, setIsChecking] = useState(true);
+  const { session, status, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    // Simulate auth check delay
-    const timer = setTimeout(() => {
-      setIsChecking(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show loading state
-  if (isChecking) {
+  // Show loading state while checking authentication
+  if (status === "loading") {
     return (
       <Center className="min-h-screen">
         <div className="text-center">
@@ -49,7 +37,7 @@ export function DashboardAuthGuard({
   }
 
   // Check if user is authenticated
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !session) {
     return (
       <Center className="min-h-screen">
         <div className="text-center max-w-md p-6">
@@ -73,7 +61,8 @@ export function DashboardAuthGuard({
   }
 
   // Check if user can access dashboard (admin or user)
-  if (!canAccessDashboard()) {
+  const userType = session.user.userType;
+  if (userType !== "admin" && userType !== "user") {
     return (
       <Center className="min-h-screen">
         <div className="text-center max-w-md p-6">
@@ -82,7 +71,7 @@ export function DashboardAuthGuard({
             Accès refusé
           </Text>
           <Text size="sm" c="dimmed" mb="lg">
-            Vous devez être authentifié pour accéder au tableau de bord.
+            Vous n'avez pas la permission d'accéder au tableau de bord.
           </Text>
           <Button
             onClick={() => router.push("/")}
@@ -97,31 +86,27 @@ export function DashboardAuthGuard({
   }
 
   // Check if user type is allowed for this specific route
-  const userType = getUserType();
-  // Type guard: ensure userType is admin or user before checking includes
-  if (userType === "admin" || userType === "user") {
-    if (!allowedUserTypes.includes(userType)) {
-      return (
-        <Center className="min-h-screen">
-          <div className="text-center max-w-md p-6">
-            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <Text size="xl" fw={600} mb="sm">
-              Permissions insuffisantes
-            </Text>
-            <Text size="sm" c="dimmed" mb="lg">
-              Votre type de compte ({userType === "admin" ? "Administrateur" : "Utilisateur"}) n'a pas accès à cette section.
-            </Text>
-            <Button
-              onClick={() => router.push("/dashboard")}
-              color="teal"
-              variant="light"
-            >
-              Retour au tableau de bord
-            </Button>
-          </div>
-        </Center>
-      );
-    }
+  if (!allowedUserTypes.includes(userType)) {
+    return (
+      <Center className="min-h-screen">
+        <div className="text-center max-w-md p-6">
+          <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <Text size="xl" fw={600} mb="sm">
+            Permissions insuffisantes
+          </Text>
+          <Text size="sm" c="dimmed" mb="lg">
+            Votre type de compte ({userType === "admin" ? "Administrateur" : "Utilisateur"}) n'a pas accès à cette section.
+          </Text>
+          <Button
+            onClick={() => router.push("/dashboard")}
+            color="teal"
+            variant="light"
+          >
+            Retour au tableau de bord
+          </Button>
+        </div>
+      </Center>
+    );
   }
 
   // User is authenticated and authorized

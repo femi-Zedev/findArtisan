@@ -1,6 +1,7 @@
 "use client";
 
 import { useUserStore } from "@/stores/userStore";
+import { handleLogout } from "@/app/lib/utils/auth";
 import { Button, Card, Title, Text, Group, Badge, Stack } from "@mantine/core";
 import { User, Shield, LogOut } from "lucide-react";
 
@@ -122,21 +123,21 @@ export default function TestAuthPage() {
               Accès au tableau de bord pour gérer ses contributions et ajouter des artisans
             </Text>
 
-            {isAuthenticated && (
-              <>
-                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
-                <Button
-                  leftSection={<LogOut className="h-4 w-4" />}
-                  onClick={clearUser}
-                  color="red"
-                  variant="outline"
-                  fullWidth
-                  size="md"
-                >
-                  Déconnecter
-                </Button>
-              </>
-            )}
+            {/* {isAuthenticated && ( */}
+            <>
+              <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+              <Button
+                leftSection={<LogOut className="h-4 w-4" />}
+                onClick={() => handleLogout()}
+                color="red"
+                variant="outline"
+                fullWidth
+                size="md"
+              >
+                Déconnecter
+              </Button>
+            </>
+            {/* )} */}
           </Stack>
         </Card>
 

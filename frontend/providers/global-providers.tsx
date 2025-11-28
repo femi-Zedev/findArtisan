@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "./theme-provider";
 import ModalProvider from "@/providers/modal-provider";
 import { DrawerProvider } from "@/providers/drawer-provider";
@@ -22,13 +23,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <DrawerProvider>
-        <ModalProvider>
-          <ThemeProvider>{children}</ThemeProvider>
-        </ModalProvider>
-      </DrawerProvider>
-    </QueryClientProvider>
+    <SessionProvider>
+      <QueryClientProvider client={queryClient}>
+        <DrawerProvider>
+          <ModalProvider>
+            <ThemeProvider>{children}</ThemeProvider>
+          </ModalProvider>
+        </DrawerProvider>
+      </QueryClientProvider>
+    </SessionProvider>
   );
 }
 
