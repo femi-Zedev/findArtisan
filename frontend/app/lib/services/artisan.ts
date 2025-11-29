@@ -48,6 +48,9 @@ export interface ArtisanSearchParams {
   q?: string;
   page?: number;
   limit?: number;
+  submittedBy?: string; // Filter by user ID who submitted
+  isCommunitySubmitted?: boolean; // Filter by community submissions
+  status?: string; // Filter by status (approved, pending, etc.)
 }
 
 export interface ArtisanSearchResponse {
@@ -85,6 +88,9 @@ export function useGetArtisans(variables: ArtisanSearchParams) {
         q: variables.q,
         page: variables.page,
         pageSize: variables.limit, // Backend uses pageSize, not limit
+        submittedBy: variables.submittedBy,
+        isCommunitySubmitted: variables.isCommunitySubmitted !== undefined ? String(variables.isCommunitySubmitted) : undefined,
+        status: variables.status,
       });
 
       const url = queryString
@@ -154,7 +160,7 @@ export interface CreateArtisanPayload {
     platform: string;
     link: string;
   }>;
-  profile_photo?: File;
+  profile_photo?: File | number; // File for new uploads, number (ID) for existing photos
   is_community_submitted?: boolean;
   status?: string;
 }

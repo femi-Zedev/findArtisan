@@ -7,6 +7,9 @@ interface ArtisanQuery {
   q?: string | string[];
   page?: string | string[];
   pageSize?: string | string[];
+  submittedBy?: string | string[]; // Filter by user ID who submitted
+  isCommunitySubmitted?: string | string[]; // Filter by community submissions (true/false)
+  status?: string | string[]; // Filter by status (approved, pending, etc.)
 }
 
 const parseSingleParam = (value: string | string[] | undefined): string | undefined => {
@@ -43,12 +46,15 @@ const parseNumberParam = (
 
 export default factories.createCoreController('api::artisan.artisan' as any, ({ strapi }) => ({
   async find(ctx: Context) {
-    const { profession, zone, q, page, pageSize } = ctx.query as ArtisanQuery;
+    const { profession, zone, q, page, pageSize, submittedBy, isCommunitySubmitted, status } = ctx.query as ArtisanQuery;
 
     try {
       const professionFilter = parseSingleParam(profession);
       const zoneFilter = parseSingleParam(zone);
       const searchQuery = parseSingleParam(q);
+      const submittedByFilter = parseSingleParam(submittedBy);
+      const isCommunitySubmittedFilter = parseSingleParam(isCommunitySubmitted);
+      const statusFilter = parseSingleParam(status);
       
       // Validate pagination parameters
       // Page must be >= 1
@@ -65,9 +71,28 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
       });
 
       // Build filters
-      const filters: Record<string, unknown> = {
-        status: 'approved', // Only return approved artisans
-      };
+      const filters: Record<string, unknown> = {};
+      
+      // Status filter: default to 'approved' unless explicitly filtered or showing community submissions
+      if (statusFilter) {
+        filters.status = statusFilter;
+      } else if (!isCommunitySubmittedFilter) {
+        // Only default to approved if not filtering by community submissions
+        // (community submissions page might show pending ones)
+        filters.status = 'approved';
+      }
+
+      // Filter by submitted_by_user (if provided)
+      if (submittedByFilter) {
+        filters.submitted_by_user = {
+          id: submittedByFilter,
+        };
+      }
+
+      // Filter by is_community_submitted (if provided)
+      if (isCommunitySubmittedFilter) {
+        filters.is_community_submitted = isCommunitySubmittedFilter === 'true';
+      }
 
       // Filter by profession (if provided)
       if (professionFilter) {
