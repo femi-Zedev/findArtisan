@@ -23,7 +23,9 @@ export type DashboardStats = AdminStats | UserStats;
 // Query keys
 export const dashboardKeys = {
   all: ['dashboard'] as const,
-  stats: () => [...dashboardKeys.all, 'stats'] as const,
+  // Include userId in the key to avoid sharing cached stats between users
+  stats: (userId: string | null | undefined) =>
+    [...dashboardKeys.all, 'stats', userId ?? 'anonymous'] as const,
 };
 
 /**
@@ -34,9 +36,10 @@ export const dashboardKeys = {
 export function useGetDashboardStats() {
   const { data: session } = useSession();
   const jwt = (session?.user as any)?.strapiJwt || '';
+  const userId = session?.user?.id;
 
   return useQuery({
-    queryKey: dashboardKeys.stats(),
+    queryKey: dashboardKeys.stats(userId),
     queryFn: async (): Promise<DashboardStats> => {
       if (!jwt) {
         throw new Error('Authentication required');
@@ -49,7 +52,8 @@ export function useGetDashboardStats() {
       });
       return response;
     },
-    enabled: !!jwt, // Only run query if JWT is available
+    // Only run query if JWT and userId are available
+    enabled: !!jwt && !!userId,
     retry: false,
     staleTime: 1000 * 60 * 2, // Cache for 2 minutes
     gcTime: 1000 * 60 * 5,

@@ -69,4 +69,3 @@ const config = {
 export const { handlers, auth, signIn, signOut } = NextAuth(config);
 
 export const { GET, POST } = handlers;
-

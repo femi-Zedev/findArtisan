@@ -9,6 +9,8 @@ import { cn } from "@/app/lib/utils";
 import { InfoBox, FileUploadArea } from "../ui";
 import { useCreateBatchArtisans, type CreateBatchArtisanPayload, type BatchCreateArtisanResponse } from "@/app/lib/services/artisan";
 import { notifications } from "@mantine/notifications";
+import { useUserStore } from "@/stores/userStore";
+import { useSession } from "next-auth/react";
 
 const CSV_TEMPLATE_HEADERS = [
   "Nom complet *",
@@ -53,7 +55,8 @@ function ensureUrlProtocol(url: string): string {
 
 // Transform parsed CSV data to API format
 function transformParsedDataToApiFormat(
-  parsedData: ParsedArtisan[]
+  parsedData: ParsedArtisan[],
+  isAdmin: boolean = false
 ): CreateBatchArtisanPayload[] {
   return parsedData.map((row) => {
     // Transform phone number
@@ -96,7 +99,7 @@ function transformParsedDataToApiFormat(
       zones: zones.length > 0 ? zones : undefined,
       phone_numbers: phoneNumbers.length > 0 ? phoneNumbers : undefined,
       social_links: socialLinks.length > 0 ? socialLinks : undefined,
-      is_community_submitted: true,
+      is_community_submitted: isAdmin ? false : true,
       status: "approved",
     };
   });
@@ -224,6 +227,9 @@ function validateParsedData(data: ParsedArtisan[]): Array<{ row: number; errors:
 }
 
 export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps) {
+  const { isAdmin } = useUserStore();
+  const { data: session } = useSession();
+  const jwt = (session?.user as any)?.strapiJwt || '';
   const [csvState, setCsvState] = useState<CsvUploadState>({
     file: null,
     error: null,
@@ -568,16 +574,19 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
 
     try {
       // Transform parsed data to API format
-      const apiPayload = transformParsedDataToApiFormat(csvState.parsedData);
+      const apiPayload = transformParsedDataToApiFormat(csvState.parsedData, isAdmin());
 
       // Submit batch
-      await batchMutation.mutateAsync(apiPayload);
+      await batchMutation.mutateAsync({
+        payload: apiPayload,
+        jwt,
+      });
     } catch (error) {
       // Error handled in onError callback
     } finally {
       setIsProcessing(false);
     }
-  }, [csvState.file, csvState.isValid, csvState.parsedData, batchMutation]);
+  }, [csvState.file, csvState.isValid, csvState.parsedData, batchMutation, jwt, isAdmin]);
 
   const handleDownloadErrorReport = useCallback(() => {
     if (!batchResult || !csvState.parsedData.length) return;

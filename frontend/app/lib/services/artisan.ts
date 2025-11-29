@@ -164,14 +164,27 @@ export interface CreateArtisanResponse {
  */
 export const useCreateArtisan = createMutation({
   mutationKey: ['artisans', 'create'],
-  mutationFn: async (payload: CreateArtisanPayload): Promise<CreateArtisanResponse> => {
+  mutationFn: async ({
+    payload,
+    jwt,
+  }: {
+    payload: CreateArtisanPayload;
+    jwt?: string;
+  }): Promise<CreateArtisanResponse> => {
     let profilePhotoId: number | undefined;
 
     // Upload photo first if provided
     if (payload.profile_photo) {
       const uploadResponse = await api.uploadFile<Array<{ id: number }>>(
         routes.upload.base,
-        payload.profile_photo
+        payload.profile_photo,
+        jwt
+          ? {
+              headers: {
+                Authorization: `Bearer ${jwt}`,
+              },
+            }
+          : undefined
       );
       profilePhotoId = uploadResponse[0]?.id;
     }
@@ -197,7 +210,17 @@ export const useCreateArtisan = createMutation({
       },
     };
 
-    const response = await api.post<CreateArtisanResponse>(routes.artisans.base, artisanData);
+    const response = await api.post<CreateArtisanResponse>(
+      routes.artisans.base,
+      artisanData,
+      jwt
+        ? {
+            headers: {
+              Authorization: `Bearer ${jwt}`,
+            },
+          }
+        : undefined
+    );
     return response;
   },
 });
@@ -241,12 +264,23 @@ export interface BatchCreateArtisanResponse {
  */
 export const useCreateBatchArtisans = createMutation({
   mutationKey: ['artisans', 'create-batch'],
-  mutationFn: async (
-    payload: CreateBatchArtisanPayload[]
-  ): Promise<BatchCreateArtisanResponse> => {
+  mutationFn: async ({
+    payload,
+    jwt,
+  }: {
+    payload: CreateBatchArtisanPayload[];
+    jwt?: string;
+  }): Promise<BatchCreateArtisanResponse> => {
     const response = await api.post<BatchCreateArtisanResponse>(
       `${routes.artisans.base}/batch`,
-      { data: payload }
+      { data: payload },
+      jwt
+        ? {
+            headers: {
+              Authorization: `Bearer ${jwt}`,
+            },
+          }
+        : undefined
     );
     return response;
   },

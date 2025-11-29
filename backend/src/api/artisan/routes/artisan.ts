@@ -15,7 +15,7 @@ const artisanRoutes = {
       path: '/artisans/stats',
       handler: 'api::artisan.artisan.stats',
       config: {
-        auth: {},
+        auth: { scope: [] }, // Requires authentication
         policies: [],
         middlewares: [],
       },
@@ -35,7 +35,8 @@ const artisanRoutes = {
       path: '/artisans',
       handler: 'api::artisan.artisan.create',
       config: {
-        auth: false,
+        // Require authentication to create a single artisan
+        auth: { scope: [] },
         policies: [],
         middlewares: [],
       },
@@ -45,7 +46,8 @@ const artisanRoutes = {
       path: '/artisans/batch',
       handler: 'api::artisan.artisan.createBatch',
       config: {
-        auth: false,
+        // Require authentication to create artisans in batch
+        auth: { scope: [] },
         policies: [],
         middlewares: [],
       },

@@ -11,6 +11,8 @@ import { MultiSelectCompact } from "../ui/MultiSelectCompact";
 import { useSearchLocations } from "@/app/lib/services/location";
 import { useCreateArtisan } from "@/app/lib/services/artisan";
 import { notifications } from "@mantine/notifications";
+import { useUserStore } from "@/stores/userStore";
+import { useSession } from "next-auth/react";
 
 interface PhoneNumber {
   number: string;
@@ -253,32 +255,39 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
     },
   });
 
+  const { isAdmin } = useUserStore();
+  const { data: session } = useSession();
+  const jwt = (session?.user as any)?.strapiJwt || '';
+
   const handleSubmit = async (values: AddArtisanFormValues) => {
     try {
       // Transform form values to API payload
       await createArtisanMutation.mutateAsync({
-        full_name: values.fullName,
-        description: values.description || "",
-        profession: values.profession,
-        zones: values.zone,
-        phone_numbers: values.phoneNumbers
-          .filter((phone) => phone.number.trim() !== "")
-          .map((phone) => ({
-            number: phone.number.trim(),
-            is_whatsapp: phone.isWhatsApp,
-          })),
-        social_links:
-          values.socialMedia.length > 0
-            ? values.socialMedia
-              .filter((social) => social.platform && social.link)
-              .map((social) => ({
-                platform: social.platform,
-                link: social.link.trim(),
-              }))
-            : undefined,
-        profile_photo: values.photo || undefined,
-        is_community_submitted: true,
-        status: "approved",
+        payload: {
+          full_name: values.fullName,
+          description: values.description || "",
+          profession: values.profession,
+          zones: values.zone,
+          phone_numbers: values.phoneNumbers
+            .filter((phone) => phone.number.trim() !== "")
+            .map((phone) => ({
+              number: phone.number.trim(),
+              is_whatsapp: phone.isWhatsApp,
+            })),
+          social_links:
+            values.socialMedia.length > 0
+              ? values.socialMedia
+                .filter((social) => social.platform && social.link)
+                .map((social) => ({
+                  platform: social.platform,
+                  link: social.link.trim(),
+                }))
+              : undefined,
+          profile_photo: values.photo || undefined,
+          is_community_submitted: isAdmin() ? false : true,
+          status: "approved",
+        },
+        jwt,
       });
     } catch (error) {
       // Error is handled by onError callback
@@ -361,7 +370,9 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
           {/* Full Name */}
           <TextInput
             label="Nom complet"
-            placeholder="Ex: Dodji COMLAN (Prénoms Nom), l'ordre est important !"
+
+            placeholder="Ex: Dodji COMLAN "
+            description="(Prénoms Nom) L'ordre est important !"
             size="lg"
             required
             classNames={{
@@ -369,6 +380,7 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
               input:
                 "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
             }}
+
             {...form.getInputProps("fullName")}
           />
 

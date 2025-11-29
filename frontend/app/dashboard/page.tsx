@@ -2,20 +2,55 @@
 
 import { useMemo } from "react";
 import { useUserStore } from "@/stores/userStore";
-import { Card, Text, Title, Group, Skeleton } from "@mantine/core";
-import { Users, FileText, TrendingUp } from "lucide-react";
-import { useGetDashboardStats, type AdminStats, type UserStats } from "@/app/lib/services/dashboard";
+import { Card, Text, Title, Group, Skeleton, Button } from "@mantine/core";
+import { Users, FileText, TrendingUp, UserPlus } from "lucide-react";
+import {
+  useGetDashboardStats,
+  type AdminStats,
+  type UserStats,
+  dashboardKeys,
+} from "@/app/lib/services/dashboard";
+import { useDrawerContext } from "@/providers/drawer-provider";
+import { AddArtisanSelection } from "@/app/_components/forms/AddArtisanSelection";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 
 export default function DashboardPage() {
-  const { user, getUserType, isAdmin } = useUserStore();
-  const userType = getUserType();
+  const { user } = useUserStore();
   const { data: stats, isLoading, error } = useGetDashboardStats();
+  const { openDrawer, closeDrawer } = useDrawerContext();
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const sessionUserId = session?.user?.id;
+
+  const handleOpenAddArtisanDrawer = () => {
+    openDrawer({
+      title: "Ajouter un artisan",
+      body: (
+        <AddArtisanSelection
+          onSuccess={() => {
+            // Invalidate dashboard stats to refresh
+            queryClient.invalidateQueries({
+              queryKey: dashboardKeys.stats(sessionUserId),
+            });
+            closeDrawer();
+            // Notification is already shown by the form component
+          }}
+        />
+      ),
+      size: "xl",
+      bodyClassName: "p-6 overflow-y-hidden",
+    });
+  };
 
   // Build stats array based on role and fetched data
   const statsCards = useMemo(() => {
     if (!stats) return [];
 
-    if (isAdmin()) {
+    // Determine role from the shape of the stats, not from cached frontend role
+    const isAdminStats = (stats as AdminStats).pendingSubmissions !== undefined;
+
+    if (isAdminStats) {
       const adminStats = stats as AdminStats;
       return [
         {
@@ -60,7 +95,7 @@ export default function DashboardPage() {
         },
       ];
     }
-  }, [stats, isAdmin]);
+  }, [stats, user?.id]);
 
   return (
     <div className="space-y-6">
@@ -70,11 +105,24 @@ export default function DashboardPage() {
           Bon retour, <p className="capitalize">{user?.name || "Utilisateur"}</p> !
         </Title>
         <Text c="dimmed" size="sm">
-          {isAdmin()
+          {stats && (stats as AdminStats).pendingSubmissions !== undefined
             ? "Gérez les artisans, examinez les soumissions et supervisez la plateforme."
             : "Gérez vos contributions et ajoutez de nouveaux artisans à la plateforme."}
         </Text>
 
+      </div>
+
+      {/* Stats Section Header with Add Button */}
+      <div className="flex items-center justify-between">
+        <Title order={2}>Statistiques</Title>
+        <Button
+          leftSection={<UserPlus className="h-4 w-4" />}
+          onClick={handleOpenAddArtisanDrawer}
+          radius="md"
+          size="md"
+        >
+          Ajouter un Artisan
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -123,7 +171,7 @@ export default function DashboardPage() {
           Comment fonctionne la plateforme ?
         </Title>
         <div className="space-y-4">
-          {isAdmin() ? (
+          {stats && (stats as AdminStats).pendingSubmissions !== undefined ? (
             <>
               <Text size="sm" mb="sm">
                 FindArtisan est une plateforme communautaire qui facilite la découverte d'artisans locaux au Bénin.

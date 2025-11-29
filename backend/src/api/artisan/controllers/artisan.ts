@@ -292,6 +292,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         description: data.description,
         is_community_submitted: data.is_community_submitted ?? true,
         status: data.status ?? 'approved',
+        createdBy: null, // Explicitly set to null to prevent Strapi from auto-setting with users-permissions user
       };
 
       if (professionId) {
@@ -302,143 +303,162 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         artisanData.profile_photo = data.profile_photo;
       }
 
-      // Create artisan
-      const artisan = await strapi.entityService.create('api::artisan.artisan' as any, {
-        data: artisanData,
-        populate: ['profession', 'zones'],
-      });
+      // Set submitted_by_user if user is authenticated (even if route auth is optional)
+      // This allows tracking which user created the artisan for stats purposes
+      if (ctx.state.user) {
+        artisanData.submitted_by_user = ctx.state.user.id;
+      }
 
-      // Link zones
-      if (zoneIds.length > 0) {
-        await strapi.entityService.update('api::artisan.artisan' as any, artisan.id, {
-          data: {
-            zones: zoneIds,
+      // Temporarily remove user from context to prevent Strapi from auto-setting createdBy
+      const originalUser = ctx.state.user;
+      ctx.state.user = undefined;
+
+      try {
+        // Create artisan
+        const artisan = await strapi.entityService.create('api::artisan.artisan' as any, {
+          data: artisanData,
+          populate: ['profession', 'zones'],
+        });
+
+        // Restore user in context
+        ctx.state.user = originalUser;
+
+        // Link zones
+        if (zoneIds.length > 0) {
+          await strapi.entityService.update('api::artisan.artisan' as any, artisan.id, {
+            data: {
+              zones: zoneIds,
+            },
+          });
+        }
+
+        // Create phone numbers
+        if (data.phone_numbers && Array.isArray(data.phone_numbers) && data.phone_numbers.length > 0) {
+          for (const phoneData of data.phone_numbers) {
+            if (phoneData.number && phoneData.number.trim()) {
+              try {
+                await strapi.entityService.create('api::phone-number.phone-number' as any, {
+                  data: {
+                    number: phoneData.number.trim(),
+                    is_whatsapp: phoneData.is_whatsapp ?? false,
+                    artisan: artisan.id,
+                  },
+                });
+              } catch (phoneError: any) {
+                // Log but don't fail if phone number already exists (unique constraint)
+                strapi.log.warn('Phone number creation failed (may be duplicate)', {
+                  number: phoneData.number,
+                  error: phoneError.message,
+                });
+              }
+            }
+          }
+        }
+
+        // Create social links
+        if (data.social_links && Array.isArray(data.social_links) && data.social_links.length > 0) {
+          for (const socialData of data.social_links) {
+            if (socialData.platform && socialData.link && socialData.link.trim()) {
+              // Ensure URL has protocol
+              let url = socialData.link.trim();
+              if (!url.match(/^https?:\/\//i)) {
+                url = `https://${url}`;
+              }
+
+              // Validate platform is in enum
+              const validPlatforms = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'website', 'other'];
+              const platform = validPlatforms.includes(socialData.platform.toLowerCase())
+                ? socialData.platform.toLowerCase()
+                : 'other';
+
+              try {
+                await strapi.entityService.create('api::social-link.social-link' as any, {
+                  data: {
+                    platform: platform,
+                    url: url, // Schema uses 'url', not 'link'
+                    artisan: artisan.id,
+                  },
+                });
+              } catch (socialError: any) {
+                strapi.log.warn('Social link creation failed', {
+                  platform: platform,
+                  url: url,
+                  error: socialError.message,
+                });
+              }
+            }
+          }
+        }
+
+        // Fetch complete artisan with all relations
+        const completeArtisan = await strapi.entityService.findOne('api::artisan.artisan' as any, artisan.id, {
+          populate: {
+            profession: {
+              fields: ['id', 'name', 'slug'],
+            },
+            zones: {
+              fields: ['id', 'name', 'slug', 'city'],
+            },
+            phone_numbers: {
+              fields: ['id', 'number', 'is_whatsapp'],
+            },
+            social_links: {
+              fields: ['id', 'platform', 'url'],
+            },
+            profile_photo: {
+              fields: ['id', 'url', 'alternativeText'],
+            },
           },
         });
+
+        // Transform to match frontend format
+        ctx.body = {
+          data: {
+            id: completeArtisan.id,
+            fullName: completeArtisan.full_name,
+            slug: completeArtisan.slug,
+            description: completeArtisan.description,
+            status: completeArtisan.status,
+            isCommunitySubmitted: completeArtisan.is_community_submitted,
+            profession: completeArtisan.profession
+              ? {
+                id: completeArtisan.profession.id,
+                name: completeArtisan.profession.name,
+                slug: completeArtisan.profession.slug,
+              }
+              : null,
+            zones: completeArtisan.zones?.map((zone: any) => ({
+              id: zone.id,
+              name: zone.name,
+              slug: zone.slug,
+              city: zone.city,
+            })) || [],
+            phoneNumbers: completeArtisan.phone_numbers?.map((phone: any) => ({
+              id: phone.id,
+              number: phone.number,
+              isWhatsApp: phone.is_whatsapp,
+            })) || [],
+            socialLinks: completeArtisan.social_links?.map((social: any) => ({
+              id: social.id,
+              platform: social.platform,
+              link: social.url, // Map 'url' from DB to 'link' for frontend
+            })) || [],
+            profilePhoto: completeArtisan.profile_photo
+              ? {
+                id: completeArtisan.profile_photo.id,
+                url: completeArtisan.profile_photo.url,
+                alternativeText: completeArtisan.profile_photo.alternativeText,
+              }
+              : null,
+            createdAt: completeArtisan.createdAt,
+            updatedAt: completeArtisan.updatedAt,
+          },
+        };
+      } catch (error) {
+        // Restore user in context even on error
+        ctx.state.user = originalUser;
+        throw error;
       }
-
-      // Create phone numbers
-      if (data.phone_numbers && Array.isArray(data.phone_numbers) && data.phone_numbers.length > 0) {
-        for (const phoneData of data.phone_numbers) {
-          if (phoneData.number && phoneData.number.trim()) {
-            try {
-              await strapi.entityService.create('api::phone-number.phone-number' as any, {
-                data: {
-                  number: phoneData.number.trim(),
-                  is_whatsapp: phoneData.is_whatsapp ?? false,
-                  artisan: artisan.id,
-                },
-              });
-            } catch (phoneError: any) {
-              // Log but don't fail if phone number already exists (unique constraint)
-              strapi.log.warn('Phone number creation failed (may be duplicate)', {
-                number: phoneData.number,
-                error: phoneError.message,
-              });
-            }
-          }
-        }
-      }
-
-      // Create social links
-      if (data.social_links && Array.isArray(data.social_links) && data.social_links.length > 0) {
-        for (const socialData of data.social_links) {
-          if (socialData.platform && socialData.link && socialData.link.trim()) {
-            // Ensure URL has protocol
-            let url = socialData.link.trim();
-            if (!url.match(/^https?:\/\//i)) {
-              url = `https://${url}`;
-            }
-
-            // Validate platform is in enum
-            const validPlatforms = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'website', 'other'];
-            const platform = validPlatforms.includes(socialData.platform.toLowerCase())
-              ? socialData.platform.toLowerCase()
-              : 'other';
-
-            try {
-              await strapi.entityService.create('api::social-link.social-link' as any, {
-                data: {
-                  platform: platform,
-                  url: url, // Schema uses 'url', not 'link'
-                  artisan: artisan.id,
-                },
-              });
-            } catch (socialError: any) {
-              strapi.log.warn('Social link creation failed', {
-                platform: platform,
-                url: url,
-                error: socialError.message,
-              });
-            }
-          }
-        }
-      }
-
-      // Fetch complete artisan with all relations
-      const completeArtisan = await strapi.entityService.findOne('api::artisan.artisan' as any, artisan.id, {
-        populate: {
-          profession: {
-            fields: ['id', 'name', 'slug'],
-          },
-          zones: {
-            fields: ['id', 'name', 'slug', 'city'],
-          },
-          phone_numbers: {
-            fields: ['id', 'number', 'is_whatsapp'],
-          },
-          social_links: {
-            fields: ['id', 'platform', 'url'],
-          },
-          profile_photo: {
-            fields: ['id', 'url', 'alternativeText'],
-          },
-        },
-      });
-
-      // Transform to match frontend format
-      ctx.body = {
-        data: {
-          id: completeArtisan.id,
-          fullName: completeArtisan.full_name,
-          slug: completeArtisan.slug,
-          description: completeArtisan.description,
-          status: completeArtisan.status,
-          isCommunitySubmitted: completeArtisan.is_community_submitted,
-          profession: completeArtisan.profession
-            ? {
-              id: completeArtisan.profession.id,
-              name: completeArtisan.profession.name,
-              slug: completeArtisan.profession.slug,
-            }
-            : null,
-          zones: completeArtisan.zones?.map((zone: any) => ({
-            id: zone.id,
-            name: zone.name,
-            slug: zone.slug,
-            city: zone.city,
-          })) || [],
-          phoneNumbers: completeArtisan.phone_numbers?.map((phone: any) => ({
-            id: phone.id,
-            number: phone.number,
-            isWhatsApp: phone.is_whatsapp,
-          })) || [],
-          socialLinks: completeArtisan.social_links?.map((social: any) => ({
-            id: social.id,
-            platform: social.platform,
-            link: social.url, // Map 'url' from DB to 'link' for frontend
-          })) || [],
-          profilePhoto: completeArtisan.profile_photo
-            ? {
-              id: completeArtisan.profile_photo.id,
-              url: completeArtisan.profile_photo.url,
-              alternativeText: completeArtisan.profile_photo.alternativeText,
-            }
-            : null,
-          createdAt: completeArtisan.createdAt,
-          updatedAt: completeArtisan.updatedAt,
-        },
-      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       strapi.log.error('Artisan create error', {
@@ -540,128 +560,141 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         }
 
         // Try to create the artisan (reuse logic from create method)
-        try {
-          // Resolve profession
-          let professionId: string | number | undefined;
-          if (rowData.profession && String(rowData.profession).trim()) {
-            const profession = await strapi.entityService.findMany('api::profession.profession' as any, {
+        // Resolve profession
+        let professionId: string | number | undefined;
+        if (rowData.profession && String(rowData.profession).trim()) {
+          const profession = await strapi.entityService.findMany('api::profession.profession' as any, {
+            filters: {
+              $or: [
+                { slug: String(rowData.profession).trim().toLowerCase() },
+                { name: { $containsi: String(rowData.profession).trim() } },
+              ],
+            },
+            limit: 1,
+          });
+          if (profession && profession.length > 0) {
+            professionId = profession[0].id;
+          } else {
+            const professionName = String(rowData.profession).trim();
+            const professionSlug = professionName
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '');
+
+            const newProfession = await strapi.entityService.create('api::profession.profession' as any, {
+              data: {
+                name: professionName,
+                slug: professionSlug,
+              },
+            });
+            professionId = newProfession.id;
+          }
+        }
+
+        // Resolve zones
+        const zoneIds: (string | number)[] = [];
+        if (rowData.zones && Array.isArray(rowData.zones) && rowData.zones.length > 0) {
+          for (const zoneSlug of rowData.zones) {
+            if (!zoneSlug || !String(zoneSlug).trim()) continue;
+
+            const zone = await strapi.entityService.findMany('api::zone.zone' as any, {
               filters: {
                 $or: [
-                  { slug: String(rowData.profession).trim().toLowerCase() },
-                  { name: { $containsi: String(rowData.profession).trim() } },
+                  { slug: String(zoneSlug).trim().toLowerCase() },
+                  { name: { $containsi: String(zoneSlug).trim() } },
                 ],
               },
               limit: 1,
             });
-            if (profession && profession.length > 0) {
-              professionId = profession[0].id;
+            if (zone && zone.length > 0) {
+              zoneIds.push(zone[0].id);
             } else {
-              const professionName = String(rowData.profession).trim();
-              const professionSlug = professionName
+              const zoneName = String(zoneSlug).trim();
+              const zoneSlugNormalized = zoneName
                 .toLowerCase()
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-+|-+$/g, '');
 
-              const newProfession = await strapi.entityService.create('api::profession.profession' as any, {
-                data: {
-                  name: professionName,
-                  slug: professionSlug,
-                },
-              });
-              professionId = newProfession.id;
-            }
-          }
-
-          // Resolve zones
-          const zoneIds: (string | number)[] = [];
-          if (rowData.zones && Array.isArray(rowData.zones) && rowData.zones.length > 0) {
-            for (const zoneSlug of rowData.zones) {
-              if (!zoneSlug || !String(zoneSlug).trim()) continue;
-
-              const zone = await strapi.entityService.findMany('api::zone.zone' as any, {
-                filters: {
-                  $or: [
-                    { slug: String(zoneSlug).trim().toLowerCase() },
-                    { name: { $containsi: String(zoneSlug).trim() } },
-                  ],
-                },
-                limit: 1,
-              });
-              if (zone && zone.length > 0) {
-                zoneIds.push(zone[0].id);
-              } else {
-                const zoneName = String(zoneSlug).trim();
-                const zoneSlugNormalized = zoneName
-                  .toLowerCase()
-                  .normalize('NFD')
-                  .replace(/[\u0300-\u036f]/g, '')
-                  .replace(/[^a-z0-9]+/g, '-')
-                  .replace(/^-+|-+$/g, '');
-
-                try {
-                  const newZone = await strapi.entityService.create('api::zone.zone' as any, {
-                    data: {
-                      name: zoneName,
-                      slug: zoneSlugNormalized,
-                    },
-                  });
-                  zoneIds.push(newZone.id);
-                } catch (zoneError: any) {
-                  strapi.log.warn('Zone creation failed (may be duplicate)', {
+              try {
+                const newZone = await strapi.entityService.create('api::zone.zone' as any, {
+                  data: {
                     name: zoneName,
-                    error: zoneError.message,
-                  });
-                }
+                    slug: zoneSlugNormalized,
+                  },
+                });
+                zoneIds.push(newZone.id);
+              } catch (zoneError: any) {
+                strapi.log.warn('Zone creation failed (may be duplicate)', {
+                  name: zoneName,
+                  error: zoneError.message,
+                });
               }
             }
           }
+        }
 
-          // Generate slug
-          let baseSlug = String(rowData.full_name)
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '');
+        // Generate slug
+        let baseSlug = String(rowData.full_name)
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
 
-          let slug = baseSlug;
-          let counter = 1;
-          while (true) {
-            const existing = await strapi.entityService.findMany('api::artisan.artisan' as any, {
-              filters: { slug },
-              limit: 1,
-            });
-            if (!existing || existing.length === 0) {
-              break;
-            }
-            slug = `${baseSlug}-${counter}`;
-            counter++;
+        let slug = baseSlug;
+        let counter = 1;
+        while (true) {
+          const existing = await strapi.entityService.findMany('api::artisan.artisan' as any, {
+            filters: { slug },
+            limit: 1,
+          });
+          if (!existing || existing.length === 0) {
+            break;
           }
+          slug = `${baseSlug}-${counter}`;
+          counter++;
+        }
 
-          // Prepare artisan data
-          const artisanData: any = {
-            full_name: String(rowData.full_name).trim(),
-            slug: slug,
-            description: rowData.description ? String(rowData.description).trim() : '',
-            is_community_submitted: rowData.is_community_submitted ?? true,
-            status: rowData.status ?? 'approved',
-          };
+        // Prepare artisan data
+        const artisanData: any = {
+          full_name: String(rowData.full_name).trim(),
+          slug: slug,
+          description: rowData.description ? String(rowData.description).trim() : '',
+          is_community_submitted: rowData.is_community_submitted ?? true,
+          status: rowData.status ?? 'approved',
+          createdBy: null, // Explicitly set to null to prevent Strapi from auto-setting with users-permissions user
+        };
 
-          if (professionId) {
-            artisanData.profession = professionId;
-          }
+        // Set submitted_by_user if user is authenticated
+        if (ctx.state.user) {
+          artisanData.submitted_by_user = ctx.state.user.id;
+        }
 
-          if (rowData.profile_photo) {
-            artisanData.profile_photo = rowData.profile_photo;
-          }
+        if (professionId) {
+          artisanData.profession = professionId;
+        }
 
+        if (rowData.profile_photo) {
+          artisanData.profile_photo = rowData.profile_photo;
+        }
+
+        // Temporarily remove user from context to prevent Strapi from auto-setting createdBy
+        const originalUser = ctx.state.user;
+        ctx.state.user = undefined;
+
+        try {
           // Create artisan
           const artisan = await strapi.entityService.create('api::artisan.artisan' as any, {
             data: artisanData,
             populate: ['profession', 'zones'],
           });
+
+          // Restore user in context
+          ctx.state.user = originalUser;
 
           // Link zones
           if (zoneIds.length > 0) {
@@ -797,6 +830,8 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
             artisan: transformedArtisan,
           });
         } catch (createError: any) {
+          // Restore user in context even on error
+          ctx.state.user = originalUser;
           failed++;
           const errorMsg = createError instanceof Error ? createError.message : String(createError);
           results.push({
@@ -833,9 +868,11 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         ctx.throw(401, 'Authentication required');
       }
 
-      // Get current month start date
+      // Get current month start date in UTC to avoid timezone boundary issues
       const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfMonth = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+      );
 
       // Total approved artisans
       const totalArtisans = await strapi.entityService.count('api::artisan.artisan' as any, {
@@ -888,10 +925,10 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
       }
 
       // User-specific stats
-      // User's contributions (approved only)
+      // User's contributions (approved only) - count by user document ID (submitted_by_user)
       const myContributions = await strapi.entityService.count('api::artisan.artisan' as any, {
         filters: {
-          submitted_by_email: userEmail,
+          submitted_by_user: { id: user.id },
           status: 'approved',
         } as any,
       });
@@ -899,7 +936,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
       // User's contributions this month
       const thisMonth = await strapi.entityService.count('api::artisan.artisan' as any, {
         filters: {
-          submitted_by_email: userEmail,
+          submitted_by_user: { id: user.id },
           createdAt: { $gte: startOfMonth.toISOString() },
         } as any,
       });
