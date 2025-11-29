@@ -184,8 +184,8 @@ export const useCreateArtisan = createMutation({
   }): Promise<CreateArtisanResponse> => {
     let profilePhotoId: number | undefined;
 
-    // Upload photo first if provided
-    if (payload.profile_photo) {
+    // Upload photo first if provided (only if it's a File)
+    if (payload.profile_photo && payload.profile_photo instanceof File) {
       const uploadResponse = await api.uploadFile<Array<{ id: number }>>(
         routes.upload.base,
         payload.profile_photo,
@@ -198,6 +198,9 @@ export const useCreateArtisan = createMutation({
           : undefined
       );
       profilePhotoId = uploadResponse[0]?.id;
+    } else if (typeof payload.profile_photo === 'number') {
+      // If it's already an ID, use it directly
+      profilePhotoId = payload.profile_photo;
     }
 
     // Prepare the artisan data

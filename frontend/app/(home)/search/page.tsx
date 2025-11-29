@@ -52,13 +52,11 @@ function SearchContent() {
 
   // Fetch artisans from API
   const { data: artisansData, isLoading, error } = useGetArtisans({
-    variables: {
-      profession: profession || undefined,
-      zone: zone || undefined,
-      q: debouncedSearchQuery || undefined,
-      page: 1,
-      limit: 100, // Fetch up to 100 results for now
-    },
+    profession: profession || undefined,
+    zone: zone || undefined,
+    q: debouncedSearchQuery || undefined,
+    page: 1,
+    limit: 100, // Fetch up to 100 results for now
   });
 
   // Show loading state when typing or when API is loading

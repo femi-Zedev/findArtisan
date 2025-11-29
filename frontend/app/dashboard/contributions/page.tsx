@@ -1,6 +1,6 @@
 "use client";
 
-import { Text } from "@mantine/core";
+import { Text, Button } from "@mantine/core";
 import { DataTable } from "@/app/_components/DataTable";
 import { TableHeader } from "@/app/_components/TableHeader";
 import { SearchInput } from "@/app/_components/SearchInput";
@@ -9,9 +9,11 @@ import { useGetArtisans, type Artisan, artisanKeys } from "@/app/lib/services/ar
 import { useMemo, useState, useEffect } from "react";
 import { useDrawerContext } from "@/providers/drawer-provider";
 import { AddArtisanForm } from "@/app/_components/forms/AddArtisan.form";
+import { AddArtisanSelection } from "@/app/_components/forms/AddArtisanSelection";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useDebouncedValue } from "@mantine/hooks";
+import { UserPlus } from "lucide-react";
 
 export default function ContributionsPage() {
   const [page, setPage] = useState(1);
@@ -65,6 +67,23 @@ export default function ContributionsPage() {
     });
   };
 
+  const handleOpenAddArtisanDrawer = () => {
+    openDrawer({
+      title: "Ajouter un artisan",
+      body: (
+        <AddArtisanSelection
+          onSuccess={() => {
+            // Invalidate and refetch artisans list
+            queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
+            closeDrawer();
+          }}
+        />
+      ),
+      size: "xl",
+      bodyClassName: "p-6 overflow-y-hidden",
+    });
+  };
+
   return (
     <div className="space-y-6">
       {error && (
@@ -79,12 +98,22 @@ export default function ContributionsPage() {
         <TableHeader
           title="Mes Contributions"
           rightSection={
-            <div className="flex items-center justify-end w-full">
-            <SearchInput
-              placeholder="Rechercher contributions..."
-              value={searchQuery}
-              onChange={setSearchQuery}
-            />
+            <div className="flex items-center justify-between w-full">
+              <SearchInput
+                placeholder="Rechercher contributions..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+                className="mx-auto"
+              />
+              <Button
+                leftSection={<UserPlus className="h-4 w-4" />}
+                onClick={handleOpenAddArtisanDrawer}
+                className="cursor-pointer"
+                radius={10}
+                size="md"
+              >
+                Ajouter un Artisan
+              </Button>
             </div>
           }
           dataCount={pagination?.total}
