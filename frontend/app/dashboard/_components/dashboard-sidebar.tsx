@@ -58,12 +58,7 @@ const userNavItems: NavItem[] = [
     icon: Wrench,
     userTypes: ["user"],
   },
-  {
-    label: "Ajouter un Artisan",
-    href: "/dashboard/add-artisan",
-    icon: UserPlus,
-    userTypes: ["user"],
-  },
+
 ];
 
 interface DashboardSidebarProps {

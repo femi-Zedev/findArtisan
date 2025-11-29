@@ -407,7 +407,7 @@ const artisanRoutes = {
       method: 'POST',
       path: '/artisans/batch',
       handler: 'api::artisan.artisan.createBatch',
-      config: {
+  config: {
         // Require authentication to create artisans in batch
         auth: { scope: [] },
         policies: [],

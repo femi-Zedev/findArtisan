@@ -19,7 +19,7 @@ export function TableHeader({
   return (
     <div
       className={cn(
-        "flex items-center justify-between px-5 py-3.5 bg-gradient-to-r from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 border border-gray-200 dark:border-gray-800 border-b-0 rounded-t-xl",
+        "flex items-center justify-between px-5 py-3.5 bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 border-b-0 rounded-t-xl",
         className
       )}
     >

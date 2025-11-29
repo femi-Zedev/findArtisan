@@ -343,7 +343,7 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
         await createArtisanMutation.mutateAsync({
           payload,
           jwt,
-        });
+      });
       }
     } catch (error) {
       // Error is handled by onError callback
@@ -405,21 +405,21 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
                 </Tooltip>
                 <span className="text-red-500">*</span>
               </div>
-              <Textarea
+            <Textarea
                 placeholder={`Décrivez les services de cet artisan:
 - Ses délais de réalisation, la qualité de ses travaux, ses finissions,
 - Possède un atelier ou non, ses horaires d'ouverture, etc.
 - Ses prix, abordables ou cher, etc.`}
-                size="lg"
-                maxLength={1200}
-                rows={4}
-                required
-                classNames={{
-                  input:
-                    "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-                }}
-                {...form.getInputProps("description")}
-              />
+              size="lg"
+              maxLength={1200}
+              rows={4}
+              required
+              classNames={{
+                input:
+                  "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+              }}
+              {...form.getInputProps("description")}
+            />
             </div>
           </div>
 

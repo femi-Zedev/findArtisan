@@ -25,15 +25,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionProvider>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
         <ConfirmationProvider>
-          <DrawerProvider>
-            <ModalProvider>
-              <ThemeProvider>{children}</ThemeProvider>
-            </ModalProvider>
-          </DrawerProvider>
+      <DrawerProvider>
+        <ModalProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </ModalProvider>
+      </DrawerProvider>
         </ConfirmationProvider>
-      </QueryClientProvider>
+    </QueryClientProvider>
     </SessionProvider>
   );
 }
