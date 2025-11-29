@@ -52,6 +52,28 @@ const artisanRoutes = {
         middlewares: [],
       },
     },
+    {
+      method: 'PUT',
+      path: '/artisans/:id',
+      handler: 'api::artisan.artisan.update',
+      config: {
+        // Require authentication to update an artisan
+        auth: { scope: [] },
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'DELETE',
+      path: '/artisans/:id',
+      handler: 'api::artisan.artisan.delete',
+      config: {
+        // Require authentication to delete an artisan
+        auth: { scope: [] },
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 } as const;
 

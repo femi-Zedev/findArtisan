@@ -16,13 +16,29 @@ const parseSingleParam = (value: string | string[] | undefined): string | undefi
   return Array.isArray(value) ? value.at(0) : value;
 };
 
-const parseNumberParam = (value: string | string[] | undefined, defaultValue: number): number => {
+const parseNumberParam = (
+  value: string | string[] | undefined,
+  defaultValue: number,
+  min?: number,
+  max?: number
+): number => {
   const param = parseSingleParam(value);
   if (!param) {
     return defaultValue;
   }
   const parsed = Number.parseInt(param, 10);
-  return Number.isNaN(parsed) || parsed <= 0 ? defaultValue : parsed;
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    return defaultValue;
+  }
+  // Apply min constraint if provided
+  if (min !== undefined && parsed < min) {
+    return min;
+  }
+  // Apply max constraint if provided
+  if (max !== undefined && parsed > max) {
+    return max;
+  }
+  return parsed;
 };
 
 export default factories.createCoreController('api::artisan.artisan' as any, ({ strapi }) => ({
@@ -33,8 +49,20 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
       const professionFilter = parseSingleParam(profession);
       const zoneFilter = parseSingleParam(zone);
       const searchQuery = parseSingleParam(q);
-      const pageParam = parseNumberParam(page, 1);
-      const pageSizeParam = parseNumberParam(pageSize, 20);
+      
+      // Validate pagination parameters
+      // Page must be >= 1
+      const pageParam = parseNumberParam(page, 1, 1);
+      // PageSize must be between 1 and 100 (prevent performance issues)
+      const pageSizeParam = parseNumberParam(pageSize, 20, 1, 100);
+
+      // Debug logging for pagination (remove in production if needed)
+      strapi.log.debug('Artisan find pagination params', {
+        rawPage: page,
+        rawPageSize: pageSize,
+        parsedPage: pageParam,
+        parsedPageSize: pageSizeParam,
+      });
 
       // Build filters
       const filters: Record<string, unknown> = {
@@ -75,8 +103,22 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         ];
       }
 
-      // Query artisans with filters and populate relations
-      const { results, pagination } = await strapi.entityService.findPage('api::artisan.artisan' as any, {
+      // Calculate pagination offset (0-based)
+      // Page 1 = offset 0, Page 2 = offset 10, etc.
+      const offset = (pageParam - 1) * pageSizeParam;
+
+      // Get total count first (for pagination metadata)
+      const total = await strapi.entityService.count('api::artisan.artisan' as any, {
+        filters,
+      });
+
+      // Calculate pagination metadata
+      const pageCount = Math.ceil(total / pageSizeParam);
+      const validatedPage = pageParam > pageCount && pageCount > 0 ? pageCount : pageParam;
+
+      // Query artisans with filters, populate relations, and manual pagination
+      // Using findMany with start/limit for reliable pagination
+      const results = await strapi.entityService.findMany('api::artisan.artisan' as any, {
         filters,
         populate: {
           profession: {
@@ -106,10 +148,19 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
           'updatedAt',
         ],
         sort: { createdAt: 'desc' },
-        pagination: {
-          page: pageParam,
-          pageSize: pageSizeParam,
-        },
+        start: offset,
+        limit: pageSizeParam,
+      });
+
+      // Debug logging for pagination
+      strapi.log.debug('Artisan find pagination', {
+        requestedPage: pageParam,
+        pageSize: pageSizeParam,
+        offset,
+        total,
+        pageCount,
+        resultsCount: results.length,
+        validatedPage,
       });
 
       // Transform results to include populated data
@@ -154,14 +205,15 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         updatedAt: artisan.updatedAt,
       }));
 
+      // Ensure pagination metadata is always valid and consistent
       ctx.body = {
         data,
         meta: {
           pagination: {
-            page: pagination.page,
-            pageSize: pagination.pageSize,
-            pageCount: pagination.pageCount,
-            total: pagination.total,
+            page: validatedPage,
+            pageSize: pageSizeParam,
+            pageCount,
+            total,
           },
         },
       };
@@ -173,6 +225,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         message: errorMessage,
         stack: errorStack,
         error,
+        query: ctx.query,
       });
 
       ctx.throw(500, `Failed to fetch artisans: ${errorMessage}`);
@@ -857,6 +910,368 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         error,
       });
       ctx.throw(500, `Failed to create artisans in batch: ${errorMessage}`);
+    }
+  },
+
+  async update(ctx: Context) {
+    try {
+      const { id } = ctx.params;
+      const { data } = ctx.request.body as { data: any };
+      const { user } = ctx.state;
+
+      if (!user) {
+        ctx.throw(401, 'Authentication required');
+      }
+
+      // Get the artisan to check ownership
+      const existingArtisan = await strapi.entityService.findOne('api::artisan.artisan' as any, id, {
+        populate: ['submitted_by_user', 'profession', 'zones', 'phone_numbers', 'social_links', 'profile_photo'],
+      });
+
+      if (!existingArtisan) {
+        ctx.throw(404, 'Artisan not found');
+      }
+
+      // Check if user is admin or the owner
+      const userWithRole = await strapi.entityService.findOne('plugin::users-permissions.user' as any, user.id, {
+        populate: ['role'],
+      });
+
+      const isAdmin = userWithRole?.role?.type === 'admin';
+      const isOwner = existingArtisan.submitted_by_user?.id === user.id;
+
+      if (!isAdmin && !isOwner) {
+        ctx.throw(403, 'You can only edit artisans you created');
+      }
+
+      // Resolve profession from name/slug to ID (similar to create)
+      let professionId: string | number | undefined;
+      if (data.profession) {
+        const profession = await strapi.entityService.findMany('api::profession.profession' as any, {
+          filters: {
+            $or: [
+              { slug: data.profession.trim().toLowerCase() },
+              { name: { $containsi: data.profession.trim() } },
+            ],
+          },
+          limit: 1,
+        });
+
+        if (profession && profession.length > 0) {
+          professionId = profession[0].id;
+        } else {
+          // Create profession if it doesn't exist
+          const professionName = data.profession.trim();
+          const professionSlug = professionName
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+
+          const newProfession = await strapi.entityService.create('api::profession.profession' as any, {
+            data: {
+              name: professionName,
+              slug: professionSlug,
+            },
+          });
+          professionId = newProfession.id;
+        }
+      }
+
+      // Resolve zones from slugs to IDs
+      const zoneIds: (string | number)[] = [];
+      if (data.zones && Array.isArray(data.zones) && data.zones.length > 0) {
+        for (const zoneSlug of data.zones) {
+          if (!zoneSlug || !zoneSlug.trim()) continue;
+
+          const zone = await strapi.entityService.findMany('api::zone.zone' as any, {
+            filters: {
+              $or: [
+                { slug: zoneSlug.trim().toLowerCase() },
+                { name: { $containsi: zoneSlug.trim() } },
+              ],
+            },
+            limit: 1,
+          });
+          if (zone && zone.length > 0) {
+            zoneIds.push(zone[0].id);
+          } else {
+            // Create zone if it doesn't exist
+            const zoneName = zoneSlug.trim();
+            const zoneSlugNormalized = zoneName
+              .toLowerCase()
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '');
+
+            try {
+              const newZone = await strapi.entityService.create('api::zone.zone' as any, {
+                data: {
+                  name: zoneName,
+                  slug: zoneSlugNormalized,
+                },
+              });
+              zoneIds.push(newZone.id);
+            } catch (zoneError: any) {
+              strapi.log.warn('Zone creation failed (may be duplicate)', {
+                name: zoneName,
+                error: zoneError.message,
+              });
+            }
+          }
+        }
+      }
+
+      // Prepare update data
+      const updateData: any = {};
+
+      if (data.full_name) {
+        updateData.full_name = data.full_name;
+        // Update slug if name changed
+        let baseSlug = data.full_name
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+
+        // Ensure slug is unique (excluding current artisan)
+        let slug = baseSlug;
+        let counter = 1;
+        while (true) {
+          const existing = await strapi.entityService.findMany('api::artisan.artisan' as any, {
+            filters: { slug, id: { $ne: id } },
+            limit: 1,
+          });
+          if (!existing || existing.length === 0) {
+            break;
+          }
+          slug = `${baseSlug}-${counter}`;
+          counter++;
+        }
+        updateData.slug = slug;
+      }
+
+      if (data.description !== undefined) {
+        updateData.description = data.description;
+      }
+
+      if (data.status !== undefined) {
+        updateData.status = data.status;
+      }
+
+      if (data.is_community_submitted !== undefined) {
+        updateData.is_community_submitted = data.is_community_submitted;
+      }
+
+      if (professionId) {
+        updateData.profession = professionId;
+      }
+
+      if (data.profile_photo) {
+        updateData.profile_photo = data.profile_photo;
+      }
+
+      // Update artisan
+      await strapi.entityService.update('api::artisan.artisan' as any, id, {
+        data: updateData,
+      });
+
+      // Update zones
+      if (zoneIds.length > 0) {
+        await strapi.entityService.update('api::artisan.artisan' as any, id, {
+          data: {
+            zones: zoneIds,
+          },
+        });
+      }
+
+      // Delete existing phone numbers and recreate
+      if (data.phone_numbers && Array.isArray(data.phone_numbers)) {
+        const existingPhones = existingArtisan.phone_numbers || [];
+        for (const phone of existingPhones) {
+          await strapi.entityService.delete('api::phone-number.phone-number' as any, phone.id);
+        }
+
+        for (const phoneData of data.phone_numbers) {
+          if (phoneData.number && phoneData.number.trim()) {
+            try {
+              await strapi.entityService.create('api::phone-number.phone-number' as any, {
+                data: {
+                  number: phoneData.number.trim(),
+                  is_whatsapp: phoneData.is_whatsapp ?? false,
+                  artisan: id,
+                },
+              });
+            } catch (phoneError: any) {
+              strapi.log.warn('Phone number creation failed', {
+                number: phoneData.number,
+                error: phoneError.message,
+              });
+            }
+          }
+        }
+      }
+
+      // Delete existing social links and recreate
+      if (data.social_links && Array.isArray(data.social_links)) {
+        const existingSocials = existingArtisan.social_links || [];
+        for (const social of existingSocials) {
+          await strapi.entityService.delete('api::social-link.social-link' as any, social.id);
+        }
+
+        for (const socialData of data.social_links) {
+          if (socialData.platform && socialData.link && socialData.link.trim()) {
+            let url = socialData.link.trim();
+            if (!url.match(/^https?:\/\//i)) {
+              url = `https://${url}`;
+            }
+
+            const validPlatforms = ['facebook', 'instagram', 'tiktok', 'whatsapp', 'website', 'other'];
+            const platform = validPlatforms.includes(socialData.platform.toLowerCase())
+              ? socialData.platform.toLowerCase()
+              : 'other';
+
+            try {
+              await strapi.entityService.create('api::social-link.social-link' as any, {
+                data: {
+                  platform: platform,
+                  url: url,
+                  artisan: id,
+                },
+              });
+            } catch (socialError: any) {
+              strapi.log.warn('Social link creation failed', {
+                platform: platform,
+                url: url,
+                error: socialError.message,
+              });
+            }
+          }
+        }
+      }
+
+      // Fetch complete updated artisan
+      const completeArtisan = await strapi.entityService.findOne('api::artisan.artisan' as any, id, {
+        populate: {
+          profession: {
+            fields: ['id', 'name', 'slug'],
+          },
+          zones: {
+            fields: ['id', 'name', 'slug', 'city'],
+          },
+          phone_numbers: {
+            fields: ['id', 'number', 'is_whatsapp'],
+          },
+          social_links: {
+            fields: ['id', 'platform', 'url'],
+          },
+          profile_photo: {
+            fields: ['id', 'url', 'alternativeText'],
+          },
+        },
+      });
+
+      // Transform to match frontend format
+      ctx.body = {
+        data: {
+          id: completeArtisan.id,
+          fullName: completeArtisan.full_name,
+          slug: completeArtisan.slug,
+          description: completeArtisan.description,
+          status: completeArtisan.status,
+          isCommunitySubmitted: completeArtisan.is_community_submitted,
+          profession: completeArtisan.profession
+            ? {
+              id: completeArtisan.profession.id,
+              name: completeArtisan.profession.name,
+              slug: completeArtisan.profession.slug,
+            }
+            : null,
+          zones: completeArtisan.zones?.map((zone: any) => ({
+            id: zone.id,
+            name: zone.name,
+            slug: zone.slug,
+            city: zone.city,
+          })) || [],
+          phoneNumbers: completeArtisan.phone_numbers?.map((phone: any) => ({
+            id: phone.id,
+            number: phone.number,
+            isWhatsApp: phone.is_whatsapp,
+          })) || [],
+          socialLinks: completeArtisan.social_links?.map((social: any) => ({
+            id: social.id,
+            platform: social.platform,
+            link: social.url,
+          })) || [],
+          profilePhoto: completeArtisan.profile_photo
+            ? {
+              id: completeArtisan.profile_photo.id,
+              url: completeArtisan.profile_photo.url,
+              alternativeText: completeArtisan.profile_photo.alternativeText,
+            }
+            : null,
+          createdAt: completeArtisan.createdAt,
+          updatedAt: completeArtisan.updatedAt,
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      strapi.log.error('Artisan update error', {
+        message: errorMessage,
+        error,
+      });
+      ctx.throw(500, `Failed to update artisan: ${errorMessage}`);
+    }
+  },
+
+  async delete(ctx: Context) {
+    try {
+      const { id } = ctx.params;
+      const { user } = ctx.state;
+
+      if (!user) {
+        ctx.throw(401, 'Authentication required');
+      }
+
+      // Get the artisan to check ownership
+      const existingArtisan = await strapi.entityService.findOne('api::artisan.artisan' as any, id, {
+        populate: ['submitted_by_user'],
+      });
+
+      if (!existingArtisan) {
+        ctx.throw(404, 'Artisan not found');
+      }
+
+      // Check if user is admin or the owner
+      const userWithRole = await strapi.entityService.findOne('plugin::users-permissions.user' as any, user.id, {
+        populate: ['role'],
+      });
+
+      const isAdmin = userWithRole?.role?.type === 'admin';
+      const isOwner = existingArtisan.submitted_by_user?.id === user.id;
+
+      if (!isAdmin && !isOwner) {
+        ctx.throw(403, 'You can only delete artisans you created');
+      }
+
+      // Delete the artisan (cascade will handle related entities)
+      await strapi.entityService.delete('api::artisan.artisan' as any, id);
+
+      ctx.body = {
+        data: {
+          id: Number(id),
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      strapi.log.error('Artisan delete error', {
+        message: errorMessage,
+        error,
+      });
+      ctx.throw(500, `Failed to delete artisan: ${errorMessage}`);
     }
   },
 

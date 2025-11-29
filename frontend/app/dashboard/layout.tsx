@@ -34,12 +34,6 @@ export default function DashboardLayout({
             {children}
           </main>
 
-          {/* Footer */}
-          <footer className="border-t border-gray-200 dark:border-gray-800 px-4 lg:px-6 py-4">
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-              © {new Date().getFullYear()}, Fait avec ❤️ par FindArtisan pour un web meilleur.
-            </p>
-          </footer>
         </div>
       </div>
     </DashboardAuthGuard>

@@ -6,6 +6,7 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "./theme-provider";
 import ModalProvider from "@/providers/modal-provider";
 import { DrawerProvider } from "@/providers/drawer-provider";
+import { ConfirmationProvider } from "@/providers/confirmation-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -25,11 +26,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        <DrawerProvider>
-          <ModalProvider>
-            <ThemeProvider>{children}</ThemeProvider>
-          </ModalProvider>
-        </DrawerProvider>
+        <ConfirmationProvider>
+          <DrawerProvider>
+            <ModalProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </ModalProvider>
+          </DrawerProvider>
+        </ConfirmationProvider>
       </QueryClientProvider>
     </SessionProvider>
   );

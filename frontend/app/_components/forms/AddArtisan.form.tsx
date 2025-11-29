@@ -9,7 +9,7 @@ import { professions } from "@/constants";
 import { useState, useCallback, useMemo } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
 import { useSearchLocations } from "@/app/lib/services/location";
-import { useCreateArtisan } from "@/app/lib/services/artisan";
+import { useCreateArtisan, useUpdateArtisan, type Artisan } from "@/app/lib/services/artisan";
 import { notifications } from "@mantine/notifications";
 import { useUserStore } from "@/stores/userStore";
 import { useSession } from "next-auth/react";
@@ -36,6 +36,7 @@ export interface AddArtisanFormValues {
 
 interface AddArtisanFormProps {
   onSuccess?: (values: AddArtisanFormValues) => void;
+  artisan?: Artisan; // If provided, form is in edit mode
 }
 
 const socialPlatforms = [
@@ -130,9 +131,12 @@ function PhotoUploadDropzone({
   );
 }
 
-export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
-  const [hasSocialMedia, setHasSocialMedia] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
+  const isEditMode = !!artisan;
+  const [hasSocialMedia, setHasSocialMedia] = useState(artisan?.socialLinks && artisan.socialLinks.length > 0);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(
+    artisan?.profilePhoto?.url || null
+  );
 
   // Fetch all locations on mount
   const { data: locations = [], isLoading: isLoadingLocations } = useSearchLocations({
@@ -152,13 +156,25 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
 
   const form = useForm<AddArtisanFormValues>({
     initialValues: {
-      fullName: "",
-      profession: "",
-      zone: [],
-      phoneNumbers: [{ number: "", isWhatsApp: false }],
-      socialMedia: [],
-      description: "",
-      photo: null,
+      fullName: artisan?.fullName || "",
+      profession: artisan?.profession?.name || "",
+      zone: artisan?.zones?.map((z) => z.slug) || [],
+      phoneNumbers:
+        artisan?.phoneNumbers && artisan.phoneNumbers.length > 0
+          ? artisan.phoneNumbers.map((p) => ({
+              number: p.number,
+              isWhatsApp: p.isWhatsApp,
+            }))
+          : [{ number: "", isWhatsApp: false }],
+      socialMedia:
+        artisan?.socialLinks && artisan.socialLinks.length > 0
+          ? artisan.socialLinks.map((s) => ({
+              platform: s.platform,
+              link: s.link,
+            }))
+          : [],
+      description: artisan?.description || "",
+      photo: null, // In edit mode, we don't set photo as File, we'll handle it separately
     },
     validate: {
       fullName: (value) => (!value ? "Le nom complet est requis" : null),
@@ -231,6 +247,10 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
     }
   }, [handlePhotoChange]);
 
+  const { isAdmin } = useUserStore();
+  const { data: session } = useSession();
+  const jwt = (session?.user as any)?.strapiJwt || '';
+
   const createArtisanMutation = useCreateArtisan({
     onSuccess: () => {
       notifications.show({
@@ -255,43 +275,79 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
     },
   });
 
-  const { isAdmin } = useUserStore();
-  const { data: session } = useSession();
-  const jwt = (session?.user as any)?.strapiJwt || '';
+  const updateArtisanMutation = useUpdateArtisan({
+    onSuccess: () => {
+      notifications.show({
+        title: "Succès",
+        message: "L'artisan a été modifié avec succès !",
+        color: "teal",
+      });
+      if (onSuccess) {
+        onSuccess(form.values);
+      }
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: "Erreur",
+        message: error.message || "Une erreur est survenue lors de la modification de l'artisan",
+        color: "red",
+      });
+    },
+  });
 
   const handleSubmit = async (values: AddArtisanFormValues) => {
     try {
-      // Transform form values to API payload
-      await createArtisanMutation.mutateAsync({
-        payload: {
-          full_name: values.fullName,
-          description: values.description || "",
-          profession: values.profession,
-          zones: values.zone,
-          phone_numbers: values.phoneNumbers
-            .filter((phone) => phone.number.trim() !== "")
-            .map((phone) => ({
-              number: phone.number.trim(),
-              is_whatsapp: phone.isWhatsApp,
-            })),
-          social_links:
-            values.socialMedia.length > 0
-              ? values.socialMedia
-                .filter((social) => social.platform && social.link)
-                .map((social) => ({
-                  platform: social.platform,
-                  link: social.link.trim(),
-                }))
-              : undefined,
-          profile_photo: values.photo || undefined,
-          is_community_submitted: isAdmin() ? false : true,
-          status: "approved",
-        },
-        jwt,
-      });
+      // Determine profile_photo: new File, existing ID, or undefined
+      let profilePhoto: File | number | undefined;
+      if (values.photo) {
+        // New photo uploaded
+        profilePhoto = values.photo;
+      } else if (isEditMode && artisan?.profilePhoto?.id) {
+        // No new photo, but existing photo exists - keep it
+        profilePhoto = artisan.profilePhoto.id;
+      }
+      // Otherwise profilePhoto is undefined (no photo)
+
+      const payload = {
+        full_name: values.fullName,
+        description: values.description || "",
+        profession: values.profession,
+        zones: values.zone,
+        phone_numbers: values.phoneNumbers
+          .filter((phone) => phone.number.trim() !== "")
+          .map((phone) => ({
+            number: phone.number.trim(),
+            is_whatsapp: phone.isWhatsApp,
+          })),
+        social_links:
+          values.socialMedia.length > 0
+            ? values.socialMedia
+              .filter((social) => social.platform && social.link)
+              .map((social) => ({
+                platform: social.platform,
+                link: social.link.trim(),
+              }))
+            : undefined,
+        profile_photo: profilePhoto,
+        is_community_submitted: isAdmin() ? false : true,
+        status: artisan?.status || "approved",
+      };
+
+      if (isEditMode && artisan) {
+        await updateArtisanMutation.mutateAsync({
+          id: artisan.id,
+          payload,
+          jwt,
+        });
+      } else {
+        await createArtisanMutation.mutateAsync({
+          payload,
+          jwt,
+        });
+      }
     } catch (error) {
       // Error is handled by onError callback
-      console.error("Error creating artisan:", error);
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} artisan:`, error);
     }
   };
 
@@ -564,11 +620,13 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
           type="submit"
           size="lg"
           fullWidth
-          loading={createArtisanMutation.isPending}
-          disabled={createArtisanMutation.isPending}
+          loading={createArtisanMutation.isPending || updateArtisanMutation.isPending}
+          disabled={createArtisanMutation.isPending || updateArtisanMutation.isPending}
           className="bg-teal-500 hover:bg-teal-600 text-white font-semibold"
         >
-          {createArtisanMutation.isPending ? "Ajout en cours..." : "Ajouter l'artisan"}
+          {createArtisanMutation.isPending || updateArtisanMutation.isPending
+            ? (isEditMode ? "Modification en cours..." : "Ajout en cours...")
+            : (isEditMode ? "Modifier l'artisan" : "Ajouter l'artisan")}
         </Button>
       </div>
     </form>

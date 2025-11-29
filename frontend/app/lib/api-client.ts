@@ -109,7 +109,18 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      let errorMessage = `API request failed: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.error?.message) {
+          errorMessage = errorData.error.message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        // If error response is not JSON, use status text
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -128,7 +139,18 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.statusText}`);
+      let errorMessage = `API request failed: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.error?.message) {
+          errorMessage = errorData.error.message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        // If error response is not JSON, use status text
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();

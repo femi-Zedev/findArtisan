@@ -86,27 +86,27 @@ export function DashboardAuthGuard({
   }
 
   // Check if user type is allowed for this specific route
-  if (!allowedUserTypes.includes(userType)) {
-    return (
-      <Center className="min-h-screen">
-        <div className="text-center max-w-md p-6">
-          <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <Text size="xl" fw={600} mb="sm">
-            Permissions insuffisantes
-          </Text>
-          <Text size="sm" c="dimmed" mb="lg">
+    if (!allowedUserTypes.includes(userType)) {
+      return (
+        <Center className="min-h-screen">
+          <div className="text-center max-w-md p-6">
+            <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+            <Text size="xl" fw={600} mb="sm">
+              Permissions insuffisantes
+            </Text>
+            <Text size="sm" c="dimmed" mb="lg">
             Votre type de compte ({userType === "admin" ? "Administrateur" : "Utilisateur"}) n'a pas accès à cette section.
-          </Text>
-          <Button
-            onClick={() => router.push("/dashboard")}
-            color="teal"
-            variant="light"
-          >
-            Retour au tableau de bord
-          </Button>
-        </div>
-      </Center>
-    );
+            </Text>
+            <Button
+              onClick={() => router.push("/dashboard")}
+              color="teal"
+              variant="light"
+            >
+              Retour au tableau de bord
+            </Button>
+          </div>
+        </Center>
+      );
   }
 
   // User is authenticated and authorized

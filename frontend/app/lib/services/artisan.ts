@@ -1,4 +1,5 @@
 import { createQuery, createMutation } from 'react-query-kit';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../api-client';
 import { routes } from '../routes';
 import { paramsBuilder } from '../params-builder';
@@ -74,30 +75,34 @@ export const artisanKeys = {
 /**
  * Hook to search/filter artisans
  */
-export const useGetArtisans = createQuery({
-  queryKey: artisanKeys.searches(),
-  fetcher: async (variables: ArtisanSearchParams): Promise<ArtisanSearchResponse> => {
-    const queryString = paramsBuilder({
-      profession: variables.profession,
-      zone: variables.zone,
-      q: variables.q,
-      page: variables.page,
-      pageSize: variables.limit, // Backend uses pageSize, not limit
-    });
+export function useGetArtisans(variables: ArtisanSearchParams) {
+  return useQuery({
+    queryKey: artisanKeys.search(variables),
+    queryFn: async (): Promise<ArtisanSearchResponse> => {
+      const queryString = paramsBuilder({
+        profession: variables.profession,
+        zone: variables.zone,
+        q: variables.q,
+        page: variables.page,
+        pageSize: variables.limit, // Backend uses pageSize, not limit
+      });
 
-    const url = queryString
-      ? `${routes.artisans.base}?${queryString}`
-      : routes.artisans.base;
+      const url = queryString
+        ? `${routes.artisans.base}?${queryString}`
+        : routes.artisans.base;
 
-    const response = await api.get<ArtisanSearchResponse>(url);
-    return response;
-  },
-  retry: false,
-  staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  gcTime: 1000 * 60 * 10,
-  refetchOnWindowFocus: false,
-  refetchOnMount: false,
-});
+      const response = await api.get<ArtisanSearchResponse>(url);
+      return response;
+    },
+    // Keep previous data while fetching new page to prevent flickering
+    placeholderData: (previousData) => previousData,
+    retry: false,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+}
 
 /**
  * Hook to get a single artisan by slug
@@ -281,6 +286,97 @@ export const useCreateBatchArtisans = createMutation({
             },
           }
         : undefined
+    );
+    return response;
+  },
+});
+
+/**
+ * Hook to update an existing artisan
+ */
+export const useUpdateArtisan = createMutation({
+  mutationKey: ['artisans', 'update'],
+  mutationFn: async ({
+    id,
+    payload,
+    jwt,
+  }: {
+    id: number;
+    payload: CreateArtisanPayload;
+    jwt: string;
+  }): Promise<CreateArtisanResponse> => {
+    let profilePhotoId: number | undefined;
+
+    // Upload photo first if provided (and it's a File, not an ID)
+    if (payload.profile_photo && payload.profile_photo instanceof File) {
+      const uploadResponse = await api.uploadFile<Array<{ id: number }>>(
+        routes.upload.base,
+        payload.profile_photo,
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        }
+      );
+      profilePhotoId = uploadResponse[0]?.id;
+    } else if (typeof payload.profile_photo === 'number') {
+      // If it's already an ID, use it directly
+      profilePhotoId = payload.profile_photo;
+    }
+
+    // Prepare the artisan data
+    const artisanData = {
+      data: {
+        full_name: payload.full_name,
+        description: payload.description,
+        profession: payload.profession,
+        zones: payload.zones,
+        phone_numbers: payload.phone_numbers?.map((phone) => ({
+          number: phone.number,
+          is_whatsapp: phone.is_whatsapp,
+        })),
+        social_links: payload.social_links?.map((social) => ({
+          platform: social.platform,
+          link: social.link,
+        })),
+        profile_photo: profilePhotoId,
+        is_community_submitted: payload.is_community_submitted,
+        status: payload.status,
+      },
+    };
+
+    const response = await api.put<CreateArtisanResponse>(
+      `${routes.artisans.base}/${id}`,
+      artisanData,
+      {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      }
+    );
+    return response;
+  },
+});
+
+/**
+ * Hook to delete an artisan
+ */
+export const useDeleteArtisan = createMutation({
+  mutationKey: ['artisans', 'delete'],
+  mutationFn: async ({
+    id,
+    jwt,
+  }: {
+    id: number;
+    jwt: string;
+  }): Promise<{ data: { id: number } }> => {
+    const response = await api.delete<{ data: { id: number } }>(
+      `${routes.artisans.base}/${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      }
     );
     return response;
   },

@@ -72,7 +72,7 @@ export function DashboardHeader({ onMobileMenuToggle, isMobileMenuOpen }: Dashbo
           {/* Right: Search, notifications, settings, user */}
           <div className="flex items-center gap-3">
             {/* Search */}
-            <div className="hidden md:block w-64">
+            {/* <div className="hidden md:block w-64">
               <TextInput
                 placeholder="Rechercher..."
                 leftSection={<Search className="h-4 w-4 text-gray-400" />}
@@ -81,7 +81,7 @@ export function DashboardHeader({ onMobileMenuToggle, isMobileMenuOpen }: Dashbo
                 className="w-full"
                 size="sm"
               />
-            </div>
+            </div> */}
 
             {/* Theme Toggle Button */}
             <button

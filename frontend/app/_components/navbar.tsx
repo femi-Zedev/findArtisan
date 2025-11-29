@@ -5,6 +5,7 @@ import { Button } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Wrench, Sun, Moon, ArrowRight, Menu, X, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { cn } from "../lib/utils";
 import { useThemeStore } from "../../stores/themeStore";
 import { useModalContext } from "@/providers/modal-provider";
@@ -35,8 +36,9 @@ export function Navbar() {
   const { isAuthenticated } = useUserStore();
   const { openDrawer, closeDrawer } = useDrawerContext();
   const isMobile = useMediaQuery(`(max-width: 800px)`);
+  const router = useRouter();
 
-  const handleOpenAddArtisanDrawer = () => {
+  const onNavbarButtonClick = () => {
     // Close mobile menu if open
     setIsMobileMenuOpen(false);
 
@@ -51,22 +53,21 @@ export function Navbar() {
       return;
     }
 
-    // If authenticated, open drawer with selection screen
-    openDrawer({
-      title: "Ajouter un artisan",
-      body: (
-        <AddArtisanSelection
-          onSuccess={(values) => {
-            // TODO: Implement API call to submit artisan
-            console.log("Artisan added:", values);
-            closeDrawer();
-            // TODO: Show success toast notification
-          }}
-        />
-      ),
-      size: "xl",
-      bodyClassName: "p-6 overflow-y-hidden",
-    });
+    router.push("/dashboard");
+
+
+  };
+
+  const handlePrimaryMobileAction = () => {
+    if (isAuthenticated) {
+      // Close mobile menu and navigate to dashboard
+      setIsMobileMenuOpen(false);
+      router.push("/dashboard");
+      return;
+    }
+
+    // Fallback to existing flow for unauthenticated users
+    onNavbarButtonClick();
   };
 
   const handleLinkClick = () => {
@@ -127,12 +128,12 @@ export function Navbar() {
           {/* Desktop Right Side Actions */}
           <div className="hidden sm:flex items-center gap-3">
             <Button
-              onClick={handleOpenAddArtisanDrawer}
+              onClick={onNavbarButtonClick}
               rightSection={<ArrowRight className="h-4 w-4" />}
               size="md"
               className="h-10 rounded-full bg-teal-500 px-6 font-semibold text-white transition-all hover:bg-teal-600 shadow-sm hover:shadow-md"
             >
-              Ajouter un artisan
+              {isAuthenticated ? "Gérer mes Contributions" : "Ajouter un artisan"}
             </Button>
             {/* Theme Toggle Button */}
             <button
@@ -260,14 +261,14 @@ export function Navbar() {
               </div>
 
               <Button
-                onClick={handleOpenAddArtisanDrawer}
+                onClick={handlePrimaryMobileAction}
                 rightSection={<ArrowRight className="h-4 w-4" />}
                 size="md"
                 fullWidth
                 radius="md"
                 className="w-full h-12 mt-6 rounded-sm bg-teal-500 px-6 font-semibold text-white transition-all "
               >
-                Ajouter un artisan
+                {isAuthenticated ? "Gérer mes Contributions" : "Ajouter un artisan"}
               </Button>
             </div>
 
