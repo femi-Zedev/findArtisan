@@ -326,15 +326,10 @@ export function DataTable<TData, TValue>({
     }
   };
 
-  // Determine if footer should be shown
-  // Hide footer when there's only one page with fewer items than page size
-  // (unless rows are selected or download is enabled)
-  const hasEnoughItemsForPagination = data.length >= paginationState.pageSize;
   const showFooter =
     table.getIsAllPageRowsSelected() ||
     table.getIsSomePageRowsSelected() ||
-    (table.getPageCount() > 1) ||
-    (table.getPageCount() === 1 && hasEnoughItemsForPagination) ||
+    table.getPageCount() > 1 ||
     enableDownload;
 
   function handleCellClick(event: React.MouseEvent, cell: any) {
@@ -371,10 +366,8 @@ export function DataTable<TData, TValue>({
             <div className={cn('w-full inline-grid', className)}>
               <div
                 className={cn(
-                  'overflow-auto overflow-x-auto w-full border border-gray-200 dark:border-gray-800',
+                  'overflow-auto overflow-x-auto w-full border border-gray-200 dark:border-gray-800 border-b-0',
                   !noTopBorderRadius && 'rounded-t-lg',
-                  !showFooter && 'rounded-b-xl border-b', // Add bottom border and radius when footer is hidden
-                  showFooter && 'border-b-0', // Remove bottom border when footer is present
                   scrollable && `[&>div]:max-h-150`
                 )}
               >

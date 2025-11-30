@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Suspense } from "react";
+import Script from "next/script";
 import { createTheme, MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
@@ -89,6 +90,10 @@ export default function RootLayout({
             </Providers>
           </NuqsAdapter>
         </MantineProvider>
+        <Script
+          src="https://t.contentsquare.net/uxa/b96d35515161d.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
