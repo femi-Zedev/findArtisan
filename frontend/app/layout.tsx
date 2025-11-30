@@ -11,6 +11,7 @@ import "@/styles/mantine-style.css";
 import "@/app/globals.css";
 import { Providers } from "@/providers/global-providers";
 import { ThemeScript } from "@/app/_components/theme-script";
+import { UsersnapScript } from "@/app/_components/UsersnapScript";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -94,6 +95,7 @@ export default function RootLayout({
           src="https://t.contentsquare.net/uxa/b96d35515161d.js"
           strategy="afterInteractive"
         />
+        <UsersnapScript />
       </body>
     </html>
   );
