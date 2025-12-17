@@ -13,10 +13,14 @@ import { AddArtisanSelection } from "./forms/AddArtisanSelection";
 
 export function Navbar() {
   const theme = useThemeStore((state) => state.theme);
+  const getEffectiveTheme = useThemeStore((state) => state.getEffectiveTheme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
   const { openModal } = useModalContext();
   const { isAuthenticated } = useUserStore();
   const { openDrawer, closeDrawer } = useDrawerContext();
+
+  // Get the effective theme for displaying the correct icon
+  const effectiveTheme = getEffectiveTheme();
 
   const handleOpenAddArtisanDrawer = () => {
     // If user is not authenticated, show login modal first
@@ -92,7 +96,7 @@ export function Navbar() {
               )}
               aria-label="Toggle theme"
             >
-              {theme === "dark" ? (
+              {effectiveTheme === "dark" ? (
                 <Moon className="h-4 w-4" />
               ) : (
                 <Sun className="h-4 w-4" />

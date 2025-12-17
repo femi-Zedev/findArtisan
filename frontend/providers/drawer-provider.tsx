@@ -39,7 +39,7 @@ export const DrawerProvider = ({ children }: { children: ReactNode }) => {
         <Drawer
           key={drawer.key || index}
           offset={drawer.offset || 16}
-          radius={drawer.radius || 16}
+          radius={drawer.radius || 20}
           closeOnEscape
           opened={true}
           onClose={closeDrawer}

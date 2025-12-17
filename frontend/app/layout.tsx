@@ -34,8 +34,23 @@ const theme = createTheme({
       "#115e59", // 8 - teal-800
       "#134e4a"  // 9 - teal-900
     ],
+    // Custom dark mode grays matching Tailwind
+    dark: [
+      "#e5e7eb", // 0 - gray-200
+      "#d1d5db", // 1 - gray-300
+      "#9ca3af", // 2 - gray-400
+      "#6b7280", // 3 - gray-500
+      "#4b5563", // 4 - gray-600
+      "#374151", // 5 - gray-700
+      "#1f2937", // 6 - gray-800
+      "#111827", // 7 - gray-900
+      "#0f172a", // 8 - slate-900
+      "#020617", // 9 - slate-950
+    ],
   },
   fontFamily: 'var(--font-inter), sans-serif',
+  autoContrast: true,
+  luminanceThreshold: 0.3,
   components: {
     Button: {
       defaultProps: {
@@ -60,7 +75,42 @@ const theme = createTheme({
           borderRadius: '0.75rem',
         }
       }
-    }
+    },
+    Select: {
+      styles: {
+        input: {
+          borderRadius: '0.75rem',
+        }
+      }
+    },
+    TextInput: {
+      styles: {
+        input: {
+          borderRadius: '0.75rem',
+        }
+      }
+    },
+    Textarea: {
+      styles: {
+        input: {
+          borderRadius: '0.75rem',
+        }
+      }
+    },
+    MultiSelect: {
+      styles: {
+        input: {
+          borderRadius: '0.75rem',
+        }
+      }
+    },
+    Autocomplete: {
+      styles: {
+        input: {
+          borderRadius: '0.75rem',
+        }
+      }
+    },
   }
 });
 

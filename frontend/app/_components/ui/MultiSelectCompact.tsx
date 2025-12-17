@@ -193,7 +193,7 @@ export function MultiSelectCompact({
             className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden"
           >
             {selectedItems.length === 0 ? (
-              <span className="text-gray-400 dark:text-gray-400 text-[17px] ">
+              <span className="text-gray-400 dark:text-gray-400 text-sm">
                 {placeholder}
               </span>
             ) : (

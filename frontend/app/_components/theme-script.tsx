@@ -6,22 +6,34 @@ export function ThemeScript() {
           (function() {
             try {
               const storage = localStorage.getItem('findartisan-theme');
+              const getSystemTheme = () => {
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+              };
+              
+              let effectiveTheme = getSystemTheme(); // Default to system preference
+              
               if (storage) {
                 const parsedStorage = JSON.parse(storage);
-                // Zustand persist stores data as { state: { theme: 'dark' } }
+                // Zustand persist stores data as { state: { theme: 'dark' | 'light' | 'system' } }
                 const theme = parsedStorage?.state?.theme;
-                if (theme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                } else if (theme === 'light') {
-                  document.documentElement.classList.remove('dark');
+                if (theme === 'dark' || theme === 'light') {
+                  effectiveTheme = theme;
+                } else if (theme === 'system') {
+                  effectiveTheme = getSystemTheme();
                 }
-              } else {
-                // Default to dark mode if no preference is stored
+              }
+              
+              if (effectiveTheme === 'dark') {
                 document.documentElement.classList.add('dark');
+              } else {
+                document.documentElement.classList.remove('dark');
               }
             } catch (e) {
-              // If there's any error, default to dark mode
-              document.documentElement.classList.add('dark');
+              // If there's any error, default to system preference
+              const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+              if (isDark) {
+                document.documentElement.classList.add('dark');
+              }
             }
           })();
         `,

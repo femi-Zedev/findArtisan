@@ -25,7 +25,7 @@ export default function ModalProvider({ children }: { children: ReactNode }) {
         closeOnEscape
         opened={opened}
         onClose={closeModal} // This ensures that the custom onClose is called
-        radius={16}
+        radius={20}
         p={0}
         size={size}
         centered

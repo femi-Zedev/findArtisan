@@ -51,3 +51,24 @@ body::before {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Global placeholder font size for all inputs and selects */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  font-size: 0.875rem; /* 14px - text-sm */
+}
+
+/* Ensure custom components also follow this */
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input[type="search"]::placeholder,
+input[type="tel"]::placeholder,
+input[type="url"]::placeholder,
+input[type="number"]::placeholder,
+input[type="date"]::placeholder,
+input[type="time"]::placeholder,
+input[type="datetime-local"]::placeholder {
+  font-size: 0.875rem; /* 14px - text-sm */
+}
