@@ -5,35 +5,27 @@ export function ThemeScript() {
         __html: `
           (function() {
             try {
-              const storage = localStorage.getItem('findartisan-theme');
               const getSystemTheme = () => {
                 return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
               };
               
-              let effectiveTheme = getSystemTheme(); // Default to system preference
+              const storage = localStorage.getItem('findartisan-theme-color-scheme');
+              let scheme = 'auto';
               
               if (storage) {
-                const parsedStorage = JSON.parse(storage);
-                // Zustand persist stores data as { state: { theme: 'dark' | 'light' | 'system' } }
-                const theme = parsedStorage?.state?.theme;
-                if (theme === 'dark' || theme === 'light') {
-                  effectiveTheme = theme;
-                } else if (theme === 'system') {
-                  effectiveTheme = getSystemTheme();
+                try {
+                  const parsed = JSON.parse(storage);
+                  scheme = parsed?.state?.theme || parsed || 'auto';
+                } catch {
+                  scheme = storage;
                 }
               }
               
-              if (effectiveTheme === 'dark') {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.remove('dark');
-              }
+              const effectiveScheme = scheme === 'auto' ? getSystemTheme() : scheme;
+              document.documentElement.setAttribute('data-mantine-color-scheme', effectiveScheme);
             } catch (e) {
-              // If there's any error, default to system preference
               const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-              if (isDark) {
-                document.documentElement.classList.add('dark');
-              }
+              document.documentElement.setAttribute('data-mantine-color-scheme', isDark ? 'dark' : 'light');
             }
           })();
         `,

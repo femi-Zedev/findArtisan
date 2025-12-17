@@ -188,7 +188,7 @@ export default function RootLayout({
         <ThemeScript />
       </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
-        <MantineProvider theme={theme}>
+        <MantineProvider theme={theme} defaultColorScheme="auto">
           <NuqsAdapter>
             <Providers>
               <Notifications />

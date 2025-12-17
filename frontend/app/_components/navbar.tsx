@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@mantine/core";
+import { Button, useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Wrench, Sun, Moon, ArrowRight, Menu, X, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -30,17 +30,28 @@ export function Navbar() {
       document.body.style.overflow = "";
     };
   }, [isMobileMenuOpen]);
-  const theme = useThemeStore((state) => state.theme);
-  const getEffectiveTheme = useThemeStore((state) => state.getEffectiveTheme);
-  const toggleTheme = useThemeStore((state) => state.toggleTheme);
+  
+  // Mantine color scheme hooks
+  const { setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('light');
+  const { theme, setTheme } = useThemeStore();
+  
   const { openModal } = useModalContext();
   const { isAuthenticated } = useUserStore();
   const { openDrawer, closeDrawer } = useDrawerContext();
 
   // Get the effective theme for displaying the correct icon
-  const effectiveTheme = getEffectiveTheme();
+  const effectiveTheme = theme === "auto" ? computedColorScheme : theme;
   const isMobile = useMediaQuery(`(max-width: 800px)`);
   const router = useRouter();
+
+  // Toggle theme function
+  const toggleTheme = () => {
+    const currentTheme = theme === "auto" ? computedColorScheme : theme;
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    setColorScheme(newTheme);
+  };
 
   const onNavbarButtonClick = () => {
     // Close mobile menu if open

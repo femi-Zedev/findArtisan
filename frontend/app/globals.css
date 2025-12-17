@@ -1,14 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where([data-mantine-color-scheme="dark"], [data-mantine-color-scheme="dark"] *));
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
-.dark {
+[data-mantine-color-scheme="dark"] {
   --background: #0a0a0a;
   --foreground: #ededed;
 }
@@ -40,7 +40,7 @@ body::before {
   z-index: 0;
 }
 
-.dark body::before {
+[data-mantine-color-scheme="dark"] body::before {
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
