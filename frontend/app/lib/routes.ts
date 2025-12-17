@@ -5,7 +5,16 @@
 
 export const routes = {
   locations: {
-    search: '/locations/search',
+    base: '/locations',
+  },
+  artisans: {
+    base: '/artisans',
+  },
+  communitySubmissions: {
+    base: '/community-submissions',
+  },
+  upload: {
+    base: '/upload',
   },
 } as const;
 

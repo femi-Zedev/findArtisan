@@ -42,7 +42,7 @@ export default function ModalProvider({ children }: { children: ReactNode }) {
       >
         <div
           className={cn(
-            'flex flex-col min-w-[400px] h-full',
+            'flex flex-col sm:min-w-[400px] h-full',
             'bg-white dark:bg-gray-900',
             modalWrapperClassName,
           )}

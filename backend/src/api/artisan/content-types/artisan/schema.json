@@ -32,12 +32,7 @@
     },
     "status": {
       "type": "enumeration",
-      "enum": [
-        "pending",
-        "approved",
-        "rejected",
-        "removed"
-      ],
+      "enum": ["pending", "approved", "rejected", "removed"],
       "default": "approved",
       "required": true
     },
@@ -50,6 +45,11 @@
     },
     "submitted_by_email": {
       "type": "email"
+    },
+    "submitted_by_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
     },
     "submitted_at": {
       "type": "datetime"
@@ -101,4 +101,3 @@
     }
   }
 }
-

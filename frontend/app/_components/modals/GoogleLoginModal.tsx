@@ -1,47 +1,23 @@
 "use client";
 
-import { useDrawerContext } from "@/providers/drawer-provider";
+import { signIn } from "next-auth/react";
 import { useModalContext } from "@/providers/modal-provider";
-import { useUserStore } from "@/stores/userStore";
-import { AddArtisanSelection } from "../forms/AddArtisanSelection";
 
 export function GoogleLoginModal() {
   const { closeModal } = useModalContext();
-  const { setUser } = useUserStore();
-  const { openDrawer, closeDrawer } = useDrawerContext();
 
   const handleGoogleLogin = async () => {
     try {
-      // TODO: Implement Google OAuth flow
-      // For now, we'll simulate a successful login
-      // In production, this should call your auth API endpoint
-
-      // Simulated user data - replace with actual OAuth response
-      const mockUser = {
-        id: "user_123",
-        name: "John Doe",
-        email: "john.doe@example.com",
-        image: "https://via.placeholder.com/150",
-      };
-
-      setUser(mockUser);
+      // Close modal first
       closeModal();
 
-      // Open the AddArtisan drawer after successful login
-      openDrawer({
-        title: "Ajouter un artisan",
-        body: (
-          <AddArtisanSelection
-            onSuccess={(values) => {
-              // TODO: Implement API call to submit artisan
-              console.log("Artisan added:", values);
-              closeDrawer();
-              // TODO: Show success toast notification
-            }}
-          />
-        ),
-        size: "xl",
-        bodyClassName: "p-6 overflow-y-hidden",
+      // Sign in with Google using NextAuth
+      // Use redirect: true and set callbackUrl with query parameter to open drawer
+      const callbackUrl = `${window.location.origin}${window.location.pathname}?openDrawer=addArtisan`;
+
+      await signIn("google", {
+        redirect: true,
+        callbackUrl: callbackUrl,
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -80,7 +56,7 @@ export function GoogleLoginModal() {
       {/* Google Login Button */}
       <button
         onClick={handleGoogleLogin}
-        className="w-full flex items-center gap-3 p-[3px] bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-700 text-white rounded-xl transition-colors duration-200"
+        className="w-full cursor-pointer flex items-center gap-3 p-[3px] bg-teal-500 hover:bg-teal-600 dark:bg-teal-600 dark:hover:bg-teal-700 text-white rounded-xl transition-colors duration-200"
       >
         {/* White rounded container with Google logo */}
         <div className="flex items-center justify-center w-11 h-10 bg-white dark:bg-gray-100 rounded-l-xl rounded-r-sm shrink-0">

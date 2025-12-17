@@ -2,8 +2,8 @@ const locationRoutes = {
   routes: [
     {
       method: 'GET',
-      path: '/locations/search',
-      handler: 'api::location.location.search',
+      path: '/locations',
+      handler: 'api::location.location.find',
       config: {
         auth: false,
         policies: [],

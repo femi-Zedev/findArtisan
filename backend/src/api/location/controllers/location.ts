@@ -1,43 +1,11 @@
 import type { Context } from 'koa';
+import { beninCities, type BeninCity } from '../data/benin-cities';
 
-interface SearchLocationQuery {
+interface LocationQuery {
   q?: string | string[];
   countrycodes?: string | string[];
-  limit?: string | string[];
+  pageSize?: string | string[];
 }
-
-interface NominatimResult {
-  place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
-  type: string;
-  address?: Record<string, unknown>;
-}
-
-interface LocationResult {
-  placeId: number;
-  displayName: string;
-  latitude: number;
-  longitude: number;
-  type: string;
-  address?: Record<string, unknown>;
-}
-
-const resolveEnv = (key: string, fallback: string): string => {
-  const value = process.env[key];
-  return value && value.trim().length > 0 ? value : fallback;
-};
-
-const NOMINATIM_ENDPOINT = resolveEnv(
-  'NOMINATIM_ENDPOINT',
-  'https://nominatim.openstreetmap.org/search',
-);
-const DEFAULT_COUNTRY_CODE = resolveEnv('NOMINATIM_DEFAULT_COUNTRY_CODE', 'bj');
-const DEFAULT_USER_AGENT = resolveEnv(
-  'NOMINATIM_USER_AGENT',
-  'findArtisan/1.0 (contact: femidev@example.com)',
-);
 
 const parseSingleParam = (value: string | string[] | undefined): string | undefined => {
   if (!value) {
@@ -47,75 +15,81 @@ const parseSingleParam = (value: string | string[] | undefined): string | undefi
   return Array.isArray(value) ? value.at(0) : value;
 };
 
-const parseLimit = (value: string | undefined): string | undefined => {
+const parsePageSize = (value: string | undefined): number => {
   if (!value) {
-    return undefined;
+    return 100; // Default pageSize
   }
 
   const parsed = Number.parseInt(value, 10);
 
   if (Number.isNaN(parsed) || parsed <= 0) {
-    return undefined;
+    return 100;
   }
 
-  return parsed.toString();
+  return parsed;
 };
 
-const mapResult = (result: NominatimResult): LocationResult => ({
-  placeId: result.place_id,
-  displayName: result.display_name,
-  latitude: Number.parseFloat(result.lat),
-  longitude: Number.parseFloat(result.lon),
-  type: result.type,
-  address: result.address,
-});
+/**
+ * Search through static Benin cities list
+ * Matches cities by name (case-insensitive, partial match)
+ * Returns results in the exact JSON format provided
+ */
+const searchCities = (query: string, limit: number): BeninCity[] => {
+  const normalizedQuery = query.toLowerCase().trim();
+
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  // Filter cities that match the query
+  const matches = beninCities
+    .filter((city) => {
+      const cityName = city.city.toLowerCase();
+      // Check if query matches the beginning of the city name or any word in it
+      const words = cityName.split(/[\s-]+/);
+      return words.some((word) => word.startsWith(normalizedQuery)) || cityName.startsWith(normalizedQuery);
+    })
+    // Sort by population (higher first), then by city name
+    .sort((a, b) => {
+      const popDiff = b.pop2025 - a.pop2025;
+      if (popDiff !== 0) return popDiff;
+      return a.city.localeCompare(b.city);
+    })
+    // Limit results
+    .slice(0, limit);
+
+  return matches;
+};
+
+/**
+ * Get all cities (sorted by population)
+ */
+const getAllCities = (limit?: number): BeninCity[] => {
+  const sorted = [...beninCities].sort((a, b) => {
+    const popDiff = b.pop2025 - a.pop2025;
+    if (popDiff !== 0) return popDiff;
+    return a.city.localeCompare(b.city);
+  });
+
+  return limit ? sorted.slice(0, limit) : sorted;
+};
 
 export default {
-  async search(ctx: Context) {
-    const { q, countrycodes, limit } = ctx.query as SearchLocationQuery;
+  async find(ctx: Context) {
+    const { q, pageSize } = ctx.query as LocationQuery;
     const query = parseSingleParam(q);
-
-    if (!query || !query.trim()) {
-      ctx.throw(400, 'Missing required query parameter "q"');
-      return;
-    }
-
-    const countryCodesParam = parseSingleParam(countrycodes) ?? DEFAULT_COUNTRY_CODE;
-    const limitParam = parseLimit(parseSingleParam(limit));
-
-    const url = new URL(NOMINATIM_ENDPOINT);
-    url.searchParams.set('q', query);
-    url.searchParams.set('format', 'json');
-    url.searchParams.set('addressdetails', '1');
-    url.searchParams.set('countrycodes', countryCodesParam);
-
-    if (limitParam) {
-      url.searchParams.set('limit', limitParam);
-    }
+    const pageSizeParam = parsePageSize(parseSingleParam(pageSize));
 
     try {
-      const response = await fetch(url.toString(), {
-        headers: {
-          'User-Agent': DEFAULT_USER_AGENT,
-          Accept: 'application/json',
-        },
-      });
+      let data: BeninCity[];
 
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        strapi.log.error('OpenStreetMap search failed', {
-          status: response.status,
-          statusText: response.statusText,
-          url: url.toString(),
-          error: errorText,
-        });
-
-        ctx.throw(response.status, `Failed to fetch locations from OpenStreetMap: ${response.statusText}`);
-        return;
+      // If no query provided, return all cities
+      if (!query || !query.trim()) {
+        data = getAllCities(pageSizeParam);
+      } else {
+        // Search through static Benin cities list
+        data = searchCities(query, pageSizeParam);
       }
-
-      const payload = (await response.json()) as NominatimResult[];
-      const data = payload.map(mapResult);
 
       ctx.body = {
         data,
@@ -126,15 +100,14 @@ export default {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
-      
-      strapi.log.error('OpenStreetMap search error', {
+
+      strapi.log.error('Location find error', {
         message: errorMessage,
         stack: errorStack,
-        url: url.toString(),
         error,
       });
-      
-      ctx.throw(500, `Unexpected error fetching locations: ${errorMessage}`);
+
+      ctx.throw(500, `Failed to fetch locations: ${errorMessage}`);
     }
   },
 };

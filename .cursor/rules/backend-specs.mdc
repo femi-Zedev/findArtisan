@@ -1,0 +1,471 @@
+---
+description: Backend API route design specifications and RESTful conventions
+globs:
+alwaysApply: true
+---
+## Backend API Specifications
+
+This document is split into:
+- **Framework-Level Rules**: How we use Strapi (and its Koa-based stack) in any project.
+- **FindArtisan Project Rules**: Conventions specific to the `artisan` resource and dashboard behavior.
+
+---
+
+## 1. Framework-Level Rules (Strapi + Koa)
+
+### 1.1 RESTful Route Design Principles
+
+All API routes should follow RESTful conventions and be purpose-agnostic. This means:
+
+1. **Use standard HTTP methods** (GET, POST, PUT, DELETE) on resource endpoints
+2. **Avoid action-specific routes** (e.g., `/resource/search`, `/resource/filter`)
+3. **Use query parameters** for filtering, searching, and pagination
+4. **Keep routes simple and predictable**
+
+#### 1.1.1 Route Structure (Generic Resource)
+
+For a resource (e.g., `thing`), use standard CRUD operations:
+
+```text
+GET    /things          - List/search/filter (with query params)
+GET    /things/:id      - Get single item by ID
+POST   /things          - Create new item
+PUT    /things/:id      - Update item
+DELETE /things/:id      - Delete item
+```
+
+Use query parameters for search/filter:
+
+```text
+❌ BAD:  GET /things/search?type=a&status=b
+✅ GOOD: GET /things?type=a&status=b
+```
+
+Common patterns:
+- `q` – General search term (across multiple fields)
+- Resource-specific filters (e.g. `type`, `status`, etc.)
+- `page`, `pageSize` for pagination
+
+---
+
+### 1.2 Auth Configuration vs `ctx.state.user`
+
+- **If a controller method requires an authenticated user** (e.g. per-user stats, admin-only operations):
+  - Route **must** use:
+    ```ts
+    config: { auth: { scope: [] } }
+    ```
+  - Controller can safely assume `ctx.state.user` exists, and should `ctx.throw(401)` if not.
+
+- **If a method is public but optionally tracks the user** (e.g. public create that records submitter):
+  - Route may use `auth: false`.
+  - Controller must treat `ctx.state.user` as optional and **must not** rely on Strapi’s automatic `createdBy` behavior (see 1.3).
+
+This alignment prevents mismatches where `ctx.state.user` is expected but never set due to route-level config.
+
+---
+
+### 1.3 `createdBy` vs Custom User Relations
+
+Strapi’s built-in `createdBy` field references `admin::user`. For frontend users (`plugin::users-permissions.user`):
+
+- **Do NOT rely on `createdBy` to track frontend/NextAuth users.**
+- **ALWAYS create explicit relations**, e.g.:
+
+```json
+"submitted_by_user": {
+  "type": "relation",
+  "relation": "manyToOne",
+  "target": "plugin::users-permissions.user"
+}
+```
+
+Controller pattern when creating entities:
+
+```ts
+const data: any = {
+  // ...fields...
+  createdBy: null, // prevent Strapi from auto-filling with admin::user
+};
+
+if (ctx.state.user) {
+  data.submitted_by_user = ctx.state.user.id;
+}
+
+// Temporarily clear ctx.state.user to avoid createdBy population
+const originalUser = ctx.state.user;
+ctx.state.user = undefined;
+
+try {
+  const entity = await strapi.entityService.create('api::resource.resource' as any, {
+    data,
+    populate: ['profession', 'zones'],
+  });
+  ctx.state.user = originalUser;
+  // post-processing...
+} catch (error) {
+  ctx.state.user = originalUser;
+  throw error;
+}
+```
+
+This prevents `admin::user` relation errors and keeps tracking explicit via `submitted_by_user`.
+
+---
+
+### 1.4 Non-CRUD / Aggregate Endpoints (e.g. `/resource/stats`)
+
+For derived or aggregate data (stats, dashboards), use:
+
+- A dedicated method on the core controller (e.g. `async stats(ctx)`).
+- A manual route with a **fixed subpath** placed before `/:id`:
+
+```ts
+const routes = {
+  routes: [
+    { method: 'GET', path: '/resources', handler: 'api::resource.resource.find', config: { auth: false } },
+    { method: 'GET', path: '/resources/stats', handler: 'api::resource.resource.stats', config: { auth: { scope: [] } } },
+    { method: 'GET', path: '/resources/:id', handler: 'api::resource.resource.findOne', config: { auth: false } },
+    // ...
+  ],
+};
+```
+
+**Rule**: Always declare fixed paths like `/resources/stats` **before** `/resources/:id` to avoid them being shadowed.
+
+---
+
+### 1.5 Timezone-Safe Date Filtering
+
+When doing month-based or date-bound filtering (e.g. “this month”):
+
+- **Always compute boundaries in UTC**, then use `.toISOString()`:
+
+```ts
+const now = new Date();
+const startOfMonth = new Date(
+  Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+);
+
+const count = await strapi.entityService.count('api::resource.resource' as any, {
+  filters: {
+    createdAt: { $gte: startOfMonth.toISOString() },
+  } as any,
+});
+```
+
+- **Never compute month boundaries using local time** and then call `.toISOString()`, as this can shift results across calendar days for non-UTC servers.
+
+---
+
+### 1.6 TypeScript & Strapi Filters
+
+Strapi’s TypeScript typings for filters can be stricter than real-world usage. To keep code safe but pragmatic:
+
+- Build filters with correct shapes, but allow **controlled `as any`** at the boundaries:
+
+```ts
+const filters: any = {
+  status: 'approved',
+  submitted_by_user: { id: user.id },
+  createdAt: { $gte: startOfMonth.toISOString() },
+};
+
+const count = await strapi.entityService.count('api::resource.resource' as any, {
+  filters,
+});
+```
+
+- Restrict `as any` to:
+  - Model UIDs (`'api::resource.resource' as any`)
+  - The `filters` object passed into `entityService` methods
+
+Avoid spreading `any` across the domain model types.
+
+---
+
+### 1.7 Error Logging & Response Pattern
+
+For non-trivial controller methods (create, batch, stats, etc.), use a consistent pattern:
+
+```ts
+async stats(ctx: Context) {
+  try {
+    // ...logic...
+    ctx.body = { /* data */ };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    strapi.log.error('Stats error', {
+      message: errorMessage,
+      error,
+    });
+    ctx.throw(500, `Failed to fetch stats: ${errorMessage}`);
+  }
+}
+```
+
+**Rules**:
+- Always log a descriptive label (e.g. `'Artisan batch create error'`, `'Stats error'`) and the error.
+- Use `ctx.throw` with meaningful messages for client-facing errors.
+
+---
+
+### 1.8 Router Factories vs Manual Routers
+
+Strapi supports two main routing patterns for collection types:
+
+- **Core router with `createCoreRouter`** – configuration-only, no manual `routes` array.
+- **Manual router object** – fully custom `routes: []` definition exported as default.
+
+**Rules**:
+- Do **not** mix `createCoreRouter` with a custom `routes` array (e.g. trying to read/merge `defaultRouter.routes`).
+  - This is not supported by Strapi and leads to confusing errors like “Handler not found”.
+- For APIs that need custom endpoints (e.g. `/artisans/stats`, batch operations), prefer a **manual router**:
+  - Export a plain object `{ routes: [...] }` where each route has `method`, `path`, `handler`, and `config`.
+  - Keep all routes for that UID in a single place for clarity.
+
+---
+
+### 1.9 Handler String & Controller Naming
+
+Strapi resolves handlers via string identifiers of the form:
+
+```text
+'api::collection-name.controllerName.methodName'
+```
+
+For APIs generated with the default core controller, the controller name is usually the same as the UID’s last segment (e.g. `api::artisan.artisan`).
+
+**Rules**:
+- Ensure route `handler` strings exactly match the controller UID and method name, e.g.:
+  - `handler: 'api::artisan.artisan.stats'` for `stats(ctx)` defined in `artisan` controller.
+- Controller methods must be defined at the **top level** of the returned controller object from `createCoreController`:
+  - Do **not** nest methods inside other methods or blocks; otherwise Strapi cannot find them.
+- When adding new methods (e.g. `createBatch`, `stats`), always:
+  - Add the method to the controller export.
+  - Add a matching route with the correct `handler` string.
+
+---
+
+### 1.10 Koa Control Flow & `ctx.throw`
+
+Strapi controllers run on top of Koa. `ctx.throw` is a Koa helper that **throws an error** and short-circuits the middleware chain.
+
+**Rules**:
+- Treat `ctx.throw(status, message)` like `throw`:
+  - Do **not** expect code after `ctx.throw` in the same branch to run.
+  - Prefer clear `if (!condition) ctx.throw(...);` early exits.
+- Avoid mixing multiple response patterns in one branch:
+  - Each successful code path should either set `ctx.body` (and status if needed) or delegate to Strapi’s default controller, not both.
+- Let Koa/Strapi’s global error handler catch thrown errors:
+  - Do not wrap everything in `try/catch` just to log and rethrow unless you’re adding useful context (as in 1.7).
+
+---
+
+## 2. FindArtisan Project-Specific Rules
+
+These rules specialize the framework conventions for the `artisan` resource and the FindArtisan product.
+
+### 2.1 Artisan Resource RESTful API
+
+Core resource: `artisan`.
+
+#### 2.1.1 Route Structure
+
+```text
+GET    /artisans          - List/search/filter artisans (with query params, public)
+GET    /artisans/stats    - Dashboard stats (requires auth)
+GET    /artisans/:id      - Get single artisan by ID (public)
+POST   /artisans          - Create single artisan (requires auth)
+POST   /artisans/batch    - Create multiple artisans from CSV (requires auth)
+```
+
+Query parameters for `GET /artisans`:
+
+- `q` - General search query (searches across multiple fields)
+- `profession` - Filter by profession name
+- `zone` - Filter by zone/city name
+- `page` - Page number for pagination
+- `pageSize` - Number of items per page (default: 20)
+- Additional resource-specific filters as needed
+
+Examples:
+
+```text
+GET /artisans?profession=plumber&zone=cotonou
+GET /artisans?q=electrician&page=2&pageSize=10
+```
+
+---
+
+### 2.2 Artisan Controller: Find Pattern (Search & Filter)
+
+`find` is overridden to implement RESTful search/filter behavior while keeping the endpoint `GET /artisans`:
+
+```typescript
+// backend/src/api/artisan/controllers/artisan.ts
+export default factories.createCoreController('api::artisan.artisan', ({ strapi }) => ({
+  async find(ctx: Context) {
+    const { profession, zone, q, page, pageSize } = ctx.query;
+
+    // Build filters based on query parameters
+    const filters: Record<string, unknown> = {
+      status: 'approved', // Default filters: only approved artisans are listed
+    };
+
+    // Add conditional filters
+    if (profession) {
+      filters.profession = {
+        name: { $containsi: profession },
+      };
+    }
+
+    if (zone) {
+      filters.zones = {
+        name: { $containsi: zone },
+      };
+    }
+
+    if (q) {
+      filters.$or = [
+        { full_name: { $containsi: q } },
+        { description: { $containsi: q } },
+      ];
+    }
+
+    // Query with filters
+    const { results, pagination } = await strapi.entityService.findPage('api::artisan.artisan', {
+      filters,
+      populate: { /* relations */ },
+      pagination: {
+        page: parseNumber(page, 1),
+        pageSize: parseNumber(pageSize, 20),
+      },
+    });
+
+    // Transform and return
+    ctx.body = {
+      data: transformResults(results),
+      meta: { pagination },
+    };
+  },
+}));
+```
+
+---
+
+### 2.3 Artisan Routes Configuration
+
+For `artisan`, we use a **manual router** (instead of `createCoreRouter`) to support stats and batch operations with explicit auth:
+
+```typescript
+// backend/src/api/artisan/routes/artisan.ts
+const artisanRoutes = {
+  routes: [
+    {
+      method: 'GET',
+      path: '/artisans',
+      handler: 'api::artisan.artisan.find',
+      config: {
+        auth: false, // Public access
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/artisans/stats',
+      handler: 'api::artisan.artisan.stats',
+      config: {
+        auth: { scope: [] }, // Requires authentication
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
+      path: '/artisans/:id',
+      handler: 'api::artisan.artisan.findOne',
+      config: {
+        auth: false, // Public access
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'POST',
+      path: '/artisans',
+      handler: 'api::artisan.artisan.create',
+      config: {
+        // Require authentication to create a single artisan
+        auth: { scope: [] },
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'POST',
+      path: '/artisans/batch',
+      handler: 'api::artisan.artisan.createBatch',
+  config: {
+        // Require authentication to create artisans in batch
+        auth: { scope: [] },
+        policies: [],
+        middlewares: [],
+      },
+    },
+  ],
+} as const;
+
+export default artisanRoutes;
+```
+
+---
+
+### 2.4 Frontend Integration for Artisan Search
+
+Frontend services should use the standard resource endpoint with query parameters:
+
+```typescript
+// frontend/app/lib/services/artisan.ts
+export const useGetArtisans = createQuery({
+  queryKey: artisanKeys.searches(),
+  fetcher: async (variables: ArtisanSearchParams): Promise<ArtisanSearchResponse> => {
+    const queryString = paramsBuilder({
+      profession: variables.profession,
+      zone: variables.zone,
+      q: variables.q,
+      page: variables.page,
+      pageSize: variables.limit,
+    });
+
+    const url = queryString 
+      ? `${routes.artisans.base}?${queryString}`
+      : routes.artisans.base;
+
+    return await api.get<ArtisanSearchResponse>(url);
+  },
+});
+```
+
+#### 2.4.1 Route Definitions (Frontend)
+
+Keep route definitions simple in `frontend/app/lib/routes.ts`:
+
+```typescript
+export const routes = {
+  artisans: {
+    base: '/artisans',  // No /search suffix needed
+  },
+} as const;
+```
+
+### 2.5 When to Break This Rule
+
+Only create custom routes when:
+1. **Complex operations** that don't fit standard CRUD (e.g., `/artisans/:id/approve`)
+2. **Bulk operations** (e.g., `/artisans/bulk-delete`)
+3. **Nested resources** (e.g., `/artisans/:id/reviews`)
+
+Even in these cases, prefer query parameters or request body over action-specific routes when possible.
+

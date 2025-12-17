@@ -293,7 +293,54 @@ export const intakeColumns: ColumnDef<IntakeRequest>[] = [
 - Type-safe with generics
 - Custom cell renderers for complex UI
 
-### 5. Protected Route Pattern
+### 5. Confirmation Modal Pattern
+
+For critical actions (deletion, irreversible operations), use the global confirmation modal:
+
+```typescript
+// In any component
+import { useConfirmationContext } from "@/providers/confirmation-provider";
+
+export function MyComponent() {
+  const { openConfirmation } = useConfirmationContext();
+
+  const handleDelete = (item: Item) => {
+    openConfirmation({
+      message: `Êtes-vous sûr de vouloir supprimer "${item.name}" ? Cette action est irréversible.`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      variant: "danger", // 'danger' | 'warning' | 'info'
+      onConfirm: async () => {
+        // Perform the action
+        await deleteItem(item.id);
+        // Show success notification
+        notifications.show({
+          title: "Suppression",
+          message: "L'élément a été supprimé",
+          color: "red",
+        });
+      },
+      onCancel: () => {
+        // Optional: Handle cancellation
+      },
+    });
+  };
+}
+```
+
+**Key Points**:
+- Use for destructive or irreversible actions
+- Always provide clear, descriptive messages
+- Use appropriate variant (`danger` for deletions, `warning` for warnings, `info` for informational confirmations)
+- Handle async operations in `onConfirm`
+- The modal automatically handles loading states during async operations
+
+**Variants**:
+- `danger`: Red buttons (default) - for destructive actions
+- `warning`: Orange buttons - for warnings
+- `info`: Blue buttons - for informational confirmations
+
+### 6. Protected Route Pattern
 
 Routes are protected using `AuthGuard`:
 

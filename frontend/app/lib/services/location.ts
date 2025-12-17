@@ -1,20 +1,22 @@
 import { createQuery } from 'react-query-kit';
 import { api } from '../api-client';
 import { routes } from '../routes';
+import { paramsBuilder } from '../params-builder';
 
 export interface LocationSearchParams {
-  query: string;
+  query?: string; // Optional - if not provided, fetches all cities
   countryCodes?: string;
-  limit?: number;
+  pageSize?: number;
 }
 
 export interface LocationSearchResult {
-  placeId: number;
-  displayName: string;
+  city: string;
+  country: string;
+  pop2025: number;
   latitude: number;
   longitude: number;
-  type: string;
-  address?: Record<string, unknown>;
+  isValidCity: boolean;
+  slug: string | null;
 }
 
 interface LocationSearchResponse {
@@ -32,34 +34,30 @@ export const locationKeys = {
 };
 
 /**
- * Hook to search locations using OpenStreetMap/Nominatim
+ * Hook to search locations from static Benin cities list
  * Returns locations matching the search query
  */
 export const useSearchLocations = createQuery({
   queryKey: locationKeys.searches(),
   fetcher: async (variables: LocationSearchParams): Promise<LocationSearchResult[]> => {
-    // Return empty array if query is empty
-    if (!variables.query?.trim()) {
-      return [];
-    }
-
-    // Build query parameters
-    const params: Record<string, string | number> = {
-      q: variables.query,
-    };
-
-    if (variables.countryCodes) {
-      params.countrycodes = variables.countryCodes;
-    }
-
-    if (variables.limit && variables.limit > 0) {
-      params.limit = variables.limit;
-    }
-
-    const response = await api.get<LocationSearchResponse>(routes.locations.search, {
-      params,
+    // Build query parameters using paramsBuilder
+    const queryString = paramsBuilder({
+      q: variables.query?.trim() || undefined,
+      pageSize: variables.pageSize && variables.pageSize > 0 ? variables.pageSize : undefined,
     });
+
+    const url = queryString
+      ? `${routes.locations.base}?${queryString}`
+      : routes.locations.base;
+
+    const response = await api.get<LocationSearchResponse>(url);
 
     return response.data;
   },
+  // React Query options - passed directly, not nested
+  retry: false, // Disable retries for location searches to prevent multiple requests
+  staleTime: 1000 * 60 * 5, // Cache results for 5 minutes
+  gcTime: 1000 * 60 * 10, // Keep in cache for 10 minutes (formerly cacheTime)
+  refetchOnWindowFocus: false, // Don't refetch on window focus
+  refetchOnMount: false, // Don't refetch on mount if data exists
 });

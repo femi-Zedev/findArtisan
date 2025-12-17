@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Suspense } from "react";
+import Script from "next/script";
 import { createTheme, MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@/styles/mantine-style.css";
-import "./globals.css";
-import { ThemeScript } from "./_components/theme-script";
+import "@/app/globals.css";
 import { Providers } from "@/providers/global-providers";
-import { Navbar } from "./_components/navbar";
+import { ThemeScript } from "@/app/_components/theme-script";
+import { UsersnapScript } from "@/app/_components/UsersnapScript";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -134,15 +135,17 @@ export default function RootLayout({
           <NuqsAdapter>
             <Providers>
               <Notifications />
-              <main className="relative min-h-screen bg-linear-to-b from-blue-50 to-gray-50 dark:from-gray-950 dark:to-gray-900">
-                <Suspense fallback={null}>
-                  <Navbar />
-                  {children}
-                </Suspense>
-              </main>
+              <Suspense fallback={null}>
+                {children}
+              </Suspense>
             </Providers>
           </NuqsAdapter>
         </MantineProvider>
+        <Script
+          src="https://t.contentsquare.net/uxa/b96d35515161d.js"
+          strategy="afterInteractive"
+        />
+        <UsersnapScript />
       </body>
     </html>
   );

@@ -60,7 +60,7 @@ export const DrawerProvider = ({ children }: { children: ReactNode }) => {
           <AnimatePresence mode='wait'>
             <motion.div
               className={cn(
-                'flex flex-col min-w-[400px] overflow-y-hidden h-full',
+                'flex flex-col sm:min-w-[400px] overflow-y-hidden h-full',
                 'bg-white dark:bg-gray-900',
                 drawer.drawerWrapperClassName,
               )}

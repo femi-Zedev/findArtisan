@@ -1,0 +1,232 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/app/lib/utils";
+import {
+  LayoutDashboard,
+  Table,
+  UserPlus,
+  Wrench,
+  FileText,
+  X,
+  Home,
+  LogOut,
+} from "lucide-react";
+import { Menu } from "@mantine/core";
+import { useUserStore } from "@/stores/userStore";
+import { handleLogout } from "@/app/lib/utils/auth";
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  userTypes: ("admin" | "user")[];
+}
+
+const adminNavItems: NavItem[] = [
+  {
+    label: "Tableau de bord",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    userTypes: ["admin"],
+  },
+  {
+    label: "Artisans",
+    href: "/dashboard/artisans",
+    icon: Table,
+    userTypes: ["admin"],
+  },
+  {
+    label: "Soumissions",
+    href: "/dashboard/submissions",
+    icon: FileText,
+    userTypes: ["admin"],
+  },
+];
+
+const userNavItems: NavItem[] = [
+  {
+    label: "Tableau de bord",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    userTypes: ["user"],
+  },
+  {
+    label: "Mes Contributions",
+    href: "/dashboard/contributions",
+    icon: Wrench,
+    userTypes: ["user"],
+  },
+
+];
+
+interface DashboardSidebarProps {
+  isMobileOpen: boolean;
+  onMobileClose: () => void;
+}
+
+export function DashboardSidebar({ isMobileOpen, onMobileClose }: DashboardSidebarProps) {
+  const pathname = usePathname();
+  const { user, getUserType, isAdmin } = useUserStore();
+  const userType = getUserType();
+
+  // Filter nav items based on user type
+  const getNavItems = (): NavItem[] => {
+    if (isAdmin()) {
+      // Admin sees admin nav items + user nav items that are also available to admin
+      return [...adminNavItems, ...userNavItems.filter((item) => item.userTypes.includes("admin"))];
+    }
+    if (userType === "user") {
+      return userNavItems;
+    }
+    return [];
+  };
+
+  const navItems = getNavItems();
+
+  return (
+    <>
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-transform duration-300",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6  h-18 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500">
+              <Wrench className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
+              FindArtisan
+            </span>
+          </div>
+          <button
+            onClick={onMobileClose}
+            className="lg:hidden cursor-pointer p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+
+              // Determine if this item is active
+              const isActive = (() => {
+                // Exact match
+                if (pathname === item.href) {
+                  return true;
+                }
+
+                // For dashboard root, only highlight if we're exactly on /dashboard
+                // Don't highlight if we're on a sub-route like /dashboard/submissions
+                if (item.href === "/dashboard") {
+                  return pathname === "/dashboard";
+                }
+
+                // For other routes, check if pathname starts with the href + "/"
+                // This ensures /dashboard/submissions matches /dashboard/submissions
+                // but not /dashboard
+                return pathname.startsWith(item.href + "/");
+              })();
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onMobileClose}
+                  className={cn(
+                    "cursor-pointer flex items-center gap-3 px-4 py-2 rounded-lg transition-colors",
+                    isActive
+                      ? "bg-teal-500/80 dark:bg-teal-700 text-white font-medium"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Home Button */}
+        <div className="px-4 pb-2">
+          <Link
+            href="/"
+            onClick={onMobileClose}
+            className="cursor-pointer flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <Home className="h-5 w-5" />
+            <span>Retour à l'accueil</span>
+          </Link>
+        </div>
+
+        {/* Profile Card */}
+        {user && (
+          <div className="p-4">
+            <Menu position="top" offset={8} width={200}>
+              <Menu.Target>
+                <button
+                  onClick={onMobileClose}
+                  className="cursor-pointer w-full"
+                >
+                  <div className="bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <div className="flex items-center gap-3">
+                      {user.image ? (
+                        <img
+                          src={user.image}
+                          alt={user.name}
+                          className="h-10 w-10 rounded-full"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-teal-500 flex items-center justify-center text-white text-sm font-semibold">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </Menu.Target>
+
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<LogOut className="h-4 w-4" />}
+                  onClick={handleLogout}
+                  className="cursor-pointer text-red-600 dark:text-red-400"
+                >
+                  Se déconnecter
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </div>
+        )}
+
+      </aside>
+    </>
+  );
+}
+

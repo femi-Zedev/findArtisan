@@ -1,90 +1,39 @@
 "use client";
 
-import { Button } from "@mantine/core";
-import { ArrowRight, Plus } from "lucide-react";
 import { ArtisanCard } from "../_components/artisan-card";
+import { Skeleton, Button } from "@mantine/core";
+import { useGetRecentlyAdded } from "../lib/services/artisan";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDrawerContext } from "@/providers/drawer-provider";
 import { useModalContext } from "@/providers/modal-provider";
 import { useUserStore } from "@/stores/userStore";
 import { AddArtisanSelection } from "../_components/forms/AddArtisanSelection";
 import { GoogleLoginModal } from "../_components/modals/GoogleLoginModal";
-
-// Mock data - will be replaced with API data later
-const mockArtisans = [
-  {
-    id: 1,
-    name: "Jean-Baptiste Koffi",
-    profession: "Plombier",
-    zone: "Akpakpa",
-    description:
-      "Spécialiste en installation et réparation de plomberie. Plus de 10 ans d'expérience.",
-    phone: "+22912345678",
-    whatsapp: true,
-    addedByCommunity: false,
-  },
-  {
-    id: 2,
-    name: "Marie Adjovi",
-    profession: "Électricien",
-    zone: "Fidjrossè",
-    description:
-      "Installation électrique résidentielle et commerciale. Service rapide et professionnel.",
-    phone: "+22923456789",
-    whatsapp: true,
-    addedByCommunity: true,
-  },
-  {
-    id: 3,
-    name: "Serge Dossou",
-    profession: "Menuisier",
-    zone: "Akpakpa",
-    description:
-      "Fabrication de meubles sur mesure, portes, fenêtres et armoires. Travail de qualité garantie.",
-    phone: "+22934567890",
-    whatsapp: true,
-    addedByCommunity: false,
-  },
-  {
-    id: 4,
-    name: "Kossi Agbessi",
-    profession: "Plombier",
-    zone: "Calavi",
-    description:
-      "Intervention rapide pour toutes urgences de plomberie. Disponible 24/7.",
-    phone: "+22945678901",
-    whatsapp: true,
-    addedByCommunity: false,
-  },
-  {
-    id: 5,
-    name: "Fatou Diallo",
-    profession: "Électricien",
-    zone: "Cotonou",
-    description:
-      "Électricité générale, dépannage et installation. Certifié et assuré.",
-    phone: "+22956789012",
-    whatsapp: true,
-    addedByCommunity: true,
-  },
-  {
-    id: 6,
-    name: "Amadou Bamba",
-    profession: "Menuisier",
-    zone: "Porto-Novo",
-    description:
-      "Menuiserie traditionnelle et moderne. Réalisations sur mesure pour particuliers et entreprises.",
-    phone: "+22967890123",
-    whatsapp: true,
-    addedByCommunity: false,
-  },
-];
+import { PlusIcon } from "lucide-react";
+import { artisanKeys } from "../lib/services/artisan";
+import { notifications } from "@mantine/notifications";
 
 export function RecentlyAddedSection() {
-  const artisans = mockArtisans;
-  const count = artisans.length;
+  const { data, isLoading, error } = useGetRecentlyAdded({ variables: 6 });
+  const queryClient = useQueryClient();
   const { openDrawer, closeDrawer } = useDrawerContext();
   const { openModal } = useModalContext();
   const { isAuthenticated } = useUserStore();
+
+  // Transform API data to match ArtisanCard props and limit to 6
+  const artisans = (data?.data?.map((artisan) => ({
+    id: artisan.id,
+    name: artisan.fullName,
+    profession: artisan.profession?.name || "Non spécifié",
+    zone: artisan.zones && artisan.zones.length > 0
+      ? artisan.zones.map((z) => z.name)
+      : ["Non spécifié"],
+    description: artisan.description || "",
+    phone: artisan.phoneNumbers?.[0]?.number || "",
+    whatsapp: artisan.phoneNumbers?.some((phone) => phone.isWhatsApp) || false,
+    imageUrl: artisan.profilePhoto?.url,
+    addedByCommunity: artisan.isCommunitySubmitted || false,
+  })) || []).slice(0, 6);
 
   const handleOpenAddArtisanDrawer = () => {
     // If user is not authenticated, show login modal first
@@ -104,10 +53,15 @@ export function RecentlyAddedSection() {
       body: (
         <AddArtisanSelection
           onSuccess={(values) => {
-            // TODO: Implement API call to submit artisan
-            console.log("Artisan added:", values);
+            // Invalidate and refetch recently added artisans
+            queryClient.invalidateQueries({ queryKey: artisanKeys.recentlyAdded() });
             closeDrawer();
-            // TODO: Show success toast notification
+            notifications.show({
+              title: "Artisan ajouté",
+              message: "L'artisan a été ajouté avec succès",
+              color: "green",
+              autoClose: 3000,
+            });
           }}
         />
       ),
@@ -120,35 +74,63 @@ export function RecentlyAddedSection() {
     <section className="w-full px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         {/* Section Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+        <div className="mb-8">
+          <h2 className="mb-1 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
             Ajoutés récemment
           </h2>
+        </div>
+
+        {/* Artisans Grid */}
+        {isLoading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={index} height={300} radius="md" />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-900/20">
+            <p className="text-sm text-red-600 dark:text-red-400">
+              Erreur lors du chargement des artisans. Veuillez réessayer plus tard.
+            </p>
+          </div>
+        ) : artisans.length === 0 ? (
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-gray-800/50">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Aucun artisan ajouté récemment.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {artisans.map((artisan) => (
+              <ArtisanCard
+                key={artisan.id}
+                name={artisan.name}
+                profession={artisan.profession}
+                zone={artisan.zone}
+                description={artisan.description}
+                phone={artisan.phone}
+                whatsapp={artisan.whatsapp}
+                imageUrl={artisan.imageUrl}
+                addedByCommunity={artisan.addedByCommunity}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Add Artisan CTA - After showing value */}
+        <div className="mt-12 flex  flex-col items-center justify-center gap-8 py-8">
+          <span className="text-center text-lg text-gray-600 dark:text-gray-300 sm:text-xl">
+            Tu connais un artisan fiable ? <br /> Aide ta communauté en l'ajoutant <br />👇
+          </span>
           <Button
             onClick={handleOpenAddArtisanDrawer}
-            rightSection={<ArrowRight className="h-4 w-4" />}
+            rightSection={<PlusIcon className="h-4 w-4" />}
             size="md"
             className="h-10 rounded-full bg-teal-500 px-4 font-semibold text-white transition-all hover:bg-teal-600 shadow-sm hover:shadow-md"
           >
             <span className="hidden sm:inline">Ajouter un artisan</span>
             <span className="sm:hidden">Ajouter</span>
           </Button>
-        </div>
-
-        {/* Artisans Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {artisans.map((artisan) => (
-            <ArtisanCard
-              key={artisan.id}
-              name={artisan.name}
-              profession={artisan.profession}
-              zone={artisan.zone}
-              description={artisan.description}
-              phone={artisan.phone}
-              whatsapp={artisan.whatsapp}
-              addedByCommunity={artisan.addedByCommunity}
-            />
-          ))}
         </div>
       </div>
     </section>

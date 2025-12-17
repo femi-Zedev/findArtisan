@@ -44,6 +44,15 @@ body::before {
   background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
+
+.btn-base {
+  @apply text-sm font-semibold text-gray-200 rounded-md py-2 px-4 active:scale-95 transition transform flex gap-2 items-center;
+}
+
+.btn-bounce {
+  @apply active:scale-95 transition transform;
+}
+
 /* Line clamp utility */
 .line-clamp-2 {
   display: -webkit-box;
