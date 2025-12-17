@@ -61,23 +61,30 @@ body::before {
   overflow: hidden;
 }
 
-/* Global placeholder font size for all inputs and selects */
-input::placeholder,
-textarea::placeholder,
-select::placeholder {
+/* Global font size for all inputs and selects - both value and placeholder */
+input,
+textarea,
+select {
   font-size: 0.875rem; /* 14px - text-sm */
 }
 
-/* Ensure custom components also follow this */
-input[type="text"]::placeholder,
-input[type="email"]::placeholder,
-input[type="password"]::placeholder,
-input[type="search"]::placeholder,
-input[type="tel"]::placeholder,
-input[type="url"]::placeholder,
-input[type="number"]::placeholder,
-input[type="date"]::placeholder,
-input[type="time"]::placeholder,
-input[type="datetime-local"]::placeholder {
+/* Ensure all input types follow this */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  font-size: 0.875rem; /* 14px - text-sm */
+}
+
+/* Placeholder font size - already inherits from input but explicit for clarity */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
   font-size: 0.875rem; /* 14px - text-sm */
 }

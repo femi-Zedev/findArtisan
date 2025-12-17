@@ -1,18 +1,13 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea, Switch, Select, Tooltip } from "@mantine/core";
+import { Button, Autocomplete, TextInput, Textarea, Switch, Select } from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { Plus, X, Minus, Image } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import { professions } from "@/constants";
-import { useState, useCallback, useMemo } from "react";
+import { zones, professions } from "@/constants";
+import { useState, useCallback } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
-import { useSearchLocations } from "@/app/lib/services/location";
-import { useCreateArtisan, useUpdateArtisan, type Artisan } from "@/app/lib/services/artisan";
-import { notifications } from "@mantine/notifications";
-import { useUserStore } from "@/stores/userStore";
-import { useSession } from "next-auth/react";
 
 interface PhoneNumber {
   number: string;
@@ -36,7 +31,6 @@ export interface AddArtisanFormValues {
 
 interface AddArtisanFormProps {
   onSuccess?: (values: AddArtisanFormValues) => void;
-  artisan?: Artisan; // If provided, form is in edit mode
 }
 
 const socialPlatforms = [
@@ -131,50 +125,19 @@ function PhotoUploadDropzone({
   );
 }
 
-export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
-  const isEditMode = !!artisan;
-  const [hasSocialMedia, setHasSocialMedia] = useState(artisan?.socialLinks && artisan.socialLinks.length > 0);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(
-    artisan?.profilePhoto?.url || null
-  );
-
-  // Fetch all locations on mount
-  const { data: locations = [], isLoading: isLoadingLocations } = useSearchLocations({
-    variables: {
-      pageSize: 100, // Fetch all cities
-    },
-    enabled: true,
-  });
-
-  // Transform locations to MultiSelectCompact format
-  const zoneOptions = useMemo(() => {
-    return locations.map((location) => ({
-      value: location.slug || location.city.toLowerCase().replace(/\s+/g, "-"), // Use slug if available, otherwise create from city name
-      label: location.city,
-    }));
-  }, [locations]);
+export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
+  const [hasSocialMedia, setHasSocialMedia] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const form = useForm<AddArtisanFormValues>({
     initialValues: {
-      fullName: artisan?.fullName || "",
-      profession: artisan?.profession?.name || "",
-      zone: artisan?.zones?.map((z) => z.slug) || [],
-      phoneNumbers:
-        artisan?.phoneNumbers && artisan.phoneNumbers.length > 0
-          ? artisan.phoneNumbers.map((p) => ({
-              number: p.number,
-              isWhatsApp: p.isWhatsApp,
-            }))
-          : [{ number: "", isWhatsApp: false }],
-      socialMedia:
-        artisan?.socialLinks && artisan.socialLinks.length > 0
-          ? artisan.socialLinks.map((s) => ({
-              platform: s.platform,
-              link: s.link,
-            }))
-          : [],
-      description: artisan?.description || "",
-      photo: null, // In edit mode, we don't set photo as File, we'll handle it separately
+      fullName: "",
+      profession: "",
+      zone: [],
+      phoneNumbers: [{ number: "", isWhatsApp: false }],
+      socialMedia: [],
+      description: "",
+      photo: null,
     },
     validate: {
       fullName: (value) => (!value ? "Le nom complet est requis" : null),
@@ -247,107 +210,11 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
     }
   }, [handlePhotoChange]);
 
-  const { isAdmin } = useUserStore();
-  const { data: session } = useSession();
-  const jwt = (session?.user as any)?.strapiJwt || '';
-
-  const createArtisanMutation = useCreateArtisan({
-    onSuccess: () => {
-      notifications.show({
-        title: "Succès",
-        message: "L'artisan a été ajouté avec succès !",
-        color: "teal",
-      });
-      // Reset form
-      form.reset();
-      setPhotoPreview(null);
-      setHasSocialMedia(false);
-      if (onSuccess) {
-        onSuccess(form.values);
-      }
-    },
-    onError: (error: Error) => {
-      notifications.show({
-        title: "Erreur",
-        message: error.message || "Une erreur est survenue lors de l'ajout de l'artisan",
-        color: "red",
-      });
-    },
-  });
-
-  const updateArtisanMutation = useUpdateArtisan({
-    onSuccess: () => {
-      notifications.show({
-        title: "Succès",
-        message: "L'artisan a été modifié avec succès !",
-        color: "teal",
-      });
-      if (onSuccess) {
-        onSuccess(form.values);
-      }
-    },
-    onError: (error: Error) => {
-      notifications.show({
-        title: "Erreur",
-        message: error.message || "Une erreur est survenue lors de la modification de l'artisan",
-        color: "red",
-      });
-    },
-  });
-
-  const handleSubmit = async (values: AddArtisanFormValues) => {
-    try {
-      // Determine profile_photo: new File, existing ID, or undefined
-      let profilePhoto: File | number | undefined;
-      if (values.photo) {
-        // New photo uploaded
-        profilePhoto = values.photo;
-      } else if (isEditMode && artisan?.profilePhoto?.id) {
-        // No new photo, but existing photo exists - keep it
-        profilePhoto = artisan.profilePhoto.id;
-      }
-      // Otherwise profilePhoto is undefined (no photo)
-
-      const payload = {
-        full_name: values.fullName,
-        description: values.description || "",
-        profession: values.profession,
-        zones: values.zone,
-        phone_numbers: values.phoneNumbers
-          .filter((phone) => phone.number.trim() !== "")
-          .map((phone) => ({
-            number: phone.number.trim(),
-            is_whatsapp: phone.isWhatsApp,
-          })),
-        social_links:
-          values.socialMedia.length > 0
-            ? values.socialMedia
-              .filter((social) => social.platform && social.link)
-              .map((social) => ({
-                platform: social.platform,
-                link: social.link.trim(),
-              }))
-            : undefined,
-        profile_photo: profilePhoto,
-        is_community_submitted: isAdmin() ? false : true,
-        status: artisan?.status || "approved",
-      };
-
-      if (isEditMode && artisan) {
-        await updateArtisanMutation.mutateAsync({
-          id: artisan.id,
-          payload,
-          jwt,
-        });
-      } else {
-        await createArtisanMutation.mutateAsync({
-          payload,
-          jwt,
-      });
-      }
-    } catch (error) {
-      // Error is handled by onError callback
-      console.error(`Error ${isEditMode ? 'updating' : 'creating'} artisan:`, error);
+  const handleSubmit = (values: AddArtisanFormValues) => {
+    // TODO: Implement API call to submit artisan
+    console.log("Add Artisan:", values);
+    if (onSuccess) {
+      onSuccess(values);
     }
   };
 
@@ -368,67 +235,25 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
             />
 
             {/* Description */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Description
-                </label>
-                <Tooltip
-                  label={<p className="text-sm">Décrivez les services offerts par cet artisan... <br />
-                    - Ses délais de réalisation, la qualité de ses travaux, etc. <br />
-                    - Possède un atelier ou non, ses finissions, etc. <br />
-                    - Ses prix, abordables ou cher, etc. <br />
-                    - Ses horaires d'ouverture, etc.</p>}
-                  multiline
-                  w={300}
-                  withArrow
-                >
-                  <button
-                    type="button"
-                    className="cursor-pointer text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                    aria-label="Aide pour la description"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </button>
-                </Tooltip>
-                <span className="text-red-500">*</span>
-              </div>
             <Textarea
-                placeholder={`Décrivez les services de cet artisan:
-- Ses délais de réalisation, la qualité de ses travaux, ses finissions,
-- Possède un atelier ou non, ses horaires d'ouverture, etc.
-- Ses prix, abordables ou cher, etc.`}
+              label="Description"
+              placeholder="Décrivez les services offerts par cet artisan..."
               size="lg"
-              maxLength={1200}
               rows={4}
               required
               classNames={{
+                label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
                 input:
                   "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
               }}
               {...form.getInputProps("description")}
             />
-            </div>
           </div>
 
           {/* Full Name */}
           <TextInput
             label="Nom complet"
-
-            placeholder="Ex: Dodji COMLAN "
-            description="(Prénoms Nom) L'ordre est important !"
+            placeholder="Ex: Jean Dupont"
             size="lg"
             required
             classNames={{
@@ -436,14 +261,13 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
               input:
                 "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
             }}
-
             {...form.getInputProps("fullName")}
           />
 
           {/* Profession and Zone - Same Line */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Autocomplete
-              label="Domaine"
+              label="Profession"
               placeholder="Ex: Plombier"
               size="lg"
               data={professions}
@@ -461,8 +285,8 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
             />
             <MultiSelectCompact
               label="Zone"
-              placeholder={isLoadingLocations ? "Chargement des zones..." : "Choisir une ou plusieurs zones"}
-              data={zoneOptions}
+              placeholder="Choisir une ou plusieurs zones"
+              data={zones}
               value={form.values.zone}
               onChange={(value) => form.setFieldValue("zone", value)}
               searchable
@@ -488,8 +312,6 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
                 <TextInput
                   label="Numéro de téléphone"
                   placeholder="Ex: +229 01 96 09 69 69"
-                  prefix="+229"
-                  type="tel"
                   size="lg"
                   className="flex-1"
                   required
@@ -620,13 +442,9 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
           type="submit"
           size="lg"
           fullWidth
-          loading={createArtisanMutation.isPending || updateArtisanMutation.isPending}
-          disabled={createArtisanMutation.isPending || updateArtisanMutation.isPending}
           className="bg-teal-500 hover:bg-teal-600 text-white font-semibold"
         >
-          {createArtisanMutation.isPending || updateArtisanMutation.isPending
-            ? (isEditMode ? "Modification en cours..." : "Ajout en cours...")
-            : (isEditMode ? "Modifier l'artisan" : "Ajouter l'artisan")}
+          Ajouter l'artisan
         </Button>
       </div>
     </form>

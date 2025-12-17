@@ -11,7 +11,6 @@ import "@/styles/mantine-style.css";
 import "@/app/globals.css";
 import { Providers } from "@/providers/global-providers";
 import { ThemeScript } from "@/app/_components/theme-script";
-import { UsersnapScript } from "@/app/_components/UsersnapScript";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,6 +21,7 @@ const inter = Inter({
 const theme = createTheme({
   primaryColor: 'teal',
   primaryShade: 6,
+  
   colors: {
     teal: [
       "#f0fdfa", // 0 - teal-50
@@ -50,6 +50,13 @@ const theme = createTheme({
     ],
   },
   fontFamily: 'var(--font-inter), sans-serif',
+  fontSizes: {
+    xs: '0.75rem',   // 12px
+    sm: '0.875rem',  // 14px - Our default for inputs
+    md: '0.875rem',  // 14px - Changed from 16px default
+    lg: '1rem',      // 16px
+    xl: '1.25rem',   // 20px
+  },
   autoContrast: true,
   luminanceThreshold: 0.3,
   components: {
@@ -64,51 +71,101 @@ const theme = createTheme({
       },
     },
     Input: {
+      defaultProps: {
+        size: 'md', // Use md which is now 14px
+      },
       styles: {
         input: {
           borderRadius: '0.75rem',
+          fontSize: '0.875rem', // 14px
         }
       }
     },
     DateInput: {
+      defaultProps: {
+        size: 'md',
+      },
       styles: {
         input: {
           borderRadius: '0.75rem',
+          fontSize: '0.875rem',
         }
       }
     },
     Select: {
+      defaultProps: {
+        size: 'md',
+      },
       styles: {
         input: {
           borderRadius: '0.75rem',
+          fontSize: '0.875rem',
         }
       }
     },
     TextInput: {
+      defaultProps: {
+        size: 'md',
+      },
       styles: {
         input: {
           borderRadius: '0.75rem',
+          fontSize: '0.875rem',
         }
       }
     },
     Textarea: {
+      defaultProps: {
+        size: 'md',
+      },
       styles: {
         input: {
           borderRadius: '0.75rem',
+          fontSize: '0.875rem',
         }
       }
     },
     MultiSelect: {
+      defaultProps: {
+        size: 'md',
+      },
       styles: {
         input: {
           borderRadius: '0.75rem',
+          fontSize: '0.875rem',
         }
       }
     },
     Autocomplete: {
+      defaultProps: {
+        size: 'md',
+      },
       styles: {
         input: {
           borderRadius: '0.75rem',
+          fontSize: '0.875rem',
+        }
+      }
+    },
+    PasswordInput: {
+      defaultProps: {
+        size: 'md',
+      },
+      styles: {
+        input: {
+          borderRadius: '0.75rem',
+          fontSize: '0.875rem',
+        }
+      }
+    },
+    NumberInput: {
+      defaultProps: {
+        size: 'md',
+      },
+      styles: {
+        input: {
+          borderRadius: '0.75rem',
+          fontSize: '0.875rem',
         }
       }
     },
@@ -116,8 +173,8 @@ const theme = createTheme({
 });
 
 export const metadata: Metadata = {
-  title: "FindArtisan - Discover Local Artisans",
-  description: "Find local artisans in Benin Republic",
+  title: "FindArtisan - Découvrez les artisans locaux au Bénin",
+  description: "Découvrez les artisans locaux au Bénin et contactez-les facilement",
 };
 
 export default function RootLayout({
@@ -145,7 +202,6 @@ export default function RootLayout({
           src="https://t.contentsquare.net/uxa/b96d35515161d.js"
           strategy="afterInteractive"
         />
-        <UsersnapScript />
       </body>
     </html>
   );

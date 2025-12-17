@@ -41,12 +41,28 @@
 .mantine-Input-input {
   min-height: 40px;
   text-transform: none;
+  font-size: 0.875rem; /* 14px - text-sm */
   /*padding: 0 8px;
   */
 }
 
 .mantine-Textarea-input {
   padding: 8px 16px;
+  font-size: 0.875rem; /* 14px - text-sm */
+}
+
+/* Global font size for all Mantine input components */
+.mantine-TextInput-input,
+.mantine-PasswordInput-input,
+.mantine-Select-input,
+.mantine-Autocomplete-input,
+.mantine-MultiSelect-input,
+.mantine-NumberInput-input,
+.mantine-DateInput-input,
+.mantine-DateTimePicker-input,
+.mantine-DatePickerInput-input,
+.mantine-TimeInput-input {
+  font-size: 0.875rem; /* 14px - text-sm */
 }
 
 /* Dark mode input backgrounds and borders */
@@ -65,6 +81,7 @@
   background-color: rgb(31 41 55); /* gray-800 */
   border-color: rgb(55 65 81); /* gray-700 */
   color: rgb(229 231 235); /* gray-200 */
+  font-size: 0.875rem; /* 14px - text-sm */
 }
 
 /* Placeholder font size for all Mantine inputs (light mode) */
@@ -138,28 +155,51 @@
 /* Select dropdown in dark mode */
 .dark .mantine-Select-dropdown,
 .dark .mantine-Autocomplete-dropdown,
-.dark .mantine-MultiSelect-dropdown {
-  background-color: rgb(31 41 55); /* gray-800 */
-  border-color: rgb(55 65 81); /* gray-700 */
+.dark .mantine-MultiSelect-dropdown,
+.dark .mantine-Combobox-dropdown {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  border-color: rgb(55 65 81) !important; /* gray-700 */
 }
 
 .dark .mantine-Select-item,
 .dark .mantine-Autocomplete-item,
-.dark .mantine-MultiSelect-item {
-  color: rgb(229 231 235); /* gray-200 */
+.dark .mantine-MultiSelect-item,
+.dark .mantine-Combobox-option {
+  color: rgb(229 231 235) !important; /* gray-200 */
+  background-color: transparent !important;
 }
 
 .dark .mantine-Select-item:hover,
 .dark .mantine-Autocomplete-item:hover,
-.dark .mantine-MultiSelect-item:hover {
-  background-color: rgb(55 65 81); /* gray-700 */
+.dark .mantine-MultiSelect-item:hover,
+.dark .mantine-Combobox-option:hover,
+.dark .mantine-Combobox-option[data-combobox-hover] {
+  background-color: rgb(55 65 81) !important; /* gray-700 */
 }
 
 .dark .mantine-Select-item[data-selected],
 .dark .mantine-Autocomplete-item[data-selected],
-.dark .mantine-MultiSelect-item[data-selected] {
-  background-color: rgb(13 148 136); /* teal-600 */
-  color: white;
+.dark .mantine-MultiSelect-item[data-selected],
+.dark .mantine-Combobox-option[data-combobox-selected] {
+  background-color: rgb(13 148 136) !important; /* teal-600 */
+  color: white !important;
+}
+
+.dark .mantine-Combobox-option[data-combobox-selected]:hover,
+.dark .mantine-Combobox-option[data-combobox-selected][data-combobox-hover] {
+  background-color: rgb(15 118 110) !important; /* teal-700 - darker on hover */
+}
+
+/* Combobox empty state in dark mode */
+.dark .mantine-Combobox-empty {
+  color: rgb(156 163 175) !important; /* gray-400 */
+}
+
+/* Combobox search input in dark mode */
+.dark .mantine-Combobox-search {
+  background-color: rgb(31 41 55) !important; /* gray-800 */
+  border-color: rgb(55 65 81) !important; /* gray-700 */
+  color: rgb(229 231 235) !important; /* gray-200 */
 }
 
 /* mantine drawer */
