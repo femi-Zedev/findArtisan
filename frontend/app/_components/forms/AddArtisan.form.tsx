@@ -10,6 +10,7 @@ import { useState, useCallback } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
 import { PhoneInput } from "../ui/PhoneInput";
 import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
+import type { Artisan } from "@/app/lib/services/artisan";
 
 interface PhoneNumber {
   number: string;
@@ -33,6 +34,7 @@ export interface AddArtisanFormValues {
 
 interface AddArtisanFormProps {
   onSuccess?: (values: AddArtisanFormValues) => void;
+  artisan?: Artisan;
 }
 
 const socialPlatforms = [
@@ -127,20 +129,42 @@ function PhotoUploadDropzone({
   );
 }
 
-export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
+export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
   const [hasSocialMedia, setHasSocialMedia] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
+  const initialValues: AddArtisanFormValues = artisan
+    ? {
+        fullName: artisan.fullName ?? "",
+        profession: artisan.profession?.name ?? "",
+        zone: artisan.zones?.map((z) => z.name) ?? [],
+        phoneNumbers:
+          artisan.phoneNumbers && artisan.phoneNumbers.length > 0
+            ? artisan.phoneNumbers.map((p) => ({
+                number: p.number,
+                isWhatsApp: p.isWhatsApp,
+              }))
+            : [{ number: "", isWhatsApp: false }],
+        socialMedia:
+          artisan.socialLinks?.map((s) => ({
+            platform: s.platform,
+            link: s.link,
+          })) ?? [],
+        description: artisan.description ?? "",
+        photo: null,
+      }
+    : {
+        fullName: "",
+        profession: "",
+        zone: [],
+        phoneNumbers: [{ number: "", isWhatsApp: false }],
+        socialMedia: [],
+        description: "",
+        photo: null,
+      };
+
   const form = useForm<AddArtisanFormValues>({
-    initialValues: {
-      fullName: "",
-      profession: "",
-      zone: [],
-      phoneNumbers: [{ number: "", isWhatsApp: false }],
-      socialMedia: [],
-      description: "",
-      photo: null,
-    },
+    initialValues,
     validate: {
       fullName: (value) => (!value ? "Le nom complet est requis" : null),
       profession: (value) => (!value ? "La profession est requise" : null),

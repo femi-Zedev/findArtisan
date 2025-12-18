@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Search, Bell, Menu, Sun, Moon, Home } from "lucide-react";
-import { Button, TextInput } from "@mantine/core";
+import { useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
 import { cn } from "@/app/lib/utils";
 import { useThemeStore } from "@/stores/themeStore";
 import { DashboardSidebar } from "./dashboard-sidebar";
@@ -17,8 +17,17 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ onMobileMenuToggle, isMobileMenuOpen }: DashboardHeaderProps) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
-  const theme = useThemeStore((state) => state.theme);
-  const toggleTheme = useThemeStore((state) => state.toggleTheme);
+  const { theme, setTheme } = useThemeStore();
+  const { setColorScheme } = useMantineColorScheme();
+  const computedColorScheme = useComputedColorScheme('light');
+
+  // Toggle theme function (aligned with navbar behavior)
+  const toggleTheme = () => {
+    const currentTheme = theme === "auto" ? computedColorScheme : theme;
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    setColorScheme(newTheme);
+  };
 
   // Generate breadcrumbs from pathname
   const generateBreadcrumbs = () => {
