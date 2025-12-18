@@ -90,102 +90,167 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full sm:top-4">
-      <div className="mx-auto max-w-6xl px-0 sm:px-4 lg:px-8">
-        <div
-          className={cn(
-            "flex h-16 items-center justify-between shadow-xs transition-colors",
-            // Mobile: match layout background colors (blue-50 to gray-50 gradient)
-            isMobile
-              ? "bg-blue-50/80 backdrop-blur-md dark:bg-gray-950/80 px-4"
-              : "bg-white/60 backdrop-blur-md border-b border-gray-200/50 dark:bg-gray-900/60 dark:backdrop-blur-md dark:border-gray-800/50 sm:rounded-2xl sm:border sm:px-5"
-          )}
-        >
-          {/* Logo */}
-          <Link
-            href="/"
-            onClick={handleLinkClick}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+    <>
+      {/* SVG filter for liquid glass distortion effect */}
+      <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style={{ position: 'absolute', overflow: 'hidden' }}>
+        <defs>
+          <filter id="glass-distortion" x="0%" y="0%" width="100%" height="100%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
+            <feGaussianBlur in="noise" stdDeviation="2" result="blurred" />
+            <feDisplacementMap in="SourceGraphic" in2="blurred" scale="35" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .liquid-glass-nav {
+          --shadow-offset: 0;
+          --shadow-blur: 20px;
+          --shadow-spread: -5px;
+          --shadow-color: rgba(255, 255, 255, 0.9);
+          --tint-color: 255, 255, 255;
+          --tint-opacity: 0.04;
+          --frost-blur: 2px;
+          isolation: isolate;
+        }
+        .liquid-glass-nav::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          border-radius: inherit;
+          box-shadow: inset var(--shadow-offset) var(--shadow-offset) var(--shadow-blur) var(--shadow-spread) var(--shadow-color);
+          background-color: rgba(var(--tint-color), var(--tint-opacity));
+          pointer-events: none;
+        }
+        .liquid-glass-nav::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          border-radius: inherit;
+          backdrop-filter: blur(var(--frost-blur));
+          -webkit-backdrop-filter: blur(var(--frost-blur));
+          filter: url(#glass-distortion);
+          -webkit-filter: url("#glass-distortion");
+          isolation: isolate;
+          pointer-events: none;
+        }
+        [data-mantine-color-scheme="dark"] .liquid-glass-nav {
+          --shadow-color: rgba(255, 255, 255, 0.1);
+          --tint-opacity: 0.02;
+        }
+        `
+      }} />
+
+      <nav className="sticky top-0 z-50 w-full sm:top-4">
+        <div className="mx-auto max-w-6xl px-0 sm:px-4 lg:px-8">
+          <div
+            className={cn(
+              "relative overflow-hidden transition-colors",
+              // Mobile: simple glassy overlay (no liquid glass effect)
+              isMobile
+                ? [
+                    "px-4 border-b border-white/20 dark:border-white/10",
+                    "bg-white/10 backdrop-blur-md dark:bg-gray-900/40",
+                  ]
+                : [
+                    // Desktop: liquid glass card floating over background
+                    "liquid-glass-nav sm:rounded-2xl sm:px-5",
+                    "border border-gray-200/50 shadow-xs",
+                    "dark:border-white/20",
+                  ]
+            )}
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500">
-              <Wrench className="h-5 w-5 text-white" />
+            {/* Foreground content - relative wrapper like in the HTML */}
+            <div className="relative z-10 flex h-16 w-full items-center justify-between">
+            {/* Logo */}
+            <Link
+              href="/"
+              onClick={handleLinkClick}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500">
+                <Wrench className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
+                FindArtisan
+              </span>
+            </Link>
+
+            {/* Desktop Navigation Links */}
+            <div className="hidden md:flex items-center gap-6">
+              <Link
+                href="/search"
+                onClick={handleLinkClick}
+                className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+              >
+                Recherche
+              </Link>
+              <Link
+                href="/#faq"
+                onClick={handleLinkClick}
+                className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+              >
+                FAQs
+              </Link>
+              <Link
+                href="/#contact"
+                onClick={handleLinkClick}
+                className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+              >
+                Contact
+              </Link>
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">
-              FindArtisan
-            </span>
-          </Link>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-6">
-            <Link
-              href="/search"
-              onClick={handleLinkClick}
-              className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-            >
-              Recherche
-            </Link>
-            <Link
-              href="/#faq"
-              onClick={handleLinkClick}
-              className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-            >
-              FAQs
-            </Link>
-            <Link
-              href="/#contact"
-              onClick={handleLinkClick}
-              className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-            >
-              Contact
-            </Link>
-          </div>
+            {/* Desktop Right Side Actions */}
+            <div className="hidden sm:flex items-center gap-3">
+              <Button
+                onClick={onNavbarButtonClick}
+                rightSection={<ArrowRight className="h-4 w-4" />}
+                size="md"
+                className="h-10 rounded-full bg-teal-500 px-6 font-semibold text-white transition-all hover:bg-teal-600 shadow-sm hover:shadow-md"
+              >
+                {isAuthenticated ? "Gérer mes Contributions" : "Ajouter un artisan"}
+              </Button>
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className={cn(
+                  "cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl transition-all shadow-sm",
+                  "border bg-teal-50 backdrop-blur-sm text-teal-700 hover:bg-teal-100 border-teal-600",
+                  "dark:border-teal-200 dark:bg-teal-900/80 dark:text-teal-300 dark:hover:bg-teal-900"
+                )}
+                aria-label="Toggle theme"
+              >
+                {effectiveTheme === "dark" ? (
+                  <Moon className="h-4 w-4" />
+                ) : (
+                  <Sun className="h-4 w-4" />
+                )}
+              </button>
+            </div>
 
-          {/* Desktop Right Side Actions */}
-          <div className="hidden sm:flex items-center gap-3">
-            <Button
-              onClick={onNavbarButtonClick}
-              rightSection={<ArrowRight className="h-4 w-4" />}
-              size="md"
-              className="h-10 rounded-full bg-teal-500 px-6 font-semibold text-white transition-all hover:bg-teal-600 shadow-sm hover:shadow-md"
-            >
-              {isAuthenticated ? "Gérer mes Contributions" : "Ajouter un artisan"}
-            </Button>
-            {/* Theme Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className={cn(
-                "cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl transition-all shadow-sm",
-                "border bg-teal-50 backdrop-blur-sm text-teal-700 hover:bg-teal-100 border-teal-600",
-                "dark:border-teal-200 dark:bg-teal-900/80 dark:text-teal-300 dark:hover:bg-teal-900"
-              )}
-              aria-label="Toggle theme"
-            >
-              {effectiveTheme === "dark" ? (
-                <Moon className="h-4 w-4" />
-              ) : (
-                <Sun className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-
-          {/* Mobile Right Side Actions (Burger only) */}
-          <div className="flex sm:hidden items-center gap-2">
-            {/* Burger Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={cn(
-                "cursor-pointer flex h-10 w-10 items-center justify-center  transition-all",
-                " text-gray-700 hover:bg-gray-100 ",
-                "dark:text-gray-300 dark:hover:bg-gray-700"
-              )}
-              aria-label="Toggle menu"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-8 w-8" />
-              ) : (
-                <Menu className="h-8 w-8" />
-              )}
-            </button>
+            {/* Mobile Right Side Actions (Burger only) */}
+            <div className="flex sm:hidden items-center gap-2">
+              {/* Burger Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className={cn(
+                  "cursor-pointer flex h-10 w-10 items-center justify-center  transition-all",
+                  " text-gray-700 hover:bg-gray-100 ",
+                  "dark:text-gray-300 dark:hover:bg-gray-700"
+                )}
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-8 w-8" />
+                ) : (
+                  <Menu className="h-8 w-8" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -194,8 +259,9 @@ export function Navbar() {
           <div
             className={cn(
               "sm:hidden fixed inset-0 top-16 z-40",
-              "bg-blue-50/80 backdrop-blur-md dark:bg-gray-950/80",
-              "border-t border-gray-200/30 dark:border-gray-800/30",
+              // Glassy overlay panel
+              "bg-white/8 backdrop-blur-xl dark:bg-gray-950/70",
+              "border-t border-white/10 dark:border-white/10",
               "flex flex-col"
             )}
           >
@@ -292,5 +358,6 @@ export function Navbar() {
         )}
       </div>
     </nav>
+    </>
   );
 }
