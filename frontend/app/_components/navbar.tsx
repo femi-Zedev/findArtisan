@@ -171,17 +171,14 @@ export function Navbar() {
             className={cn(
               "relative transition-colors",
               "liquid-glass-nav bg-white/50 dark:bg-gray-900/50 rounded-2xl sm:px-5",
-              "border border-gray-200/50 shadow-xs",
-              "dark:border-white/20",
+              "border border-gray-200/50 dark:border-gray-600/50 shadow-xs",
               isMobile
                 ? [
-                    "px-4 border-b border-white/20 dark:border-white/10",
-                    "bg-white/10 backdrop-blur-md dark:bg-gray-900/40",
+                    "px-4 ",
+                    // "bg-white/10 backdrop-blur-md dark:bg-gray-900/40",
                   ]
                 : [
                     // Desktop: liquid glass card floating over background
-                    "border border-gray-200/50 shadow-xs",
-                    "dark:border-white/20",
                     "overflow-hidden",
                   ]
             )}
@@ -295,7 +292,7 @@ export function Navbar() {
                 className={cn(
                   "sm:hidden absolute top-full left-0 right-0 mt-2 z-40",
                   // White rounded panel with backdrop blur
-                  "bg-white/95 backdrop-blur-xl dark:bg-gray-900/95",
+                  "bg-white dark:bg-gray-900",
                   "rounded-2xl border border-gray-200/50 dark:border-gray-700/50",
                   "shadow-lg",
                   // Slide down animation
