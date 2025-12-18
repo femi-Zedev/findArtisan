@@ -77,7 +77,8 @@ export default function RootLayout({
 }>) {
   return (
 
-    <main className="relative min-h-screen bg-linear-to-b from-blue-50 to-gray-50 dark:from-gray-950 dark:to-gray-900 flex flex-col">
+    <main className="relative min-h-screen flex flex-col"
+    >
       <Suspense fallback={null}>
         <Navbar />
         <div className="flex-1">

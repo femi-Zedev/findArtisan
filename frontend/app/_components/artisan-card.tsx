@@ -298,8 +298,8 @@ export function ArtisanCard({
   return (
     <div
       className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition-all",
-        "bg-white border-gray-200 hover:border hover:border-teal-500",
+        "group relative flex flex-col overflow-hidden rounded-2xl shadow-xl shadow-gray-300/20 dark:shadow-gray-700/20 border  p-6 transition-all",
+        "bg-white border-gray-300/60 hover:border hover:border-teal-500",
         "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
       )}
     >
@@ -307,7 +307,7 @@ export function ArtisanCard({
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           {/* Avatar */}
-          <div className="shrink-0 ring-2 ring-teal-500/20 rounded-full">
+         
             <Avatar
               src={imageUrl}
               alt={name}
@@ -317,7 +317,6 @@ export function ArtisanCard({
               color="initials"
             >
             </Avatar>
-          </div>
 
           {/* Name and Profession */}
           <div className="flex-1 min-w-0">

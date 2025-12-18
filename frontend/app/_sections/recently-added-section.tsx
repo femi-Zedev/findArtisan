@@ -119,7 +119,7 @@ export function RecentlyAddedSection() {
 
         {/* Add Artisan CTA - After showing value */}
         <div className="mt-12 flex  flex-col items-center justify-center gap-8 py-8">
-          <span className="text-center text-lg text-gray-600 dark:text-gray-300 sm:text-xl">
+          <span className="text-center text-xl font-semibold text-gray-600 dark:text-gray-300 sm:text-2xl">
             Tu connais un artisan fiable ? <br /> Aide ta communauté en l'ajoutant <br />👇
           </span>
           <Button

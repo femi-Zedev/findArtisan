@@ -73,22 +73,21 @@ export function HeroSearchInput() {
   // ).length;
 
   return (
-    <div className="mx-auto max-w-2xl flex justify-center">
+    <div className="mx-auto max-w-lg flex justify-center">
       <button
         type="button"
         onClick={handleOpenFilterModal}
         className={cn(
           "relative flex items-center justify-between gap-2 cursor-pointer w-full",
           "px-6 py-4 rounded-full",
-          "bg-white/80 backdrop-blur-3xl text-gray-700 shadow-xs hover:shadow-md shadow-gray-200 dark:shadow-gray-700 transition-all",
-          "border border-gray-200 hover:border-2 hover:border-teal-500",
-          "dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700",
+          "bg-teal-500  text-white transition-all hover:bg-teal-600/90",
+          "dark:bg-teal-600 dark:text-white ",
           "font-medium"
         )}
       >
-        <div className="flex items-center gap-2">
-          <Search className="h-5 w-5 text-gray-500 dark:text-gray-400 shrink-0" />
-          <span>Rechercher un artisan</span>
+        <div className="flex items-center justify-between gap-2 w-full">
+          <span className="text-lg font-medium">Rechercher un artisan</span>
+          <Search className="h-5 w-5 text-white  shrink-0" />
         </div>
         {/* <SlidersHorizontal className="h-5 w-5 text-gray-500 dark:text-gray-400 shrink-0" /> */}
         {/* {filterCount > 0 && (

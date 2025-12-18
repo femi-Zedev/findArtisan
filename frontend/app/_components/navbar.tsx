@@ -144,7 +144,7 @@ export function Navbar() {
         `
       }} />
 
-      <nav className="sticky top-0 z-50 w-full sm:top-4">
+      <nav className="sticky top-0 z-50 w-full sm:top-6">
         <div className="mx-auto max-w-6xl px-0 sm:px-4 lg:px-8">
           <div
             className={cn(
@@ -157,7 +157,7 @@ export function Navbar() {
                   ]
                 : [
                     // Desktop: liquid glass card floating over background
-                    "liquid-glass-nav sm:rounded-2xl sm:px-5",
+                    "liquid-glass-nav bg-white/50 dark:bg-gray-900/50 sm:rounded-2xl sm:px-5",
                     "border border-gray-200/50 shadow-xs",
                     "dark:border-white/20",
                   ]

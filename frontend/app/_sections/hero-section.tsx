@@ -9,7 +9,7 @@ export function HeroSection() {
     <section className="w-full px-4 py-6 sm:py-10 sm:px-6 lg:px-8 mt-14">
       <div className="mx-auto max-w-6xl text-center">
         {/* Main Headline */}
-        <h1 className="mb-6 text-4xl font-extrabold leading-none tracking-tighter text-gray-900 dark:text-white sm:text-5xl lg:text-6xl">
+        <h1 className="my-10 text-4xl font-extrabold leading-none tracking-tighter text-gray-900 dark:text-white sm:text-5xl lg:text-6xl">
           Trouve le bon <br className="block sm:hidden" /> <AnimatedProfession /> <br /> près de{" "}
           chez toi
         </h1>
