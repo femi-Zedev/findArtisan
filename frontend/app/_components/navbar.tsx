@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button, useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Wrench, Sun, Moon, ArrowRight, Menu, X, ChevronRight } from "lucide-react";
@@ -16,18 +16,29 @@ import { AddArtisanSelection } from "./forms/AddArtisanSelection";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const navbarRef = useRef<HTMLDivElement>(null);
 
-  // Prevent body scroll when mobile menu is open
+  // Handle click outside to close mobile menu
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        mobileMenuRef.current &&
+        navbarRef.current &&
+        !mobileMenuRef.current.contains(event.target as Node) &&
+        !navbarRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
     if (isMobileMenuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
+      document.addEventListener("mousedown", handleClickOutside);
+      // Don't prevent body scroll for dropdown menu
     }
 
-    // Cleanup on unmount
     return () => {
-      document.body.style.overflow = "";
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMobileMenuOpen]);
   
@@ -141,15 +152,27 @@ export function Navbar() {
           --shadow-color: rgba(255, 255, 255, 0.1);
           --tint-opacity: 0.02;
         }
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         `
       }} />
 
-      <nav className="sticky top-0 z-50 w-full sm:top-6">
-        <div className="mx-auto max-w-6xl px-0 sm:px-4 lg:px-8">
+      <nav className="sticky top-0 z-50 w-full top-6" ref={navbarRef}>
+        <div className="mx-auto max-w-6xl px-0 px-4 lg:px-8">
           <div
             className={cn(
-              "relative overflow-hidden transition-colors",
-              // Mobile: simple glassy overlay (no liquid glass effect)
+              "relative transition-colors",
+              "liquid-glass-nav bg-white/50 dark:bg-gray-900/50 rounded-2xl sm:px-5",
+              "border border-gray-200/50 shadow-xs",
+              "dark:border-white/20",
               isMobile
                 ? [
                     "px-4 border-b border-white/20 dark:border-white/10",
@@ -157,9 +180,9 @@ export function Navbar() {
                   ]
                 : [
                     // Desktop: liquid glass card floating over background
-                    "liquid-glass-nav bg-white/50 dark:bg-gray-900/50 sm:rounded-2xl sm:px-5",
                     "border border-gray-200/50 shadow-xs",
                     "dark:border-white/20",
+                    "overflow-hidden",
                   ]
             )}
           >
@@ -234,38 +257,52 @@ export function Navbar() {
 
             {/* Mobile Right Side Actions (Burger only) */}
             <div className="flex sm:hidden items-center gap-2">
-              {/* Burger Menu Button */}
+              {/* Burger Menu Button with Animation */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className={cn(
-                  "cursor-pointer flex h-10 w-10 items-center justify-center  transition-all",
-                  " text-gray-700 hover:bg-gray-100 ",
-                  "dark:text-gray-300 dark:hover:bg-gray-700"
+                  "cursor-pointer flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-300",
+                  "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                 )}
                 aria-label="Toggle menu"
               >
-                {isMobileMenuOpen ? (
-                  <X className="h-8 w-8" />
-                ) : (
-                  <Menu className="h-8 w-8" />
-                )}
+                <div className="relative w-6 h-6">
+                  <Menu
+                    className={cn(
+                      "absolute inset-0 h-6 w-6 transition-all duration-300",
+                      isMobileMenuOpen
+                        ? "opacity-0 rotate-90 scale-0"
+                        : "opacity-100 rotate-0 scale-100"
+                    )}
+                  />
+                  <X
+                    className={cn(
+                      "absolute inset-0 h-6 w-6 transition-all duration-300",
+                      isMobileMenuOpen
+                        ? "opacity-100 rotate-0 scale-100"
+                        : "opacity-0 -rotate-90 scale-0"
+                    )}
+                  />
+                </div>
               </button>
             </div>
           </div>
-        </div>
 
-        {/* Mobile Menu - Full Height */}
-        {isMobileMenuOpen && (
-          <div
-            className={cn(
-              "sm:hidden fixed inset-0 top-16 z-40",
-              // Glassy overlay panel
-              "bg-white/8 backdrop-blur-xl dark:bg-gray-950/70",
-              "border-t border-white/10 dark:border-white/10",
-              "flex flex-col"
-            )}
-          >
-            <div className="flex-1 overflow-y-auto px-4 py-6">
+            {/* Mobile Menu - Dropdown Panel */}
+            {isMobileMenuOpen && (
+              <div
+                ref={mobileMenuRef}
+                className={cn(
+                  "sm:hidden absolute top-full left-0 right-0 mt-2 z-40",
+                  // White rounded panel with backdrop blur
+                  "bg-white/95 backdrop-blur-xl dark:bg-gray-900/95",
+                  "rounded-2xl border border-gray-200/50 dark:border-gray-700/50",
+                  "shadow-lg",
+                  // Slide down animation
+                  "animate-[slideDown_0.2s_ease-out]"
+                )}
+              >
+                <div className="overflow-y-auto max-h-[calc(100vh-120px)] px-4 py-4">
 
               {/* Menu Links with arrow design */}
               <div className="space-y-0">
@@ -351,13 +388,12 @@ export function Navbar() {
               >
                 {isAuthenticated ? "Gérer mes Contributions" : "Ajouter un artisan"}
               </Button>
-            </div>
-
-
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </nav>
+        </div>
+      </nav>
     </>
   );
 }
