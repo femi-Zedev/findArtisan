@@ -8,6 +8,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "@/styles/mantine-style.css";
+import "@/styles/phone-input.css";
 import "@/app/globals.css";
 import { Providers } from "@/providers/global-providers";
 import { ThemeScript } from "@/app/_components/theme-script";

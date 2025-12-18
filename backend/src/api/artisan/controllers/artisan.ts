@@ -19,6 +19,16 @@ const parseSingleParam = (value: string | string[] | undefined): string | undefi
   return Array.isArray(value) ? value.at(0) : value;
 };
 
+const parseArrayParam = (value: string | string[] | undefined): string[] | undefined => {
+  if (!value) {
+    return undefined;
+  }
+  const values = Array.isArray(value) ? value : [value];
+  // Filter out empty strings and return undefined if no valid values
+  const filtered = values.filter(v => v && v.trim());
+  return filtered.length > 0 ? filtered : undefined;
+};
+
 const parseNumberParam = (
   value: string | string[] | undefined,
   defaultValue: number,
@@ -50,7 +60,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
 
     try {
       const professionFilter = parseSingleParam(profession);
-      const zoneFilter = parseSingleParam(zone);
+      const zoneFilters = parseArrayParam(zone);
       const searchQuery = parseSingleParam(q);
       const submittedByFilter = parseSingleParam(submittedBy);
       const isCommunitySubmittedFilter = parseSingleParam(isCommunitySubmitted);
@@ -103,13 +113,25 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         };
       }
 
-      // Filter by zone (if provided)
-      if (zoneFilter) {
-        filters.zones = {
-          name: {
-            $containsi: zoneFilter,
-          },
-        };
+      // Filter by zone(s) (if provided)
+      // Supports multiple zones: /artisans?zone=Cotonou&zone=Calavi
+      // Returns artisans who work in ANY of the specified zones
+      if (zoneFilters && zoneFilters.length > 0) {
+        if (zoneFilters.length === 1) {
+          // Single zone: use simple containsi filter
+          filters.zones = {
+            name: {
+              $containsi: zoneFilters[0],
+            },
+          };
+        } else {
+          // Multiple zones: use $or to match any of them
+          filters.zones = {
+            name: {
+              $in: zoneFilters,
+            },
+          };
+        }
       }
 
       // Search in name or description (if query provided)

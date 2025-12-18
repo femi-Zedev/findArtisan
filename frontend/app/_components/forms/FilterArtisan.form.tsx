@@ -1,10 +1,11 @@
 "use client";
 
-import { Button, Autocomplete, Loader, Select } from "@mantine/core";
+import { Button, Autocomplete, Loader } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDebouncedValue } from "@mantine/hooks";
 import { useState, useMemo, useCallback } from "react";
 import { useSearchLocations } from "@/app/lib/services/location";
+import { MultiSelectCompact } from "../ui/MultiSelectCompact";
 
 const professions = [
   { value: "plombier", label: "Plombier" },
@@ -24,7 +25,7 @@ const professions = [
 
 export interface FilterValues {
   profession: string;
-  zone: string;
+  zone: string | string[]; // Support both single and multiple zones for backward compatibility
 }
 
 interface FilterArtisanFormProps {
@@ -39,9 +40,11 @@ export function FilterArtisanForm({
   onReset,
 }: FilterArtisanFormProps) {
   const form = useForm<FilterValues>({
-    initialValues: initialValues || {
-      profession: "",
-      zone: "",
+    initialValues: {
+      profession: initialValues?.profession || "",
+      zone: initialValues?.zone 
+        ? (Array.isArray(initialValues.zone) ? initialValues.zone : [initialValues.zone])
+        : [],
     },
   });
 
@@ -83,10 +86,9 @@ export function FilterArtisanForm({
     }
   };
 
-  // Handle zone selection - update form and clear search query
-  const handleZoneChange = useCallback((value: string) => {
+  // Handle zone selection - update form
+  const handleZoneChange = useCallback((value: string[]) => {
     form.setFieldValue("zone", value);
-    setZoneSearchQuery(""); // Clear search when a city is selected
   }, [form]);
 
   return (
@@ -105,17 +107,15 @@ export function FilterArtisanForm({
         }}
         {...form.getInputProps("profession")}
       />
-      <Select
-        placeholder="Sélectionner une ville"
-        size="lg"
+      <MultiSelectCompact
+        placeholder="Sélectionner une ou plusieurs villes"
         data={zoneOptions}
-        value={form.values.zone}
+        value={Array.isArray(form.values.zone) ? form.values.zone : (form.values.zone ? [form.values.zone] : [])}
+        onChange={handleZoneChange}
         searchable
-        onChange={(value) => handleZoneChange(value || "")}
-        rightSection={isLoadingLocations ? <Loader size="1rem" /> : null}
         classNames={{
           input:
-            "rounded-lg border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
+            "rounded-xl",
           dropdown:
             "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
           option:

@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, SlidersHorizontal } from "lucide-react";
-import { useQueryState, parseAsString } from "nuqs";
+import { useQueryState, parseAsString, parseAsArrayOf } from "nuqs";
 import { useRouter } from "next/navigation";
 import { useModalContext } from "@/providers/modal-provider";
 import { FilterArtisanForm, FilterValues } from "./forms/FilterArtisan.form";
@@ -9,20 +9,28 @@ import { cn } from "../lib/utils";
 
 export function HeroSearchInput() {
   const [profession, setProfession] = useQueryState("profession", parseAsString.withDefault(""));
-  const [zone, setZone] = useQueryState("zone", parseAsString.withDefault(""));
+  const [zones, setZones] = useQueryState("zone", parseAsArrayOf(parseAsString).withDefault([]));
   const { openModal, closeModal } = useModalContext();
   const router = useRouter();
 
   const filterValues: FilterValues = {
     profession,
-    zone,
+    zone: zones,
   };
 
   const handleFilterSubmit = (values: FilterValues) => {
     // Build search URL with filter params
     const params = new URLSearchParams();
     if (values.profession) params.set("profession", values.profession);
-    if (values.zone) params.set("zone", values.zone);
+    
+    // Handle multiple zones
+    if (values.zone) {
+      const zoneArray = Array.isArray(values.zone) ? values.zone : [values.zone];
+      zoneArray.forEach(z => {
+        if (z) params.append("zone", z);
+      });
+    }
+    
     const queryString = params.toString();
     const searchUrl = `/search${queryString ? `?${queryString}` : ""}`;
 
@@ -38,7 +46,7 @@ export function HeroSearchInput() {
   const handleFilterReset = () => {
     // Clear URL params using nuqs
     setProfession(null);
-    setZone(null);
+    setZones(null);
     closeModal();
   };
 

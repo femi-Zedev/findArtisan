@@ -62,8 +62,14 @@
 }
 
 /* Mantine drawer and modal layout overrides (non-color) */
-.mantine-Paper-root {
+/* Apply overflow hidden only to Drawer Paper, not Modal Paper */
+.mantine-Drawer-root .mantine-Paper-root {
   overflow-y: hidden;
+}
+
+/* Ensure Modal Paper allows overflow for dropdowns */
+.mantine-Modal-root .mantine-Paper-root {
+  overflow: visible !important;
 }
 
 .mantine-Drawer-body {
@@ -73,4 +79,6 @@
 
 .mantine-Modal-body {
   padding: 0 !important;
+  overflow: visible !important;
+  border-radius: 20px;
 }

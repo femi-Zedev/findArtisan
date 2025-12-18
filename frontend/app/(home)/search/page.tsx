@@ -2,7 +2,7 @@
 
 import { useState, Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryState, parseAsString } from "nuqs";
+import { useQueryState, parseAsString, parseAsArrayOf } from "nuqs";
 import { useDebouncedValue, useMediaQuery } from "@mantine/hooks";
 import { ArtisanCard } from "../../_components/artisan-card";
 import { Autocomplete, ScrollArea, TextInput, Skeleton } from "@mantine/core";
@@ -25,7 +25,7 @@ function SearchContent() {
 
   // Use nuqs for URL state management
   const [profession, setProfession] = useQueryState("profession", parseAsString.withDefault(""));
-  const [zone, setZone] = useQueryState("zone", parseAsString.withDefault(""));
+  const [zones, setZones] = useQueryState("zone", parseAsArrayOf(parseAsString).withDefault([]));
   const [searchQuery, setSearchQuery] = useQueryState("q", parseAsString.withDefault(""));
   const [hideCommunityAdded, setHideCommunityAdded] = useState(false);
 
@@ -53,7 +53,7 @@ function SearchContent() {
   // Fetch artisans from API
   const { data: artisansData, isLoading, error } = useGetArtisans({
     profession: profession || undefined,
-    zone: zone || undefined,
+    zone: zones.length > 0 ? zones : undefined,
     q: debouncedSearchQuery || undefined,
     page: 1,
     limit: 100, // Fetch up to 100 results for now
@@ -93,7 +93,7 @@ function SearchContent() {
 
   const handleResetFilters = () => {
     setProfession(null);
-    setZone(null);
+    setZones(null);
     setSearchQuery(null);
     setHideCommunityAdded(false);
   };
@@ -102,8 +102,8 @@ function SearchContent() {
     setSearchQuery(value || null);
   };
 
-  const hasActiveFilters = profession || zone || hideCommunityAdded;
-  const activeFiltersCount = [profession, zone, hideCommunityAdded].filter(Boolean).length;
+  const hasActiveFilters = profession || zones.length > 0 || hideCommunityAdded;
+  const activeFiltersCount = [profession, zones.length > 0, hideCommunityAdded].filter(Boolean).length;
 
   const handleBack = () => {
     router.push("/");
@@ -136,13 +136,13 @@ function SearchContent() {
           />
 
           <Autocomplete
-            placeholder="Filtrer par zone"
+            placeholder="Filtrer par zone (Première zone uniquement dans le modal)"
             size="md"
             clearable
             data={zoneOptions}
-            value={zone}
+            value={zones[0] || ""}
             onChange={(value) => {
-              setZone(value || null);
+              setZones(value ? [value] : null);
             }}
             rightSection={isLoadingLocations ?? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />}
             classNames={{
@@ -286,13 +286,13 @@ function SearchContent() {
                 className="flex-1 min-w-[150px]"
               />
               <Autocomplete
-                placeholder="Chercher par zone"
+                placeholder="Chercher par zone (Première zone uniquement ici)"
                 size="lg"
                 clearable
                 data={zoneOptions}
-                value={zone}
+                value={zones[0] || ""}
                 onChange={(value) => {
-                  setZone(value || null);
+                  setZones(value ? [value] : null);
                 }}
                 rightSection={isLoadingLocations ?? <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />}
                 classNames={{

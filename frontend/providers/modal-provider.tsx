@@ -42,7 +42,7 @@ export default function ModalProvider({ children }: { children: ReactNode }) {
       >
         <div
           className={cn(
-            'flex flex-col sm:min-w-[400px] h-full',
+            'flex flex-col sm:min-w-[400px] h-full rounded-[20px]',
             'bg-white dark:bg-gray-900',
             modalWrapperClassName,
           )}
@@ -52,7 +52,7 @@ export default function ModalProvider({ children }: { children: ReactNode }) {
               <div className="bg-white dark:bg-gray-900">{body}</div>
             ) : (
               <>
-                <header className='flex justify-between items-start px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900'>
+                <header className='flex justify-between items-start px-6 py-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 rounded-t-[20px]'>
                   <hgroup>
                     <h4 className='text-2xl font-bold text-gray-700 dark:text-white'>{title}</h4>
 
@@ -72,7 +72,7 @@ export default function ModalProvider({ children }: { children: ReactNode }) {
                   )}
                 </header>
 
-                <div className={cn('bg-white dark:bg-gray-900  overflow-y-auto h-full', modalContentClassName)}>
+                <div className={cn('bg-white dark:bg-gray-900 h-full overflow-visible rounded-b-[20px]', modalContentClassName)}>
                   {body}
                 </div>
               </>

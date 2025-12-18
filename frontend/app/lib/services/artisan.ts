@@ -44,7 +44,7 @@ export interface Artisan {
 
 export interface ArtisanSearchParams {
   profession?: string;
-  zone?: string;
+  zone?: string | string[]; // Support single or multiple zones
   q?: string;
   page?: number;
   limit?: number;
@@ -82,17 +82,26 @@ export function useGetArtisans(variables: ArtisanSearchParams) {
   return useQuery({
     queryKey: artisanKeys.search(variables),
     queryFn: async (): Promise<ArtisanSearchResponse> => {
-      const queryString = paramsBuilder({
-        profession: variables.profession,
-        zone: variables.zone,
-        q: variables.q,
-        page: variables.page,
-        pageSize: variables.limit, // Backend uses pageSize, not limit
-        submittedBy: variables.submittedBy,
-        isCommunitySubmitted: variables.isCommunitySubmitted !== undefined ? String(variables.isCommunitySubmitted) : undefined,
-        status: variables.status,
-      });
+      // Build query params manually to handle multiple zones
+      const params = new URLSearchParams();
+      
+      if (variables.profession) params.set('profession', variables.profession);
+      if (variables.q) params.set('q', variables.q);
+      if (variables.page) params.set('page', String(variables.page));
+      if (variables.limit) params.set('pageSize', String(variables.limit));
+      if (variables.submittedBy) params.set('submittedBy', variables.submittedBy);
+      if (variables.isCommunitySubmitted !== undefined) params.set('isCommunitySubmitted', String(variables.isCommunitySubmitted));
+      if (variables.status) params.set('status', variables.status);
+      
+      // Handle multiple zones - append each zone as a separate param
+      if (variables.zone) {
+        const zones = Array.isArray(variables.zone) ? variables.zone : [variables.zone];
+        zones.forEach(z => {
+          if (z) params.append('zone', z);
+        });
+      }
 
+      const queryString = params.toString();
       const url = queryString
         ? `${routes.artisans.base}?${queryString}`
         : routes.artisans.base;

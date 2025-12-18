@@ -156,7 +156,7 @@ export function MultiSelectCompact({
           className={cn(
             "min-h-[50px] px-4 py-2 rounded-xl border cursor-pointer transition-all",
             "flex items-center gap-2 bg-white dark:bg-gray-800",
-            "border-gray-300 dark:border-gray-700",
+            "border-gray-300 dark:border-gray-600",
             "hover:border-teal-500 dark:hover:border-teal-500",
             "focus-within:border-teal-500 dark:focus-within:border-teal-500",
             error && "border-red-500 dark:border-red-500",
@@ -260,7 +260,7 @@ export function MultiSelectCompact({
           <div
             ref={dropdownRef}
             className={cn(
-              "absolute z-50 w-full mt-1 rounded-lg border shadow-lg",
+              "absolute z-[400] w-full mt-2 rounded-lg border shadow-lg",
               "bg-white dark:bg-gray-900",
               "border-gray-300 dark:border-gray-800",
               "flex flex-col max-h-60",

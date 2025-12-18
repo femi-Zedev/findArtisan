@@ -8,6 +8,8 @@ import { cn } from "@/app/lib/utils";
 import { zones, professions } from "@/constants";
 import { useState, useCallback } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
+import { PhoneInput } from "../ui/PhoneInput";
+import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
 
 interface PhoneNumber {
   number: string;
@@ -144,9 +146,26 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
       profession: (value) => (!value ? "La profession est requise" : null),
       zone: (value) => (value.length === 0 ? "Au moins une zone est requise" : null),
       phoneNumbers: {
-        number: (value, values) => {
-          const hasValidPhone = values.phoneNumbers.some((p) => p.number.trim() !== "");
-          return !hasValidPhone ? "Au moins un numéro de téléphone est requis" : null;
+        number: (value, values, path) => {
+          // Skip validation if field is empty
+          if (!value || value.trim() === "") {
+            const hasOtherValidPhone = values.phoneNumbers.some((p, idx) => {
+              const currentIndex = parseInt(path.split('.')[1]);
+              return idx !== currentIndex && p.number.trim() !== "";
+            });
+            return hasOtherValidPhone ? null : "Au moins un numéro de téléphone est requis";
+          }
+          
+          try {
+            // Check if the number is valid
+            if (!isValidPhoneNumber(value)) {
+              return 'Numéro de téléphone invalide';
+            }
+            
+            return null;
+          } catch {
+            return 'Numéro de téléphone invalide';
+          }
         },
       },
     },
@@ -221,7 +240,7 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
   return (
     <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col h-full overflow-hidden">
       {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
+      <div className="flex-1 overflow-y-visible overflow-x-hidden px-2 py-4">
         <div className="flex flex-col gap-6 pr-2">
           {/* Photo and Description - Inline */}
           <div className="grid grid-cols-1 md:grid-cols-[208px_1fr] gap-6 items-start">
@@ -309,17 +328,14 @@ export function AddArtisanForm({ onSuccess }: AddArtisanFormProps) {
 
             {form.values.phoneNumbers.map((phone, index) => (
               <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
-                <TextInput
+                <PhoneInput
                   label="Numéro de téléphone"
-                  placeholder="Ex: +229 01 96 09 69 69"
-                  size="lg"
-                  className="flex-1"
+                  placeholder="96 09 69 69"
                   required
-                  classNames={{
-                    input:
-                      "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-                  }}
-                  {...form.getInputProps(`phoneNumbers.${index}.number`)}
+                  className="flex-1"
+                  value={form.values.phoneNumbers[index].number}
+                  onChange={(value) => form.setFieldValue(`phoneNumbers.${index}.number`, value || '')}
+                  error={form.errors[`phoneNumbers.${index}.number`] as string | undefined}
                 />
                 <div className="flex items-center gap-3 mt-8">
                   <Switch

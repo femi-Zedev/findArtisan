@@ -1,0 +1,21 @@
+/* Minimal phone input styling - component handles most styling */
+.PhoneInput {
+  /* Remove default react-phone-number-input styles */
+}
+
+.PhoneInputInput {
+  /* Input styling handled by component */
+}
+
+.PhoneInputCountry {
+  /* Country selector styling handled by component */
+}
+
+.PhoneInputCountryIcon {
+  /* Flag styling handled by component */
+}
+
+/* Remove any conflicting styles */
+.phone-input-wrapper * {
+  box-shadow: none !important;
+}
