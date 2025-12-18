@@ -1,4 +1,5 @@
 import * as React from "react";
+import { createPortal } from "react-dom";
 import * as RPNInput from "react-phone-number-input";
 import flags from "react-phone-number-input/flags";
 
@@ -93,44 +94,80 @@ const CountrySelect = ({
 }: CountrySelectProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [position, setPosition] = React.useState<{ top: number; left: number; width: number } | null>(null);
   const [openUpward, setOpenUpward] = React.useState(false);
-  const [dropdownWidth, setDropdownWidth] = React.useState<number | undefined>(undefined);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   const dropdownContentRef = React.useRef<HTMLDivElement>(null);
 
-  // Calculate dropdown position and width based on available space
-  React.useEffect(() => {
-    if (isOpen && buttonRef.current && dropdownContentRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const spaceBelow = viewportHeight - buttonRect.bottom;
-      const spaceAbove = buttonRect.top;
-      const dropdownHeight = 400; // max-h-[400px]
+  // Calculate dropdown position using viewport coordinates (for portal)
+  const updatePosition = React.useCallback(() => {
+    if (!isOpen || !buttonRef.current) return;
 
-      // Open upward if there's not enough space below but enough space above
-      const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
-      setOpenUpward(shouldOpenUpward);
+    const buttonRect = buttonRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - buttonRect.bottom;
+    const spaceAbove = buttonRect.top;
+    const dropdownHeight = 400; // max-h-[400px]
 
-      // Find the parent PhoneInput container to get its width
-      let parentElement = buttonRef.current.parentElement;
-      while (parentElement) {
-        // Look for the RPNInput container (usually has specific classes or structure)
-        if (parentElement.classList.contains('PhoneInput') || 
-            parentElement.querySelector('input[type="tel"]')) {
-          const parentRect = parentElement.getBoundingClientRect();
-          setDropdownWidth(parentRect.width);
-          break;
-        }
-        parentElement = parentElement.parentElement;
+    // Open upward if there's not enough space below but enough space above
+    const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+    setOpenUpward(shouldOpenUpward);
+
+    // Find the parent PhoneInput container to get its width
+    let parentElement = buttonRef.current.parentElement;
+    let parentWidth = buttonRect.width;
+    while (parentElement) {
+      // Look for the RPNInput container (usually has specific classes or structure)
+      if (parentElement.classList.contains('PhoneInput') || 
+          parentElement.querySelector('input[type="tel"]')) {
+        const parentRect = parentElement.getBoundingClientRect();
+        parentWidth = parentRect.width;
+        break;
       }
+      parentElement = parentElement.parentElement;
     }
+
+    // Calculate position using viewport coordinates (for fixed positioning in portal)
+    const top = shouldOpenUpward 
+      ? buttonRect.top - dropdownHeight - 8 // 8px margin
+      : buttonRect.bottom + 8; // 8px margin
+
+    setPosition({
+      top,
+      left: buttonRect.left,
+      width: parentWidth,
+    });
   }, [isOpen]);
+
+  // Update position when dropdown opens or window resizes/scrolls
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    updatePosition();
+
+    const handleResize = () => updatePosition();
+    const handleScroll = () => updatePosition();
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, true); // Capture scroll events from all elements
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen, updatePosition]);
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        buttonRef.current &&
+        !buttonRef.current.contains(target) &&
+        dropdownContentRef.current &&
+        !dropdownContentRef.current.contains(target)
+      ) {
         setIsOpen(false);
         setSearchQuery("");
       }
@@ -196,13 +233,18 @@ const CountrySelect = ({
         </svg>
       </button>
 
-      {isOpen && (
+      {isOpen && position && typeof document !== 'undefined' && createPortal(
         <div
           ref={dropdownContentRef}
-          style={{ width: dropdownWidth ? `${dropdownWidth}px` : undefined }}
+          style={{
+            position: 'fixed',
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            width: `${position.width}px`,
+            zIndex: 500,
+          }}
           className={cn(
-            "absolute left-0 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg z-[9999] max-h-[400px] overflow-hidden flex flex-col",
-            openUpward ? "bottom-full mb-2" : "top-full mt-2"
+            "bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg max-h-[400px] overflow-hidden flex flex-col"
           )}
         >
           {/* Search Input */}
@@ -260,7 +302,8 @@ const CountrySelect = ({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronDown, Check } from "lucide-react";
 import { Input } from "@mantine/core";
 import { cn } from "@/app/lib/utils";
@@ -41,6 +42,7 @@ export function MultiSelectCompact({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [maxDisplayed, setMaxDisplayed] = useState(1);
+  const [position, setPosition] = useState<{ top: number; left: number; width: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const tagsContainerRef = useRef<HTMLDivElement>(null);
@@ -123,24 +125,59 @@ export function MultiSelectCompact({
     onChange([]);
   };
 
+  // Calculate dropdown position using viewport coordinates (for portal)
+  const updatePosition = useCallback(() => {
+    if (!isOpen || !inputRef.current) return;
+
+    const inputRect = inputRef.current.getBoundingClientRect();
+    
+    setPosition({
+      top: inputRect.bottom + 8, // 8px margin (mt-2 equivalent)
+      left: inputRect.left,
+      width: inputRect.width,
+    });
+  }, [isOpen]);
+
+  // Update position when dropdown opens or window resizes/scrolls
+  useEffect(() => {
+    if (!isOpen) return;
+
+    updatePosition();
+
+    const handleResize = () => updatePosition();
+    const handleScroll = () => updatePosition();
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, true); // Capture scroll events from all elements
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen, updatePosition]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
         inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
+        !inputRef.current.contains(target) &&
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target)
       ) {
         setIsOpen(false);
         setSearchQuery("");
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [isOpen]);
 
   return (
     <Input.Wrapper
@@ -256,11 +293,18 @@ export function MultiSelectCompact({
           />
         </div>
 
-        {isOpen && (
+        {isOpen && position && typeof document !== 'undefined' && createPortal(
           <div
             ref={dropdownRef}
+            style={{
+              position: 'fixed',
+              top: `${position.top}px`,
+              left: `${position.left}px`,
+              width: `${position.width}px`,
+              zIndex: 500,
+            }}
             className={cn(
-              "absolute z-[400] w-full mt-2 rounded-lg border shadow-lg",
+              "rounded-lg border shadow-lg",
               "bg-white dark:bg-gray-900",
               "border-gray-300 dark:border-gray-800",
               "flex flex-col max-h-60",
@@ -335,7 +379,8 @@ export function MultiSelectCompact({
                 )}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </Input.Wrapper>
