@@ -149,13 +149,13 @@ export function Navbar() {
           pointer-events: none;
         }
         [data-mantine-color-scheme="dark"] .liquid-glass-nav {
-          --shadow-color: rgba(255, 255, 255, 0.1);
-          --tint-opacity: 0.02;
+          --shadow-color: rgba(255, 255, 255, 0.01);
+          --tint-opacity: 0.01;
         }
         @keyframes slideDown {
           from {
             opacity: 0;
-            transform: translateY(-8px);
+            transform: translateY(-4px);
           }
           to {
             opacity: 1;
@@ -170,7 +170,7 @@ export function Navbar() {
           <div
             className={cn(
               "relative transition-colors",
-              "liquid-glass-nav bg-white/50 dark:bg-gray-900/50 rounded-2xl sm:px-5",
+              "liquid-glass-nav bg-white/10 dark:bg-gray-900/20 rounded-2xl sm:px-5",
               "border border-gray-200/50 dark:border-gray-600/50 shadow-xs",
               isMobile
                 ? [
@@ -292,7 +292,7 @@ export function Navbar() {
                 className={cn(
                   "sm:hidden absolute top-full left-0 right-0 mt-2 z-40",
                   // White rounded panel with backdrop blur
-                  "bg-white dark:bg-gray-900",
+                  "liquid-glass-nav bg-white/10 dark:bg-gray-900/20",
                   "rounded-2xl border border-gray-200/50 dark:border-gray-700/50",
                   "shadow-lg",
                   // Slide down animation

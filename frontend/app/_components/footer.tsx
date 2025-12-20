@@ -9,7 +9,7 @@ export function Footer() {
 
   return (
     <footer className="relative mt-auto border-t border-gray-200/50 dark:border-gray-800/50 bg-white/60 backdrop-blur-md dark:bg-gray-900/60">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 sm:py-8">
+      <div className="mx-auto max-w-6xl px-6 py-8 sm:py-8">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Section */}
           <div className="space-y-4">

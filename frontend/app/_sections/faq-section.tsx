@@ -50,7 +50,7 @@ export function FAQSection() {
   };
 
   return (
-    <section id="faq" className="w-full px-4 py-12 sm:px-6 lg:px-8 ">
+    <section id="faq" className="w-full py-12 px-6 lg:px-8 ">
       <div className="mx-auto max-w-4xl">
         {/* Section Header */}
         <div className="mb-10 text-center">
