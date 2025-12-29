@@ -76,11 +76,6 @@ export default function ArtisansPage() {
       body: (
         <AddArtisanForm
           artisan={artisan}
-          onSuccess={() => {
-            // Invalidate and refetch artisans list
-            queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
-            closeDrawer();
-          }}
         />
       ),
       size: "xl",

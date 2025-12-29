@@ -44,7 +44,7 @@ export function AddArtisanSelection({ onSuccess, onBack }: AddArtisanSelectionPr
       <div className="flex flex-col h-full overflow-hidden">
         <BackButton onClick={handleBack} />
         <div className="flex-1 overflow-y-auto">
-          <AddArtisanForm onSuccess={onSuccess} />
+          <AddArtisanForm />
         </div>
       </div>
     );

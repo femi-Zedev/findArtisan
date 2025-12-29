@@ -1,16 +1,21 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea, Switch, Select, Text } from "@mantine/core";
+import { Button, Autocomplete, TextInput, Textarea, Switch, Select, Tooltip } from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { Plus, X, Minus, Image } from "lucide-react";
 import { cn } from "@/app/lib/utils";
-import { zones, professions } from "@/constants";
-import { useState, useCallback } from "react";
+import { professions, zones } from "@/constants";
+import { useState, useCallback, useMemo } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
 import { PhoneInput } from "../ui/PhoneInput";
 import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
-import type { Artisan } from "@/app/lib/services/artisan";
+import { useCreateArtisan, useUpdateArtisan, type Artisan, artisanKeys } from "@/app/lib/services/artisan";
+import { notifications } from "@mantine/notifications";
+import { useUserStore } from "@/stores/userStore";
+import { useSession } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSearchLocations } from "@/app/lib/services/location";
 
 interface PhoneNumber {
   number: string;
@@ -33,7 +38,6 @@ export interface AddArtisanFormValues {
 }
 
 interface AddArtisanFormProps {
-  onSuccess?: (values: AddArtisanFormValues) => void;
   artisan?: Artisan;
 }
 
@@ -62,23 +66,23 @@ function PhotoUploadDropzone({
     <div className="flex flex-col">
       {showLabel && (
         <label className="mantine-TextInput-label">
-          Photo de profil (optionnel)
+          Photo de l'artisan
         </label>
       )}
-      <div className="relative">
+      <div className="relative group">
         <Dropzone
           onDrop={onDrop}
           accept={IMAGE_MIME_TYPE}
           multiple={false}
           classNames={{
             root: cn(
-              "relative h-32 w-42 rounded-3xl border-2 border-dashed",
+              "relative h-32 w-42 border-2 border-dashed rounded-3xl",
               "flex items-center justify-center cursor-pointer transition-all",
               "border-gray-300 dark:border-gray-600",
               "bg-gray-50 dark:bg-gray-800/50",
               "hover:border-teal-500 dark:hover:border-teal-500",
               "hover:bg-teal-50/50 dark:hover:bg-teal-900/10",
-              photoPreview && "w-42 h-42 border-solid !rounded-full "
+              photoPreview && "w-42 h-42 border-solid rounded-full"
             ),
             inner: "h-full w-full flex items-center justify-center p-0",
           }}
@@ -98,20 +102,26 @@ function PhotoUploadDropzone({
               <img
                 src={photoPreview}
                 alt="Photo preview"
-                className="w-full h-full rounded-2xl object-cover"
+                className="w-full h-full rounded-full object-cover"
               />
               <button
                 type="button"
                 onClick={onRemove}
                 className={cn(
-                  "absolute -top-1 -right-1 w-8 h-8 rounded-full z-10",
+                  "absolute inset-0 w-full h-full rounded-full z-10",
                   "flex items-center justify-center",
-                  "bg-red-500 hover:bg-red-600 text-white",
-                  "shadow-lg transition-colors"
+                  "bg-black/60 hover:bg-black/70 text-white",
+                  "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                  "backdrop-blur-sm"
                 )}
                 aria-label="Supprimer la photo"
               >
-                <X size={14} />
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-colors cursor-pointer">
+                    <X size={20} />
+                  </div>
+                  <span className="text-xs font-medium">Supprimer</span>
+                </div>
               </button>
             </>
           ) : (
@@ -127,15 +137,34 @@ function PhotoUploadDropzone({
   );
 }
 
-export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
-  const [hasSocialMedia, setHasSocialMedia] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+export function AddArtisanForm({ artisan }: AddArtisanFormProps) {
+  const isEditMode = !!artisan;
+  const [hasSocialMedia, setHasSocialMedia] = useState(artisan?.socialLinks && artisan.socialLinks.length > 0);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(
+    artisan?.profilePhoto?.url || null
+  );
+
+  // Fetch all locations on mount
+  const { data: locations = [], isLoading: isLoadingLocations } = useSearchLocations({
+    variables: {
+      pageSize: 100, // Fetch all cities
+    },
+    enabled: true,
+  });
+
+  // Transform locations to MultiSelectCompact format
+  const zoneOptions = useMemo(() => {
+    return locations.map((location) => ({
+      value: location.slug || location.city.toLowerCase().replace(/\s+/g, "-"), // Use slug if available, otherwise create from city name
+      label: location.city,
+    }));
+  }, [locations]);
 
   const initialValues: AddArtisanFormValues = artisan
     ? {
         fullName: artisan.fullName ?? "",
         profession: artisan.profession?.name ?? "",
-        zone: artisan.zones?.map((z) => z.name) ?? [],
+        zone: artisan.zones?.map((z) => z.slug) ?? [],
         phoneNumbers:
           artisan.phoneNumbers && artisan.phoneNumbers.length > 0
             ? artisan.phoneNumbers.map((p) => ({
@@ -144,12 +173,14 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
               }))
             : [{ number: "", isWhatsApp: false }],
         socialMedia:
-          artisan.socialLinks?.map((s) => ({
-            platform: s.platform,
-            link: s.link,
-          })) ?? [],
+          artisan.socialLinks && artisan.socialLinks.length > 0
+            ? artisan.socialLinks.map((s) => ({
+                platform: s.platform,
+                link: s.link,
+              }))
+            : [],
         description: artisan.description ?? "",
-        photo: null,
+        photo: null, // In edit mode, we don't set photo as File, we'll handle it separately
       }
     : {
         fullName: "",
@@ -251,11 +282,106 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
     }
   }, [handlePhotoChange]);
 
-  const handleSubmit = (values: AddArtisanFormValues) => {
-    // TODO: Implement API call to submit artisan
-    console.log("Add Artisan:", values);
-    if (onSuccess) {
-      onSuccess(values);
+  const { isAdmin } = useUserStore();
+  const { data: session } = useSession();
+  const jwt = (session?.user as any)?.strapiJwt || '';
+  const queryClient = useQueryClient();
+
+  const createArtisanMutation = useCreateArtisan({
+    onSuccess: () => {
+      notifications.show({
+        title: "Succès",
+        message: "L'artisan a été ajouté avec succès !",
+        color: "teal",
+      });
+      // Reset form
+      form.reset();
+      setPhotoPreview(null);
+      setHasSocialMedia(false);
+      // Invalidate queries to refresh lists
+      queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: "Erreur",
+        message: error.message || "Une erreur est survenue lors de l'ajout de l'artisan",
+        color: "red",
+      });
+    },
+  });
+
+  const updateArtisanMutation = useUpdateArtisan({
+    onSuccess: () => {
+      notifications.show({
+        title: "Succès",
+        message: "L'artisan a été modifié avec succès !",
+        color: "teal",
+      });
+      // Invalidate queries to refresh lists
+      queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: "Erreur",
+        message: error.message || "Une erreur est survenue lors de la modification de l'artisan",
+        color: "red",
+      });
+    },
+  });
+
+  const handleSubmit = async (values: AddArtisanFormValues) => {
+    try {
+      // Determine profile_photo: new File, existing ID, or undefined
+      let profilePhoto: File | number | undefined;
+      if (values.photo) {
+        // New photo uploaded
+        profilePhoto = values.photo;
+      } else if (isEditMode && artisan?.profilePhoto?.id) {
+        // No new photo, but existing photo exists - keep it
+        profilePhoto = artisan.profilePhoto.id;
+      }
+      // Otherwise profilePhoto is undefined (no photo)
+
+      const payload = {
+        full_name: values.fullName,
+        description: values.description || "",
+        profession: values.profession,
+        zones: values.zone,
+        phone_numbers: values.phoneNumbers
+          .filter((phone) => phone.number.trim() !== "")
+          .map((phone) => ({
+            number: phone.number.trim(),
+            is_whatsapp: phone.isWhatsApp,
+          })),
+        social_links:
+          values.socialMedia.length > 0
+            ? values.socialMedia
+              .filter((social) => social.platform && social.link)
+              .map((social) => ({
+                platform: social.platform,
+                link: social.link.trim(),
+              }))
+            : undefined,
+        profile_photo: profilePhoto,
+        is_community_submitted: isAdmin() ? false : true,
+        status: artisan?.status || "approved",
+      };
+
+      if (isEditMode && artisan) {
+        await updateArtisanMutation.mutateAsync({
+          id: artisan.id,
+          payload,
+          jwt,
+        });
+      } else {
+        await createArtisanMutation.mutateAsync({
+          payload,
+          jwt,
+        });
+      }
+    } catch (error) {
+      // Error is handled by onError callback
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} artisan:`, error);
     }
   };
 
@@ -294,7 +420,8 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
           {/* Full Name */}
           <TextInput
             label="Nom complet"
-            placeholder="Ex: Jean Dupont"
+            placeholder="Ex: Dodji COMLAN "
+            description="(Prénoms Nom) L'ordre est important !"
             size="lg"
             required
             classNames={{
@@ -308,7 +435,7 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
           {/* Profession and Zone - Same Line */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Autocomplete
-              label="Profession"
+              label="Domaine"
               placeholder="Ex: Plombier"
               size="lg"
               data={professions}
@@ -480,9 +607,13 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
           type="submit"
           size="lg"
           fullWidth
+          loading={createArtisanMutation.isPending || updateArtisanMutation.isPending}
+          disabled={createArtisanMutation.isPending || updateArtisanMutation.isPending}
           className="bg-teal-500 hover:bg-teal-600 text-white font-semibold"
         >
-          Ajouter l'artisan
+          {createArtisanMutation.isPending || updateArtisanMutation.isPending
+            ? (isEditMode ? "Modification en cours..." : "Ajout en cours...")
+            : (isEditMode ? "Modifier l'artisan" : "Ajouter l'artisan")}
         </Button>
       </div>
     </form>
