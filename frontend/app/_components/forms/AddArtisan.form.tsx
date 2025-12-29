@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea, Switch, Select } from "@mantine/core";
+import { Button, Autocomplete, TextInput, Textarea, Switch, Select, Text } from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { useForm } from "@mantine/form";
 import { Plus, X, Minus, Image } from "lucide-react";
@@ -72,21 +72,19 @@ function PhotoUploadDropzone({
           multiple={false}
           classNames={{
             root: cn(
-              "relative w-52 h-32 rounded-2xl border-2 border-dashed",
+              "relative h-32 w-42 rounded-3xl border-2 border-dashed",
               "flex items-center justify-center cursor-pointer transition-all",
               "border-gray-300 dark:border-gray-600",
               "bg-gray-50 dark:bg-gray-800/50",
               "hover:border-teal-500 dark:hover:border-teal-500",
               "hover:bg-teal-50/50 dark:hover:bg-teal-900/10",
-              photoPreview && "border-solid border-teal-500 dark:border-teal-400"
+              photoPreview && "w-42 h-42 border-solid !rounded-full "
             ),
             inner: "h-full w-full flex items-center justify-center p-0",
           }}
           styles={{
             root: {
               padding: 0,
-              width: "208px",
-              height: "128px",
             },
             inner: {
               height: "100%",
@@ -119,7 +117,7 @@ function PhotoUploadDropzone({
           ) : (
             <div className="flex flex-col items-center gap-2 text-gray-400 dark:text-gray-500 pointer-events-none">
               <Image className="w-8 h-8" />
-              <span className="text-xs text-center px-2">Cliquez ou glissez-déposez</span>
+              <span className="text-xs text-center px-2">Cliquez ou <br /> glissez-déposez</span>
             </div>
           )}
         </Dropzone>
@@ -282,7 +280,7 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
               label="Description"
               placeholder="Décrivez les services offerts par cet artisan..."
               size="lg"
-              rows={4}
+              maxLength={1000}
               required
               classNames={{
                 label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
