@@ -72,11 +72,6 @@ export default function ContributionsPage() {
       title: "Ajouter un artisan",
       body: (
         <AddArtisanSelection
-          onSuccess={() => {
-            // Invalidate and refetch artisans list
-            queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
-            closeDrawer();
-          }}
         />
       ),
       size: "xl",

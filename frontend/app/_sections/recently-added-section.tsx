@@ -52,17 +52,6 @@ export function RecentlyAddedSection() {
       title: "Ajouter un artisan",
       body: (
         <AddArtisanSelection
-          onSuccess={(values) => {
-            // Invalidate and refetch recently added artisans
-            queryClient.invalidateQueries({ queryKey: artisanKeys.recentlyAdded() });
-            closeDrawer();
-            notifications.show({
-              title: "Artisan ajouté",
-              message: "L'artisan a été ajouté avec succès",
-              color: "green",
-              autoClose: 3000,
-            });
-          }}
         />
       ),
       size: "xl",

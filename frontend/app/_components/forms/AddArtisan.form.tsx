@@ -1,196 +1,40 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea, Switch, Select, Tooltip } from "@mantine/core";
-import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
+import { Button, Autocomplete, TextInput, Textarea } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { Plus, X, Minus, Image } from "lucide-react";
-import { cn } from "@/app/lib/utils";
-import { professions, zones } from "@/constants";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
-import { PhoneInput } from "../ui/PhoneInput";
-import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
+import { PhotoUploadDropzone } from "../ui/PhotoUploadDropzone";
+import { PhoneNumbersSection } from "./PhoneNumbersSection";
+import { SocialMediaSection } from "./SocialMediaSection";
 import { useCreateArtisan, useUpdateArtisan, type Artisan, artisanKeys } from "@/app/lib/services/artisan";
 import { notifications } from "@mantine/notifications";
 import { useUserStore } from "@/stores/userStore";
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useSearchLocations } from "@/app/lib/services/location";
-
-interface PhoneNumber {
-  number: string;
-  isWhatsApp: boolean;
-}
-
-interface SocialMedia {
-  platform: string;
-  link: string;
-}
-
-export interface AddArtisanFormValues {
-  fullName: string;
-  profession: string;
-  zone: string[];
-  phoneNumbers: PhoneNumber[];
-  socialMedia: SocialMedia[];
-  description?: string;
-  photo?: File | null;
-}
+import { professions, zones } from "@/constants";
+import {
+  type AddArtisanFormValues,
+  validatePhoneNumber,
+  transformFormValuesToPayload,
+  getInitialFormValues,
+} from "@/app/lib/utils/artisan-form";
 
 interface AddArtisanFormProps {
   artisan?: Artisan;
+  onSuccess?: () => void;
 }
 
-const socialPlatforms = [
-  { value: "facebook", label: "Facebook" },
-  { value: "tiktok", label: "TikTok" },
-  { value: "instagram", label: "Instagram" },
-];
-
-interface PhotoUploadDropzoneProps {
-  photoPreview: string | null;
-  onDrop: (files: File[]) => void;
-  onRemove: (e: React.MouseEvent) => void;
-  error?: string;
-  showLabel?: boolean;
-}
-
-function PhotoUploadDropzone({
-  photoPreview,
-  onDrop,
-  onRemove,
-  error,
-  showLabel = true,
-}: PhotoUploadDropzoneProps) {
-  return (
-    <div className="flex flex-col">
-      {showLabel && (
-        <label className="mantine-TextInput-label">
-          Photo de l'artisan
-        </label>
-      )}
-      <div className="relative group">
-        <Dropzone
-          onDrop={onDrop}
-          accept={IMAGE_MIME_TYPE}
-          multiple={false}
-          classNames={{
-            root: cn(
-              "relative h-32 w-42 border-2 border-dashed rounded-3xl",
-              "flex items-center justify-center cursor-pointer transition-all",
-              "border-gray-300 dark:border-gray-600",
-              "bg-gray-50 dark:bg-gray-800/50",
-              "hover:border-teal-500 dark:hover:border-teal-500",
-              "hover:bg-teal-50/50 dark:hover:bg-teal-900/10",
-              photoPreview && "w-42 h-42 border-solid rounded-full"
-            ),
-            inner: "h-full w-full flex items-center justify-center p-0",
-          }}
-          styles={{
-            root: {
-              padding: 0,
-            },
-            inner: {
-              height: "100%",
-              width: "100%",
-              padding: 0,
-            },
-          }}
-        >
-          {photoPreview ? (
-            <>
-              <img
-                src={photoPreview}
-                alt="Photo preview"
-                className="w-full h-full rounded-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={onRemove}
-                className={cn(
-                  "absolute inset-0 w-full h-full rounded-full z-10",
-                  "flex items-center justify-center",
-                  "bg-black/60 hover:bg-black/70 text-white",
-                  "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
-                  "backdrop-blur-sm"
-                )}
-                aria-label="Supprimer la photo"
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center transition-colors cursor-pointer">
-                    <X size={20} />
-                  </div>
-                  <span className="text-xs font-medium">Supprimer</span>
-                </div>
-              </button>
-            </>
-          ) : (
-            <div className="flex flex-col items-center gap-2 text-gray-400 dark:text-gray-500 pointer-events-none">
-              <Image className="w-8 h-8" />
-              <span className="text-xs text-center px-2">Cliquez ou <br /> glissez-déposez</span>
-            </div>
-          )}
-        </Dropzone>
-      </div>
-      {error && <span className="text-xs text-red-500">{error}</span>}
-    </div>
-  );
-}
-
-export function AddArtisanForm({ artisan }: AddArtisanFormProps) {
+export function AddArtisanForm({ artisan, onSuccess }: AddArtisanFormProps) {
   const isEditMode = !!artisan;
-  const [hasSocialMedia, setHasSocialMedia] = useState(artisan?.socialLinks && artisan.socialLinks.length > 0);
+  const [hasSocialMedia, setHasSocialMedia] = useState<boolean>(
+    !!(artisan?.socialLinks && artisan.socialLinks.length > 0)
+  );
   const [photoPreview, setPhotoPreview] = useState<string | null>(
     artisan?.profilePhoto?.url || null
   );
 
-  // Fetch all locations on mount
-  const { data: locations = [], isLoading: isLoadingLocations } = useSearchLocations({
-    variables: {
-      pageSize: 100, // Fetch all cities
-    },
-    enabled: true,
-  });
-
-  // Transform locations to MultiSelectCompact format
-  const zoneOptions = useMemo(() => {
-    return locations.map((location) => ({
-      value: location.slug || location.city.toLowerCase().replace(/\s+/g, "-"), // Use slug if available, otherwise create from city name
-      label: location.city,
-    }));
-  }, [locations]);
-
-  const initialValues: AddArtisanFormValues = artisan
-    ? {
-        fullName: artisan.fullName ?? "",
-        profession: artisan.profession?.name ?? "",
-        zone: artisan.zones?.map((z) => z.slug) ?? [],
-        phoneNumbers:
-          artisan.phoneNumbers && artisan.phoneNumbers.length > 0
-            ? artisan.phoneNumbers.map((p) => ({
-                number: p.number,
-                isWhatsApp: p.isWhatsApp,
-              }))
-            : [{ number: "", isWhatsApp: false }],
-        socialMedia:
-          artisan.socialLinks && artisan.socialLinks.length > 0
-            ? artisan.socialLinks.map((s) => ({
-                platform: s.platform,
-                link: s.link,
-              }))
-            : [],
-        description: artisan.description ?? "",
-        photo: null, // In edit mode, we don't set photo as File, we'll handle it separately
-      }
-    : {
-        fullName: "",
-        profession: "",
-        zone: [],
-        phoneNumbers: [{ number: "", isWhatsApp: false }],
-        socialMedia: [],
-        description: "",
-        photo: null,
-      };
+  const initialValues = getInitialFormValues(artisan);
 
   const form = useForm<AddArtisanFormValues>({
     initialValues,
@@ -200,41 +44,12 @@ export function AddArtisanForm({ artisan }: AddArtisanFormProps) {
       zone: (value) => (value.length === 0 ? "Au moins une zone est requise" : null),
       phoneNumbers: {
         number: (value, values, path) => {
-          // Skip validation if field is empty
-          if (!value || value.trim() === "") {
-            const hasOtherValidPhone = values.phoneNumbers.some((p, idx) => {
-              const currentIndex = parseInt(path.split('.')[1]);
-              return idx !== currentIndex && p.number.trim() !== "";
-            });
-            return hasOtherValidPhone ? null : "Au moins un numéro de téléphone est requis";
-          }
-          
-          try {
-            // Check if the number is valid
-            if (!isValidPhoneNumber(value)) {
-              return 'Numéro de téléphone invalide';
-            }
-            
-            return null;
-          } catch {
-            return 'Numéro de téléphone invalide';
-          }
+          const currentIndex = parseInt(path.split('.')[1]);
+          return validatePhoneNumber(value, values.phoneNumbers, currentIndex);
         },
       },
     },
   });
-
-  const addPhoneNumber = () => {
-    if (form.values.phoneNumbers.length < 4) {
-      form.insertListItem("phoneNumbers", { number: "", isWhatsApp: false });
-    }
-  };
-
-  const removePhoneNumber = (index: number) => {
-    if (form.values.phoneNumbers.length > 1) {
-      form.removeListItem("phoneNumbers", index);
-    }
-  };
 
   const toggleSocialMedia = (checked: boolean) => {
     setHasSocialMedia(checked);
@@ -242,17 +57,6 @@ export function AddArtisanForm({ artisan }: AddArtisanFormProps) {
       form.setFieldValue("socialMedia", []);
     } else if (form.values.socialMedia.length === 0) {
       form.insertListItem("socialMedia", { platform: "", link: "" });
-    }
-  };
-
-  const addSocialMedia = () => {
-    form.insertListItem("socialMedia", { platform: "", link: "" });
-  };
-
-  const removeSocialMedia = (index: number) => {
-    form.removeListItem("socialMedia", index);
-    if (form.values.socialMedia.length === 1) {
-      setHasSocialMedia(false);
     }
   };
 
@@ -298,8 +102,10 @@ export function AddArtisanForm({ artisan }: AddArtisanFormProps) {
       form.reset();
       setPhotoPreview(null);
       setHasSocialMedia(false);
-      // Invalidate queries to refresh lists
-      queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
+      
+      if (onSuccess) {
+        onSuccess();
+      }
     },
     onError: (error: Error) => {
       notifications.show({
@@ -319,6 +125,9 @@ export function AddArtisanForm({ artisan }: AddArtisanFormProps) {
       });
       // Invalidate queries to refresh lists
       queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
+      if (onSuccess) {
+        onSuccess();
+      }
     },
     onError: (error: Error) => {
       notifications.show({
@@ -331,41 +140,12 @@ export function AddArtisanForm({ artisan }: AddArtisanFormProps) {
 
   const handleSubmit = async (values: AddArtisanFormValues) => {
     try {
-      // Determine profile_photo: new File, existing ID, or undefined
-      let profilePhoto: File | number | undefined;
-      if (values.photo) {
-        // New photo uploaded
-        profilePhoto = values.photo;
-      } else if (isEditMode && artisan?.profilePhoto?.id) {
-        // No new photo, but existing photo exists - keep it
-        profilePhoto = artisan.profilePhoto.id;
-      }
-      // Otherwise profilePhoto is undefined (no photo)
-
-      const payload = {
-        full_name: values.fullName,
-        description: values.description || "",
-        profession: values.profession,
-        zones: values.zone,
-        phone_numbers: values.phoneNumbers
-          .filter((phone) => phone.number.trim() !== "")
-          .map((phone) => ({
-            number: phone.number.trim(),
-            is_whatsapp: phone.isWhatsApp,
-          })),
-        social_links:
-          values.socialMedia.length > 0
-            ? values.socialMedia
-              .filter((social) => social.platform && social.link)
-              .map((social) => ({
-                platform: social.platform,
-                link: social.link.trim(),
-              }))
-            : undefined,
-        profile_photo: profilePhoto,
-        is_community_submitted: isAdmin() ? false : true,
-        status: artisan?.status || "approved",
-      };
+      const payload = transformFormValuesToPayload(
+        values,
+        isEditMode,
+        isAdmin,
+        artisan
+      );
 
       if (isEditMode && artisan) {
         await updateArtisanMutation.mutateAsync({
@@ -473,131 +253,14 @@ export function AddArtisanForm({ artisan }: AddArtisanFormProps) {
           </div>
 
           {/* Phone Numbers */}
-          <div className="flex flex-col gap-4">
-
-            {form.values.phoneNumbers.map((phone, index) => (
-              <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
-                <PhoneInput
-                  label="Numéro de téléphone"
-                  placeholder="96 09 69 69"
-                  required
-                  className="flex-1"
-                  value={form.values.phoneNumbers[index].number}
-                  onChange={(value) => form.setFieldValue(`phoneNumbers.${index}.number`, value || '')}
-                  error={form.errors[`phoneNumbers.${index}.number`] as string | undefined}
-                />
-                <div className="flex items-center gap-3 mt-8">
-                  <Switch
-                    label="Numéro dispo sur WhatsApp ?"
-                    size="md"
-                    classNames={{
-                      label: "text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap",
-                      root: "flex items-center gap-2",
-                    }}
-                    {...form.getInputProps(`phoneNumbers.${index}.isWhatsApp`, {
-                      type: "checkbox",
-                    })}
-                  />
-                  {form.values.phoneNumbers.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removePhoneNumber(index)}
-                      className={cn(
-                        "p-2 rounded-lg transition-colors",
-                        "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      )}
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-            {form.values.phoneNumbers.length < 4 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                leftSection={<Plus size={16} />}
-                onClick={addPhoneNumber}
-                className="self-start border-teal-500 text-teal-500 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-900/20"
-              >
-                Ajouter un autre numéro
-              </Button>
-            )}
-            {form.errors.phoneNumbers && (
-              <span className="text-xs text-red-500">{form.errors.phoneNumbers as string}</span>
-            )}
-          </div>
+          <PhoneNumbersSection form={form} />
 
           {/* Social Media - Toggleable */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-
-              <Switch
-                label="Réseaux sociaux (optionnel)"
-                checked={hasSocialMedia}
-                onChange={(e) => toggleSocialMedia(e.currentTarget.checked)}
-                size="md"
-                classNames={{
-                  root: "flex items-center",
-                }}
-              />
-            </div>
-            {hasSocialMedia && (
-              <div className="flex flex-col gap-4">
-                {form.values.socialMedia.map((social, index) => (
-                  <div key={index} className="flex gap-4">
-                    <Select
-                      placeholder="Plateforme"
-                      size="lg"
-                      data={socialPlatforms}
-                      className="flex-1"
-                      classNames={{
-                        input:
-                          "rounded-lg border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
-                        dropdown:
-                          "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
-                        option:
-                          "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
-                      }}
-                      {...form.getInputProps(`socialMedia.${index}.platform`)}
-                    />
-                    <TextInput
-                      placeholder="https://..."
-                      size="lg"
-                      className="flex-1"
-                      classNames={{
-                        input:
-                          "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-                      }}
-                      {...form.getInputProps(`socialMedia.${index}.link`)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeSocialMedia(index)}
-                      className={cn(
-                        "py-2 px-4 rounded-lg transition-colors flex items-center justify-center",
-                        "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      )}
-                    >
-                      <Minus size={16} />
-                    </button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  leftSection={<Plus size={16} />}
-                  onClick={addSocialMedia}
-                  className="self-start border-teal-500 text-teal-500 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-900/20"
-                >
-                  Ajouter un autre réseau social
-                </Button>
-              </div>
-            )}
-          </div>
+          <SocialMediaSection
+            form={form}
+            hasSocialMedia={hasSocialMedia}
+            onToggleSocialMedia={toggleSocialMedia}
+          />
         </div>
       </div>
 

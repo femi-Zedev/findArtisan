@@ -12,7 +12,6 @@ import { useModalContext } from "@/providers/modal-provider";
 import { useUserStore } from "@/stores/userStore";
 import { GoogleLoginModal } from "./modals/GoogleLoginModal";
 import { useDrawerContext } from "@/providers/drawer-provider";
-import { AddArtisanSelection } from "./forms/AddArtisanSelection";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

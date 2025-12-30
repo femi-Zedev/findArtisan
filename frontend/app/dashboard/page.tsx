@@ -28,14 +28,6 @@ export default function DashboardPage() {
       title: "Ajouter un artisan",
       body: (
         <AddArtisanSelection
-          onSuccess={() => {
-            // Invalidate dashboard stats to refresh
-            queryClient.invalidateQueries({
-              queryKey: dashboardKeys.stats(sessionUserId),
-            });
-            closeDrawer();
-            // Notification is already shown by the form component
-          }}
         />
       ),
       size: "xl",

@@ -3,30 +3,25 @@
 import { useState, useCallback } from "react";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { AddArtisanForm } from "./AddArtisan.form";
-import { AddArtisanFormValues } from "./AddArtisan.form";
 import { AddArtisanCsvForm, ParsedArtisan } from "./AddArtisanCsv.form";
 import { BackButton, InfoBox, MethodCard } from "../ui";
+import { AddArtisanFormValues } from "@/app/lib/utils/artisan-form";
 
 interface AddArtisanSelectionProps {
-  onSuccess?: (values: AddArtisanFormValues) => void;
+    
   onBack?: () => void;
 }
 
 type SelectionMethod = "form" | "csv" | null;
 
-export function AddArtisanSelection({ onSuccess, onBack }: AddArtisanSelectionProps) {
+export function AddArtisanSelection({ onBack }: AddArtisanSelectionProps) {
   const [selectedMethod, setSelectedMethod] = useState<SelectionMethod>(null);
 
   const handleCsvSuccess = useCallback(
     (parsedData: ParsedArtisan[]) => {
       // CSV batch submission was successful, close drawer by calling parent onSuccess
-      if (onSuccess) {
-        // Call parent onSuccess to trigger drawer close
-        // The parent component (e.g., recently-added-section) will handle closing the drawer
-        onSuccess({} as AddArtisanFormValues); // Pass empty object as placeholder
-      }
     },
-    [onSuccess]
+    []
   );
 
   const handleCsvError = useCallback((error: string) => {

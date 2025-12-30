@@ -34,12 +34,6 @@ export default function Home() {
         title: "Ajouter un artisan",
         body: (
           <AddArtisanSelection
-            onSuccess={(values) => {
-              // TODO: Implement API call to submit artisan
-              console.log("Artisan added:", values);
-              closeDrawer();
-              // TODO: Show success toast notification
-            }}
           />
         ),
         size: "xl",
