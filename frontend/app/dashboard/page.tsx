@@ -8,12 +8,11 @@ import {
   useGetDashboardStats,
   type AdminStats,
   type UserStats,
-  dashboardKeys,
 } from "@/app/lib/services/dashboard";
 import { useDrawerContext } from "@/providers/drawer-provider";
-import { AddArtisanSelection } from "@/app/_components/forms/AddArtisanSelection";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
+import { AddArtisan } from "../_components/AddArtisan";
 
 export default function DashboardPage() {
   const { user } = useUserStore();
@@ -25,13 +24,12 @@ export default function DashboardPage() {
 
   const handleOpenAddArtisanDrawer = () => {
     openDrawer({
-      title: "Ajouter un artisan",
       body: (
-        <AddArtisanSelection
-        />
+        <AddArtisan />
       ),
       size: "xl",
-      bodyClassName: "p-6 overflow-y-hidden",
+      asChild: true,
+      bodyClassName: "overflow-y-hidden",
     });
   };
 

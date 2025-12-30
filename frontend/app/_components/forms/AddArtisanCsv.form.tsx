@@ -7,10 +7,12 @@ import * as Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { cn } from "@/app/lib/utils";
 import { InfoBox, FileUploadArea } from "../ui";
+import { FormArea, ButtonsArea } from "../shared";
 import { useCreateBatchArtisans, type CreateBatchArtisanPayload, type BatchCreateArtisanResponse } from "@/app/lib/services/artisan";
 import { notifications } from "@mantine/notifications";
 import { useUserStore } from "@/stores/userStore";
 import { useSession } from "next-auth/react";
+import { useDrawerContext } from "@/providers/drawer-provider";
 
 const CSV_TEMPLATE_HEADERS = [
   "Nom complet *",
@@ -230,6 +232,7 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
   const { isAdmin } = useUserStore();
   const { data: session } = useSession();
   const jwt = (session?.user as any)?.strapiJwt || '';
+  const { closeDrawer } = useDrawerContext();
   const [csvState, setCsvState] = useState<CsvUploadState>({
     file: null,
     error: null,
@@ -267,6 +270,7 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
       if (response.failed === 0) {
         // Show success message briefly, then close drawer
         setTimeout(() => {
+          closeDrawer();
           if (onSuccess) {
             onSuccess(csvState.parsedData);
           }
@@ -613,8 +617,7 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2 -mr-2">
-        <div className="flex flex-col gap-6 pr-2">
+      <FormArea className="gap-6">
           {showUploadSections && (
             <>
               <InfoBox title="Instructions pour l'upload en lot" variant="blue">
@@ -861,10 +864,9 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
               )}
             </div>
           )}
-        </div>
-      </div>
+      </FormArea>
 
-      <div className="shrink-0 py-6 space-y-3">
+      <ButtonsArea>
         {batchResult && (
           <Button
             onClick={() => {
@@ -880,8 +882,6 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
             }}
             variant="light"
             size="md"
-            radius="lg"
-            fullWidth
             color="gray"
             className="font-semibold"
           >
@@ -893,8 +893,6 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
             onClick={handleCsvSubmit}
             disabled={!csvState.isValid || isProcessing || csvState.parsedData.length === 0}
             size="lg"
-            radius="lg"
-            fullWidth
             color="teal"
             className="font-semibold transition-colors"
             loading={isProcessing}
@@ -905,7 +903,7 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
               : `Soumettre ${csvState.parsedData.length > 0 ? `${csvState.parsedData.length} artisan(s)` : "le fichier"}`}
           </Button>
         )}
-      </div>
+      </ButtonsArea>
     </div>
   );
 }

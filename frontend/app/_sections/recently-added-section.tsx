@@ -7,11 +7,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useDrawerContext } from "@/providers/drawer-provider";
 import { useModalContext } from "@/providers/modal-provider";
 import { useUserStore } from "@/stores/userStore";
-import { AddArtisanSelection } from "../_components/forms/AddArtisanSelection";
 import { GoogleLoginModal } from "../_components/modals/GoogleLoginModal";
 import { PlusIcon } from "lucide-react";
 import { artisanKeys } from "../lib/services/artisan";
 import { notifications } from "@mantine/notifications";
+import { AddArtisan } from "../_components/AddArtisan";
 
 export function RecentlyAddedSection() {
   const { data, isLoading, error } = useGetRecentlyAdded({ variables: 6 });
@@ -49,13 +49,12 @@ export function RecentlyAddedSection() {
 
     // If authenticated, open drawer with selection screen
     openDrawer({
-      title: "Ajouter un artisan",
       body: (
-        <AddArtisanSelection
-        />
+        <AddArtisan />
       ),
       size: "xl",
-      bodyClassName: "p-6 overflow-y-hidden",
+      asChild: true,
+      bodyClassName: "overflow-y-hidden",
     });
   };
 

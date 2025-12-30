@@ -9,11 +9,11 @@ import { useGetArtisans, type Artisan, artisanKeys } from "@/app/lib/services/ar
 import { useMemo, useState, useEffect } from "react";
 import { useDrawerContext } from "@/providers/drawer-provider";
 import { AddArtisanForm } from "@/app/_components/forms/AddArtisan.form";
-import { AddArtisanSelection } from "@/app/_components/forms/AddArtisanSelection";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useDebouncedValue } from "@mantine/hooks";
 import { UserPlus } from "lucide-react";
+import { AddArtisan } from "@/app/_components/AddArtisan";
 
 export default function ContributionsPage() {
   const [page, setPage] = useState(1);
@@ -69,13 +69,12 @@ export default function ContributionsPage() {
 
   const handleOpenAddArtisanDrawer = () => {
     openDrawer({
-      title: "Ajouter un artisan",
       body: (
-        <AddArtisanSelection
-        />
+        <AddArtisan />
       ),
       size: "xl",
-      bodyClassName: "p-6 overflow-y-hidden",
+      asChild: true,
+      bodyClassName: "overflow-y-hidden",
     });
   };
 

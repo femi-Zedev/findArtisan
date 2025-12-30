@@ -9,8 +9,8 @@ import { FAQSection } from "../_sections/faq-section";
 import { ContactSection } from "../_sections/contact-section";
 import { useDrawerContext } from "@/providers/drawer-provider";
 import { useAuth } from "@/app/lib/hooks/useAuth";
-import { AddArtisanSelection } from "../_components/forms/AddArtisanSelection";
 import { GradientBlurAccent } from "../_components/gradient-blur-accent";
+import { AddArtisan } from "../_components/AddArtisan";
 
 export default function Home() {
   const searchParams = useSearchParams();
@@ -31,13 +31,12 @@ export default function Home() {
       hasOpenedDrawerRef.current = true;
 
       openDrawer({
-        title: "Ajouter un artisan",
         body: (
-          <AddArtisanSelection
-          />
+          <AddArtisan />
         ),
         size: "xl",
-        bodyClassName: "p-6 overflow-y-hidden",
+        asChild: true,
+        bodyClassName: "overflow-y-hidden",
       });
 
       // Remove the query parameter from URL
