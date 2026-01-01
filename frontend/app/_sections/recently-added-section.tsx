@@ -28,7 +28,7 @@ export function RecentlyAddedSection() {
     zone: artisan.zones && artisan.zones.length > 0
       ? artisan.zones.map((z) => z.name)
       : ["Non spécifié"],
-    description: artisan.description || "",
+    skills: artisan.skills || "",
     phone: artisan.phoneNumbers?.[0]?.number || "",
     whatsapp: artisan.phoneNumbers?.some((phone) => phone.isWhatsApp) || false,
     imageUrl: artisan.profilePhoto?.url,
@@ -95,7 +95,7 @@ export function RecentlyAddedSection() {
                 name={artisan.name}
                 profession={artisan.profession}
                 zone={artisan.zone}
-                description={artisan.description}
+                skills={artisan.skills}
                 phone={artisan.phone}
                 whatsapp={artisan.whatsapp}
                 imageUrl={artisan.imageUrl}

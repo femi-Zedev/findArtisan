@@ -21,8 +21,8 @@
       "targetField": "full_name",
       "required": true
     },
-    "description": {
-      "type": "richtext",
+    "skills": {
+      "type": "text",
       "required": true
     },
     "profile_photo": {

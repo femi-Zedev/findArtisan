@@ -447,7 +447,6 @@ export interface ApiArtisanArtisan extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    description: Schema.Attribute.RichText & Schema.Attribute.Required;
     full_name: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
@@ -476,6 +475,7 @@ export interface ApiArtisanArtisan extends Struct.CollectionTypeSchema {
     profile_photo: Schema.Attribute.Media;
     publishedAt: Schema.Attribute.DateTime;
     rejected_reason: Schema.Attribute.Text;
+    skills: Schema.Attribute.Text & Schema.Attribute.Required;
     slug: Schema.Attribute.UID<'full_name'> & Schema.Attribute.Required;
     social_links: Schema.Attribute.Relation<
       'oneToMany',

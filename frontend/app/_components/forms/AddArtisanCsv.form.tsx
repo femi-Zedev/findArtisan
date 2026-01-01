@@ -96,7 +96,7 @@ function transformParsedDataToApiFormat(
 
     return {
       full_name: row["Nom complet"].trim(),
-      description: row.Description?.trim() || "",
+      skills: row.Description?.trim() || "",
       profession: row.Profession?.trim(),
       zones: zones.length > 0 ? zones : undefined,
       phone_numbers: phoneNumbers.length > 0 ? phoneNumbers : undefined,

@@ -214,9 +214,9 @@ export function AddArtisanForm({ artisan, onSuccess, onPrevious }: AddArtisanFor
                 "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
             }}
             className="w-full"
-            value={form.values.description || []}
-            onChange={(value) => form.setFieldValue("description", value)}
-            error={form.errors.description as string | undefined}
+            value={form.values.skills || []}
+            onChange={(value) => form.setFieldValue("skills", value)}
+            error={form.errors.skills as string | undefined}
           />
         </div>
 

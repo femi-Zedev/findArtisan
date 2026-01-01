@@ -134,7 +134,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         }
       }
 
-      // Search in name or description (if query provided)
+      // Search in name or skills (if query provided)
       if (searchQuery) {
         filters.$or = [
           {
@@ -143,7 +143,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
             },
           },
           {
-            description: {
+            skills: {
               $containsi: searchQuery,
             },
           },
@@ -188,7 +188,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
           'id',
           'full_name',
           'slug',
-          'description',
+          'skills',
           'status',
           'is_community_submitted',
           'createdAt',
@@ -215,7 +215,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         id: artisan.id,
         fullName: artisan.full_name,
         slug: artisan.slug,
-        description: artisan.description,
+        skills: artisan.skills,
         status: artisan.status,
         isCommunitySubmitted: artisan.is_community_submitted,
         profession: artisan.profession
@@ -389,7 +389,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
       const artisanData: any = {
         full_name: data.full_name,
         slug: slug,
-        description: data.description,
+        skills: data.skills,
         is_community_submitted: data.is_community_submitted ?? true,
         status: data.status ?? 'approved',
         createdBy: null, // Explicitly set to null to prevent Strapi from auto-setting with users-permissions user
@@ -517,7 +517,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
             id: completeArtisan.id,
             fullName: completeArtisan.full_name,
             slug: completeArtisan.slug,
-            description: completeArtisan.description,
+            skills: completeArtisan.skills,
             status: completeArtisan.status,
             isCommunitySubmitted: completeArtisan.is_community_submitted,
             profession: completeArtisan.profession
@@ -763,7 +763,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         const artisanData: any = {
           full_name: String(rowData.full_name).trim(),
           slug: slug,
-          description: rowData.description ? String(rowData.description).trim() : '',
+          skills: rowData.skills ? String(rowData.skills).trim() : '',
           is_community_submitted: rowData.is_community_submitted ?? true,
           status: rowData.status ?? 'approved',
           createdBy: null, // Explicitly set to null to prevent Strapi from auto-setting with users-permissions user
@@ -886,7 +886,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
             id: completeArtisan.id,
             fullName: completeArtisan.full_name,
             slug: completeArtisan.slug,
-            description: completeArtisan.description,
+            skills: completeArtisan.skills,
             status: completeArtisan.status,
             isCommunitySubmitted: completeArtisan.is_community_submitted,
             profession: completeArtisan.profession
@@ -1101,8 +1101,8 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
         updateData.slug = slug;
       }
 
-      if (data.description !== undefined) {
-        updateData.description = data.description;
+      if (data.skills !== undefined) {
+        updateData.skills = data.skills;
       }
 
       if (data.status !== undefined) {
@@ -1227,7 +1227,7 @@ export default factories.createCoreController('api::artisan.artisan' as any, ({ 
           id: completeArtisan.id,
           fullName: completeArtisan.full_name,
           slug: completeArtisan.slug,
-          description: completeArtisan.description,
+          skills: completeArtisan.skills,
           status: completeArtisan.status,
           isCommunitySubmitted: completeArtisan.is_community_submitted,
           profession: completeArtisan.profession

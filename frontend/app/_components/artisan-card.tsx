@@ -1,14 +1,14 @@
 "use client";
 
 import { Avatar, Button, Badge, Tooltip } from "@mantine/core";
-import { Phone, MessageCircle, MapPin, Users } from "lucide-react";
+import { Phone, MessageCircle, MapPin, Users, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface ArtisanCardProps {
   name: string;
   profession: string;
   zone: string | string[];
-  description: string;
+  skills: string;
   phone: string;
   whatsapp?: boolean;
   imageUrl?: string;
@@ -20,7 +20,7 @@ export function ArtisanCard({
   name,
   profession,
   zone,
-  description,
+  skills,
   phone,
   whatsapp = true,
   imageUrl,
@@ -42,6 +42,13 @@ export function ArtisanCard({
   const zones = Array.isArray(zone) ? zone : [zone];
   const displayedZones = zones.slice(0, 2);
   const remainingZones = zones.slice(2);
+
+  // Parse skills from comma-separated string to array
+  const skillsArray = skills
+    ? skills.split(",").map((s) => s.trim()).filter((s) => s.length > 0)
+    : [];
+  const displayedSkills = skillsArray.slice(0, 10);
+  const remainingSkills = skillsArray.slice(10);
 
   // Horizontal Layout - shows vertical layout on mobile
   if (layout === "horizontal") {
@@ -125,12 +132,45 @@ export function ArtisanCard({
                   </div>
                 </div>
 
-                {/* Description Block - Full width */}
-                <div className="flex-1">
-                  <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
-                    {description}
-                  </p>
-                </div>
+                {/* Skills Block - Full width */}
+                {skillsArray.length > 0 && (
+                  <div className="mb-3 flex-1">
+                    <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
+                      Services & compétences
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {displayedSkills.map((skill, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"
+                        >
+                          <CheckCircle2 className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                          <span>{skill}</span>
+                        </div>
+                      ))}
+                      {remainingSkills.length > 0 && (
+                        <Tooltip
+                          label={
+                            <div className="flex flex-col gap-1.5">
+                              {remainingSkills.map((skill, idx) => (
+                                <div key={idx} className="flex items-center gap-1.5">
+                                  <CheckCircle2 className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                                  <span>{skill}</span>
+                                </div>
+                              ))}
+                            </div>
+                          }
+                          position="top"
+                          withArrow
+                        >
+                          <span className="text-xs font-medium text-purple-600 dark:text-purple-400 cursor-help">
+                            +{remainingSkills.length}
+                          </span>
+                        </Tooltip>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Community Badge - Right side */}
                 {addedByCommunity && (
@@ -259,9 +299,44 @@ export function ArtisanCard({
                 </div>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
-              {description}
-            </p>
+            {skillsArray.length > 0 && (
+              <div className="mt-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  Services & compétences
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {displayedSkills.map((skill, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                      <span>{skill}</span>
+                    </div>
+                  ))}
+                  {remainingSkills.length > 0 && (
+                    <Tooltip
+                      label={
+                        <div className="flex flex-col gap-1.5">
+                          {remainingSkills.map((skill, idx) => (
+                            <div key={idx} className="flex items-center gap-1.5">
+                              <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                              <span>{skill}</span>
+                            </div>
+                          ))}
+                        </div>
+                      }
+                      position="top"
+                      withArrow
+                    >
+                      <span className="text-sm font-medium text-purple-600 dark:text-purple-400 cursor-help">
+                        +{remainingSkills.length}
+                      </span>
+                    </Tooltip>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right: Action Buttons */}
@@ -386,12 +461,45 @@ export function ArtisanCard({
         </div>
       </div>
 
-      {/* Description Block - Full width */}
-      <div className="mb-5 flex-1">
-        <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
-          {description}
-        </p>
-      </div>
+      {/* Skills Block - Full width */}
+      {skillsArray.length > 0 && (
+        <div className="mb-5 flex-1">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+            Services & compétences
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {displayedSkills.map((skill, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                <span>{skill}</span>
+              </div>
+            ))}
+            {remainingSkills.length > 0 && (
+              <Tooltip
+                label={
+                  <div className="flex flex-col gap-1.5">
+                    {remainingSkills.map((skill, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                        <span>{skill}</span>
+                      </div>
+                    ))}
+                  </div>
+                }
+                position="top"
+                withArrow
+              >
+                <span className="text-sm font-medium text-purple-600 dark:text-purple-400 cursor-help">
+                  +{remainingSkills.length}
+                </span>
+              </Tooltip>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Action Buttons - Bottom */}
       <div className="flex gap-2 border-gray-200 dark:border-gray-800">
