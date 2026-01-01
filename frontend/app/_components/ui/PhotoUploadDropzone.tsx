@@ -33,13 +33,13 @@ export function PhotoUploadDropzone({
           multiple={false}
           classNames={{
             root: cn(
-              "relative h-32 w-42 border-2 border-dashed rounded-3xl",
+              "relative h-32 w-32 border-2 border-dashed rounded-3xl",
               "flex items-center justify-center cursor-pointer transition-all",
               "border-gray-300 dark:border-gray-600",
               "bg-gray-50 dark:bg-gray-800/50",
               "hover:border-teal-500 dark:hover:border-teal-500",
               "hover:bg-teal-50/50 dark:hover:bg-teal-900/10",
-              photoPreview && "w-42 h-42 border-solid rounded-full"
+              photoPreview && " h-32 w-32 border-solid rounded-3xl"
             ),
             inner: "h-full w-full flex items-center justify-center p-0",
           }}
@@ -59,7 +59,7 @@ export function PhotoUploadDropzone({
               <img
                 src={photoPreview}
                 alt="Photo preview"
-                className="w-full h-full rounded-full object-cover"
+                className="w-full h-full rounded-3xl object-cover"
               />
               <button
                 type="button"

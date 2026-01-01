@@ -102,7 +102,7 @@ export function Navbar() {
   return (
     <>
       {/* SVG filter for liquid glass distortion effect */}
-      <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style={{ position: 'absolute', overflow: 'hidden' }}>
+      {/* <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style={{ position: 'absolute', overflow: 'hidden' }}>
         <defs>
           <filter id="glass-distortion" x="0%" y="0%" width="100%" height="100%">
             <feTurbulence type="fractalNoise" baseFrequency="0.008 0.008" numOctaves="2" seed="92" result="noise" />
@@ -162,14 +162,16 @@ export function Navbar() {
           }
         }
         `
-      }} />
+      }} /> */}
 
       <nav className="sticky top-0 z-50 w-full top-6" ref={navbarRef}>
         <div className="mx-auto max-w-6xl px-0 px-4 lg:px-8">
           <div
             className={cn(
               "relative transition-colors",
-              "liquid-glass-nav bg-white/10 dark:bg-gray-900/20 rounded-2xl sm:px-5",
+              // "liquid-glass-nav bg-white/10 dark:bg-gray-900/20 rounded-2xl sm:px-5",
+              "bg-white/50 dark:bg-gray-900/20 rounded-2xl sm:px-5 backdrop-blur-sm",
+
               "border border-gray-200/50 dark:border-gray-600/50 shadow-xs",
               isMobile
                 ? [
@@ -291,7 +293,8 @@ export function Navbar() {
                 className={cn(
                   "sm:hidden absolute top-full left-0 right-0 mt-2 z-40",
                   // White rounded panel with backdrop blur
-                  "liquid-glass-nav bg-white/10 dark:bg-gray-900/20",
+                  // "liquid-glass-nav bg-white/10 dark:bg-gray-900/20",
+                  "bg-white dark:bg-gray-900",
                   "rounded-2xl border border-gray-200/50 dark:border-gray-700/50",
                   "shadow-lg",
                   // Slide down animation

@@ -18,7 +18,7 @@ export interface AddArtisanFormValues {
   zone: string[];
   phoneNumbers: PhoneNumber[];
   socialMedia: SocialMedia[];
-  description?: string;
+  description?: string[]; // Changed to array for TagsInput (skills)
   photo?: File | null;
 }
 
@@ -72,7 +72,9 @@ export function transformFormValuesToPayload(
 
   return {
     full_name: values.fullName,
-    description: values.description || "",
+    description: values.description && values.description.length > 0 
+      ? values.description.join(", ") 
+      : "",
     profession: values.profession,
     zones: values.zone,
     phone_numbers: values.phoneNumbers
@@ -119,7 +121,9 @@ export function getInitialFormValues(artisan?: Artisan): AddArtisanFormValues {
               link: s.link,
             }))
           : [],
-      description: artisan.description ?? "",
+      description: artisan.description 
+        ? artisan.description.split(",").map(s => s.trim()).filter(s => s.length > 0)
+        : [],
       photo: null, // In edit mode, we don't set photo as File, we'll handle it separately
     };
   }
@@ -130,7 +134,7 @@ export function getInitialFormValues(artisan?: Artisan): AddArtisanFormValues {
     zone: [],
     phoneNumbers: [{ number: "", isWhatsApp: false }],
     socialMedia: [],
-    description: "",
+    description: [],
     photo: null,
   };
 }

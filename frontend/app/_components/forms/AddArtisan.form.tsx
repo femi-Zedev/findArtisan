@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea } from "@mantine/core";
+import { Button, Autocomplete, TextInput, Textarea, TagsInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useState, useCallback } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
@@ -14,7 +14,7 @@ import { useUserStore } from "@/stores/userStore";
 import { useSession } from "next-auth/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDrawerContext } from "@/providers/drawer-provider";
-import { professions, zones } from "@/constants";
+import { professions, zones, suggestedSkills } from "@/constants";
 import {
   type AddArtisanFormValues,
   validatePhoneNumber,
@@ -177,8 +177,8 @@ export function AddArtisanForm({ artisan, onSuccess, onPrevious }: AddArtisanFor
   return (
     <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col h-full overflow-hidden">
       <FormArea className="gap-6">
-        {/* Photo and Description - Inline */}
-        <div className="grid grid-cols-1 md:grid-cols-[208px_1fr] gap-6 items-start">
+        {/* Photo and Skills - Inline */}
+        <div className="flex flex-col md:flex-row gap-8 w-full">
           {/* Photo Upload */}
           <PhotoUploadDropzone
             photoPreview={photoPreview}
@@ -188,19 +188,35 @@ export function AddArtisanForm({ artisan, onSuccess, onPrevious }: AddArtisanFor
             showLabel={true}
           />
 
-          {/* Description */}
-          <Textarea
-            label="Description"
-            placeholder="Décrivez les services offerts par cet artisan..."
-            size="lg"
-            maxLength={1000}
-            required
+          {/* Skills/Description */}
+          <TagsInput
+            label="Compétences"
+            placeholder={`Rechercher une compétence ou ajoutez une nouvelle et appuyez sur "Entré"...`}
+            size="md"
+            data={suggestedSkills}
+            maxTags={15}
+            clearable
+            styles={{
+              wrapper: {
+                minHeight: "128px", // Match PhotoUploadDropzone h-32 (128px)
+              },
+              input: {
+                minHeight: "128px", // Match PhotoUploadDropzone h-32 (128px)
+              },
+            }}
             classNames={{
               label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
               input:
                 "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+              dropdown:
+                "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
+              option:
+                "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
             }}
-            {...form.getInputProps("description")}
+            className="w-full"
+            value={form.values.description || []}
+            onChange={(value) => form.setFieldValue("description", value)}
+            error={form.errors.description as string | undefined}
           />
         </div>
 
@@ -208,7 +224,6 @@ export function AddArtisanForm({ artisan, onSuccess, onPrevious }: AddArtisanFor
         <TextInput
           label="Nom complet"
           placeholder="Ex: Dodji COMLAN "
-          description="(Prénoms Nom) L'ordre est important !"
           size="lg"
           required
           classNames={{
@@ -275,14 +290,14 @@ export function AddArtisanForm({ artisan, onSuccess, onPrevious }: AddArtisanFor
         <Button
           type="button"
           variant="outline"
-          size="lg"
+          size="md"
           onClick={() => onPrevious?.()}
         >
           Retour
         </Button>
         <Button
           type="submit"
-          size="lg"
+          size="md"
           loading={createArtisanMutation.isPending || updateArtisanMutation.isPending}
           disabled={createArtisanMutation.isPending || updateArtisanMutation.isPending}
           className="bg-teal-500 hover:bg-teal-600 text-white font-semibold"

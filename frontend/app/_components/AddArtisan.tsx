@@ -48,7 +48,7 @@ export function AddArtisan() {
       )}
 
       {step === 2 && selectedMethod === "csv" && (
-        <AddArtisanCsvForm />
+        <AddArtisanCsvForm onPrevious={() => setStep(1)} />
       )}
     </div>
   );

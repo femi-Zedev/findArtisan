@@ -195,6 +195,7 @@ interface CsvUploadState {
 interface AddArtisanCsvFormProps {
   onSuccess?: (parsedData: ParsedArtisan[]) => void;
   onError?: (error: string) => void;
+  onPrevious?: () => void;
 }
 
 function validateParsedData(data: ParsedArtisan[]): Array<{ row: number; errors: string[] }> {
@@ -228,7 +229,7 @@ function validateParsedData(data: ParsedArtisan[]): Array<{ row: number; errors:
   return errors;
 }
 
-export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps) {
+export function AddArtisanCsvForm({ onSuccess, onError, onPrevious }: AddArtisanCsvFormProps) {
   const { isAdmin } = useUserStore();
   const { data: session } = useSession();
   const jwt = (session?.user as any)?.strapiJwt || '';
@@ -889,10 +890,19 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
           </Button>
         )}
         {showUploadSections && (
-          <Button
+          <div className="flex gap-4">
+            <Button
+              onClick={() => onPrevious?.()}
+              variant="outline"
+              size="md"
+              className="font-semibold"
+            >
+              Retour
+            </Button>
+             <Button
             onClick={handleCsvSubmit}
             disabled={!csvState.isValid || isProcessing || csvState.parsedData.length === 0}
-            size="lg"
+            size="md"
             color="teal"
             className="font-semibold transition-colors"
             loading={isProcessing}
@@ -902,6 +912,8 @@ export function AddArtisanCsvForm({ onSuccess, onError }: AddArtisanCsvFormProps
               ? "Traitement en cours..."
               : `Soumettre ${csvState.parsedData.length > 0 ? `${csvState.parsedData.length} artisan(s)` : "le fichier"}`}
           </Button>
+          </div>
+         
         )}
       </ButtonsArea>
     </div>

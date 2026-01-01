@@ -55,7 +55,7 @@ export function AddArtisanSelection({ onSelectMethod }: { onSelectMethod: (metho
       <ButtonsArea>
         <Button
           type="button"
-          size="lg"
+          size="md"
           onClick={handleConfirm}
           disabled={!selectedMethod}
           className="bg-teal-500 hover:bg-teal-600 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"

@@ -29,7 +29,7 @@ export function ButtonsArea({
     <div
       id="button-area"
       className={cn(
-        "flex justify-between gap-4 p-6 w-full border-t border-slate-200 dark:border-gray-800 min-h-[84px] bg-white dark:bg-gray-900",
+        "flex justify-between gap-4 py-4 px-6 w-full border-t border-slate-200 dark:border-gray-800 min-h-[84px] bg-white dark:bg-gray-900",
         className
       )}
     >
@@ -37,7 +37,7 @@ export function ButtonsArea({
         <Button
           color="gray"
           variant="default"
-          size="lg"
+          size="md"
           type="button"
           onClick={handleClose}
         >
