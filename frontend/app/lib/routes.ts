@@ -16,6 +16,9 @@ export const routes = {
   upload: {
     base: '/upload',
   },
+  reviews: {
+    base: '/reviews',
+  },
 } as const;
 
 

@@ -26,9 +26,10 @@ interface AddArtisanFormProps {
   artisan?: Artisan;
   onPrevious?: () => void;
   onSuccess?: () => void;
+  onNext?: (artisanId: number, artisanName: string) => void; // Callback to navigate to step 3 with artisan ID and name
 }
 
-export function AddArtisanForm({ artisan, onSuccess, onPrevious }: AddArtisanFormProps) {
+export function AddArtisanForm({ artisan, onSuccess, onPrevious, onNext }: AddArtisanFormProps) {
   const isEditMode = !!artisan;
   const [hasSocialMedia, setHasSocialMedia] = useState<boolean>(
     !!(artisan?.socialLinks && artisan.socialLinks.length > 0)
@@ -96,22 +97,27 @@ export function AddArtisanForm({ artisan, onSuccess, onPrevious }: AddArtisanFor
   const { closeDrawer } = useDrawerContext();
 
   const createArtisanMutation = useCreateArtisan({
-    onSuccess: () => {
+    onSuccess: (response) => {
       notifications.show({
         title: "Succès",
         message: "L'artisan a été ajouté avec succès !",
         color: "teal",
       });
-      // Reset form
-      form.reset();
-      setPhotoPreview(null);
-      setHasSocialMedia(false);
       // Invalidate queries to refresh lists
       queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
-      // Close drawer
-      closeDrawer();
-      if (onSuccess) {
-        onSuccess();
+      
+      // If onNext is provided, navigate to step 3 with artisan ID and name
+      if (onNext && response.data?.id) {
+        onNext(response.data.id, response.data.fullName);
+      } else {
+        // Otherwise, close drawer (edit mode or no step 3)
+        form.reset();
+        setPhotoPreview(null);
+        setHasSocialMedia(false);
+        closeDrawer();
+        if (onSuccess) {
+          onSuccess();
+        }
       }
     },
     onError: (error: Error) => {

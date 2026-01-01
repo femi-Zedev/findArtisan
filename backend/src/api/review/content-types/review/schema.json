@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "reviews",
+  "info": {
+    "singularName": "review",
+    "pluralName": "reviews",
+    "displayName": "Review",
+    "description": "User reviews and ratings for artisans"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "artisan": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::artisan.artisan",
+      "inversedBy": "reviews"
+    },
+    "rating_criteria": {
+      "type": "json"
+    },
+    "final_score": {
+      "type": "decimal",
+      "precision": 1,
+      "scale": 1
+    },
+    "comment": {
+      "type": "text"
+    },
+    "work_photos": {
+      "type": "media",
+      "multiple": true,
+      "required": false
+    },
+    "submitted_by_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "submitted_at": {
+      "type": "datetime"
+    }
+  }
+}

@@ -98,6 +98,12 @@
       "relation": "manyToMany",
       "target": "api::csv-import-job.csv-import-job",
       "mappedBy": "artisans"
+    },
+    "reviews": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::review.review",
+      "mappedBy": "artisan"
     }
   }
 }

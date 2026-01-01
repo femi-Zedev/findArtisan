@@ -475,6 +475,7 @@ export interface ApiArtisanArtisan extends Struct.CollectionTypeSchema {
     profile_photo: Schema.Attribute.Media;
     publishedAt: Schema.Attribute.DateTime;
     rejected_reason: Schema.Attribute.Text;
+    reviews: Schema.Attribute.Relation<'oneToMany', 'api::review.review'>;
     skills: Schema.Attribute.Text & Schema.Attribute.Required;
     slug: Schema.Attribute.UID<'full_name'> & Schema.Attribute.Required;
     social_links: Schema.Attribute.Relation<
@@ -668,6 +669,44 @@ export interface ApiProfessionProfession extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiReviewReview extends Struct.CollectionTypeSchema {
+  collectionName: 'reviews';
+  info: {
+    description: 'User reviews and ratings for artisans';
+    displayName: 'Review';
+    pluralName: 'reviews';
+    singularName: 'review';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    artisan: Schema.Attribute.Relation<'manyToOne', 'api::artisan.artisan'>;
+    comment: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    final_score: Schema.Attribute.Decimal;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::review.review'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    rating_criteria: Schema.Attribute.JSON;
+    submitted_at: Schema.Attribute.DateTime;
+    submitted_by_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    work_photos: Schema.Attribute.Media<undefined, true>;
   };
 }
 
@@ -1272,6 +1311,7 @@ declare module '@strapi/strapi' {
       'api::csv-import-job.csv-import-job': ApiCsvImportJobCsvImportJob;
       'api::phone-number.phone-number': ApiPhoneNumberPhoneNumber;
       'api::profession.profession': ApiProfessionProfession;
+      'api::review.review': ApiReviewReview;
       'api::social-link.social-link': ApiSocialLinkSocialLink;
       'api::zone.zone': ApiZoneZone;
       'plugin::content-releases.release': PluginContentReleasesRelease;

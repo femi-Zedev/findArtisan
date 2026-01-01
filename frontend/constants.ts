@@ -198,6 +198,65 @@ export const suggestedSkills = [
   },
 ];
 
+export const ratingCriteria = [
+  {
+    id: 'price',
+    label: '💸 Prix / Respect du devis',
+    options: [
+      { label: 'Devis respecté', points: 10 },
+      { label: 'Petite différence', points: 6 },
+      { label: 'Grande différence', points: 2 },
+    ],
+  },
+  {
+    id: 'deadlines',
+    label: '⏱ Respect des délais',
+    options: [
+      { label: 'À temps', points: 10 },
+      { label: 'Léger retard', points: 7 },
+      { label: 'Retard important', points: 2 },
+    ],
+  },
+  {
+    id: 'professionalism',
+    label: '🤝 Professionalisme',
+    options: [
+      { label: 'Très professionnel', points: 10 },
+      { label: 'Assez professionnel', points: 5 },
+      { label: 'Pas du tout professionnel', points: 0 },
+    ],
+  },
+  {
+    id: 'quality',
+    label: '🛠 Qualité du travail',
+    options: [
+      { label: 'Finition excellente', points: 10 },
+      { label: 'Correct', points: 7 },
+      { label: 'Très basique', points: 4 },
+      { label: 'Travail bâclé / précipité', points: 1 },
+    ],
+  },
+  {
+    id: 'communication',
+    label: '📞 Communication',
+    options: [
+      { label: 'Excellente', points: 10 },
+      { label: 'Moyenne', points: 6 },
+      { label: 'Mauvaise', points: 2 },
+    ],
+  },
+  
+  // {
+  //   id: 'cleanliness',
+  //   label: '🧹 Propreté après travaux',
+  //   options: [
+  //     { label: 'Espace de travail propre', points: 10 },
+  //     { label: 'Acceptable', points: 6 },
+  //     { label: 'Sale', points: 2 },
+  //   ],
+  // },
+];
+
 export const professions = [
   // Construction et Bâtiment
   { value: "maçon", label: "Maçon" },

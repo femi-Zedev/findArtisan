@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { AddArtisanForm } from "./forms/AddArtisan.form";
 import { AddArtisanCsvForm } from "./forms/AddArtisanCsv.form";
+import { ArtisanFeedbackForm } from "./forms/ArtisanFeedback.form";
 import { InfoBox, MethodCard } from "./ui";
 
 import { DrawerTitle } from "@/providers/drawer-provider";
@@ -27,10 +28,18 @@ export function AddArtisanHeader({ step }: { step: number }) {
 export function AddArtisan() {
   const [step, setStep] = useState(1);
   const [selectedMethod, setSelectedMethod] = useState<"form" | "csv" | null>(null);
+  const [createdArtisanId, setCreatedArtisanId] = useState<number | null>(null);
+  const [createdArtisanName, setCreatedArtisanName] = useState<string>("");
 
   const handleSelectMethod = (method: "form" | "csv") => {
     setSelectedMethod(method);
     setStep(2);
+  };
+
+  const handleArtisanCreated = (artisanId: number, artisanName: string) => {
+    setCreatedArtisanId(artisanId);
+    setCreatedArtisanName(artisanName);
+    setStep(3);
   };
 
   return (
@@ -44,11 +53,24 @@ export function AddArtisan() {
       )}
 
       {step === 2 && selectedMethod === "form" && (
-        <AddArtisanForm  onPrevious={() => setStep(1)}/>
+        <AddArtisanForm
+          onPrevious={() => setStep(1)}
+          onNext={(artisanId, artisanName) => {
+            handleArtisanCreated(artisanId, artisanName);
+          }}
+        />
       )}
 
       {step === 2 && selectedMethod === "csv" && (
         <AddArtisanCsvForm onPrevious={() => setStep(1)} />
+      )}
+
+      {step === 3 && createdArtisanId && (
+        <ArtisanFeedbackForm
+          artisanId={createdArtisanId}
+          artisanName={createdArtisanName}
+          onPrevious={() => setStep(2)}
+        />
       )}
     </div>
   );
