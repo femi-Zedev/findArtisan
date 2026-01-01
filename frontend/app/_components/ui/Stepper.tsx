@@ -29,7 +29,7 @@ export default function Stepper({ steps, currentStep, className }: StepperProps)
 
             <p
               className={cn(
-                `font-medium text-sm max-md:w-max capitalize`,
+                `font-medium text-sm max-md:w-max`,
                 currentStep == index + 1 ? 'text-teal-500' : 'text-slate-500',
               )}
             >

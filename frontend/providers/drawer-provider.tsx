@@ -15,7 +15,7 @@ export interface DrawerContextType {
 const DrawerContext = createContext<DrawerContextType | null>(null);
 
 export const DrawerTitle = ({ title, className }: { title: string; className?: string }) => {
-  return <h2 className={cn('text-xl font-semibold text-gray-700 dark:text-white capitalize', className)}>{title}</h2>;
+  return <h2 className={cn('text-xl font-semibold text-gray-700 dark:text-white', className)}>{title}</h2>;
 };
 
 export const DrawerProvider = ({ children }: { children: ReactNode }) => {

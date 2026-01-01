@@ -16,7 +16,7 @@ export function AddArtisanHeader({ step }: { step: number }) {
       <DrawerTitle title='Ajouter un artisan' />
       <Stepper
         currentStep={step}
-        steps={['Sélection', 'Formulaire/CSV']}
+        steps={['Ajout simple ou multiple', 'Informations sur l\'artisan', 'Expérience avec l\'artisan']}
       />
     </div>
   );
