@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Button, useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
+import { Button, useMantineColorScheme, useComputedColorScheme, Switch } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Wrench, Sun, Moon, ArrowRight, Menu, X, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -12,6 +12,7 @@ import { useModalContext } from "@/providers/modal-provider";
 import { useUserStore } from "@/stores/userStore";
 import { GoogleLoginModal } from "./modals/GoogleLoginModal";
 import { useDrawerContext } from "@/providers/drawer-provider";
+import { AddArtisan } from "./AddArtisan";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -40,12 +41,12 @@ export function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMobileMenuOpen]);
-  
+
   // Mantine color scheme hooks
   const { setColorScheme } = useMantineColorScheme();
   const computedColorScheme = useComputedColorScheme('light');
   const { theme, setTheme } = useThemeStore();
-  
+
   const { openModal } = useModalContext();
   const { isAuthenticated } = useUserStore();
   const { openDrawer, closeDrawer } = useDrawerContext();
@@ -75,10 +76,16 @@ export function Navbar() {
         size: "md",
         withCloseButton: true,
       });
-      return;
+    } else {
+      openDrawer({
+        body: (
+          <AddArtisan />
+        ),
+        size: "xl",
+        asChild: true,
+        bodyClassName: "overflow-y-hidden",
+      });
     }
-
-    router.push("/dashboard");
 
 
   };
@@ -175,116 +182,126 @@ export function Navbar() {
               "border border-gray-200/50 dark:border-gray-600/50 shadow-xs",
               isMobile
                 ? [
-                    "px-4 ",
-                    // "bg-white/10 backdrop-blur-md dark:bg-gray-900/40",
-                  ]
+                  "px-4 ",
+                  // "bg-white/10 backdrop-blur-md dark:bg-gray-900/40",
+                ]
                 : [
-                    // Desktop: liquid glass card floating over background
-                    "overflow-hidden",
-                  ]
+                  // Desktop: liquid glass card floating over background
+                  "overflow-hidden",
+                ]
             )}
           >
             {/* Foreground content - relative wrapper like in the HTML */}
             <div className="relative z-10 flex h-16 w-full items-center justify-between">
-            {/* Logo */}
-            <Link
-              href="/"
-              onClick={handleLinkClick}
-              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500">
-                <Wrench className="h-5 w-5 text-white" />
+              {/* Logo */}
+              <Link
+                href="/"
+                onClick={handleLinkClick}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+               <img src="/icon.svg" alt="" className="h-8" />
+              </Link>
+
+              {/* Desktop Navigation Links */}
+              <div className="hidden md:flex items-center gap-6">
+                <Link
+                  href="/search"
+                  onClick={handleLinkClick}
+                  className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+                >
+                  Recherche
+                </Link>
+                <Link
+                  href="/#faq"
+                  onClick={handleLinkClick}
+                  className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+                >
+                  FAQs
+                </Link>
+                <Link
+                  href="/#contact"
+                  onClick={handleLinkClick}
+                  className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+                >
+                  Contact
+                </Link>
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
-                FindArtisan
-              </span>
-            </Link>
 
-            {/* Desktop Navigation Links */}
-            <div className="hidden md:flex items-center gap-6">
-              <Link
-                href="/search"
-                onClick={handleLinkClick}
-                className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-              >
-                Recherche
-              </Link>
-              <Link
-                href="/#faq"
-                onClick={handleLinkClick}
-                className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-              >
-                FAQs
-              </Link>
-              <Link
-                href="/#contact"
-                onClick={handleLinkClick}
-                className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
-              >
-                Contact
-              </Link>
-            </div>
+              {/* Desktop Right Side Actions */}
+              <div className="hidden sm:flex items-center gap-3">
 
-            {/* Desktop Right Side Actions */}
-            <div className="hidden sm:flex items-center gap-3">
-              <Button
-                onClick={onNavbarButtonClick}
-                rightSection={<ArrowRight className="h-4 w-4" />}
-                size="md"
-                className="h-10 rounded-full bg-teal-500 px-6 font-semibold text-white transition-all hover:bg-teal-600 shadow-sm hover:shadow-md"
-              >
-                {isAuthenticated ? "Gérer mes Contributions" : "Ajouter un artisan"}
-              </Button>
-              {/* Theme Toggle Button */}
-              <button
-                onClick={toggleTheme}
-                className={cn(
-                  "cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl transition-all shadow-sm",
-                  "border bg-teal-50 backdrop-blur-sm text-teal-700 hover:bg-teal-100 border-teal-600",
-                  "dark:border-teal-200 dark:bg-teal-900/80 dark:text-teal-300 dark:hover:bg-teal-900"
-                )}
-                aria-label="Toggle theme"
-              >
-                {effectiveTheme === "dark" ? (
-                  <Moon className="h-4 w-4" />
-                ) : (
-                  <Sun className="h-4 w-4" />
-                )}
-              </button>
-            </div>
+                <div className="flex items-center gap-4">
 
-            {/* Mobile Right Side Actions (Burger only) */}
-            <div className="flex sm:hidden items-center gap-2">
-              {/* Burger Menu Button with Animation */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={cn(
-                  "cursor-pointer flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-300",
-                  "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                )}
-                aria-label="Toggle menu"
-              >
-                <div className="relative w-6 h-6">
-                  <Menu
-                    className={cn(
-                      "absolute inset-0 h-6 w-6 transition-all duration-300",
-                      isMobileMenuOpen
-                        ? "opacity-0 rotate-90 scale-0"
-                        : "opacity-100 rotate-0 scale-100"
-                    )}
-                  />
-                  <X
-                    className={cn(
-                      "absolute inset-0 h-6 w-6 transition-all duration-300",
-                      isMobileMenuOpen
-                        ? "opacity-100 rotate-0 scale-100"
-                        : "opacity-0 -rotate-90 scale-0"
-                    )}
-                  />
+                  <Button
+                    rightSection={<ArrowRight className="h-4 w-4" />}
+                    size="md"
+                    onClick={onNavbarButtonClick}
+                    radius="lg">
+
+                    Ajouter un artisan
+                  </Button>
+
+                  {isAuthenticated &&
+                    <Button
+                      onClick={handlePrimaryMobileAction}
+                      variant="outline"
+                      size="md"
+                      radius="lg"
+                      className="w-full h-12 rounded-full bg-teal-500 px-6 font-semibold text-white transition-all "
+                    >
+                      Gérer mes Contributions
+                    </Button>}
                 </div>
-              </button>
+                {/* Theme Toggle Button */}
+                <button
+                  onClick={toggleTheme}
+                  className={cn(
+                    "cursor-pointer flex h-10 w-10 items-center justify-center rounded-xl transition-all shadow-sm",
+                    "border bg-teal-50 backdrop-blur-sm text-teal-700 hover:bg-teal-100 border-teal-600",
+                    "dark:border-teal-200 dark:bg-teal-900/80 dark:text-teal-300 dark:hover:bg-teal-900"
+                  )}
+                  aria-label="Toggle theme"
+                >
+                  {effectiveTheme === "dark" ? (
+                    <Moon className="h-4 w-4" />
+                  ) : (
+                    <Sun className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+
+              {/* Mobile Right Side Actions (Burger only) */}
+              <div className="flex sm:hidden items-center gap-2">
+                {/* Burger Menu Button with Animation */}
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className={cn(
+                    "cursor-pointer flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-300",
+                    "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                  )}
+                  aria-label="Toggle menu"
+                >
+                  <div className="relative w-6 h-6">
+                    <Menu
+                      className={cn(
+                        "absolute inset-0 h-6 w-6 transition-all duration-300",
+                        isMobileMenuOpen
+                          ? "opacity-0 rotate-90 scale-0"
+                          : "opacity-100 rotate-0 scale-100"
+                      )}
+                    />
+                    <X
+                      className={cn(
+                        "absolute inset-0 h-6 w-6 transition-all duration-300",
+                        isMobileMenuOpen
+                          ? "opacity-100 rotate-0 scale-100"
+                          : "opacity-0 -rotate-90 scale-0"
+                      )}
+                    />
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
 
             {/* Mobile Menu - Dropdown Panel */}
             {isMobileMenuOpen && (
@@ -303,90 +320,105 @@ export function Navbar() {
               >
                 <div className="overflow-y-auto max-h-[calc(100vh-120px)] px-4 py-4">
 
-              {/* Menu Links with arrow design */}
-              <div className="space-y-0">
-                <Link
-                  href="/search"
-                  onClick={handleLinkClick}
-                  className={cn(
-                    "flex items-center justify-between px-4 py-3",
-                    "text-gray-900 dark:text-white",
-                    "hover:bg-gray-100 dark:hover:bg-gray-800",
-                    "transition-colors font-medium",
-                    "border-b border-gray-200/50 dark:border-gray-800/50"
-                  )}
-                >
-                  <span>Recherche</span>
-                  <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                </Link>
-                <Link
-                  href="/#faq"
-                  onClick={handleLinkClick}
-                  className={cn(
-                    "flex items-center justify-between px-4 py-3",
-                    "text-gray-900 dark:text-white",
-                    "hover:bg-gray-100 dark:hover:bg-gray-800",
-                    "transition-colors font-medium",
-                    "border-b border-gray-200/50 dark:border-gray-800/50"
-                  )}
-                >
-                  <span>FAQs</span>
-                  <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                </Link>
-                <Link
-                  href="/#contact"
-                  onClick={handleLinkClick}
-                  className={cn(
-                    "flex items-center justify-between px-4 py-3",
-                    "text-gray-900 dark:text-white",
-                    "hover:bg-gray-100 dark:hover:bg-gray-800",
-                    "transition-colors font-medium",
-                    "border-b border-gray-200/50 dark:border-gray-800/50"
-                  )}
-                >
-                  <span>Contact</span>
-                  <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                </Link>
-              </div>
-
-              {/* Theme Toggle Dropdown */}
-              <div className="mt-6 space-y-0">
-                <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Préférences
-                </div>
-                <button
-                  onClick={toggleTheme}
-                  className={cn(
-                    "w-full flex items-center justify-between px-4 py-3",
-                    "text-gray-900 dark:text-white",
-                    "hover:bg-gray-100 dark:hover:bg-gray-800",
-                    "transition-colors font-medium",
-                    "border-b border-gray-200/50 dark:border-gray-800/50"
-                  )}
-                  aria-label="Toggle theme"
-                >
-                  <div className="flex items-center gap-3">
-                    {theme === "dark" ? (
-                      <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                    ) : (
-                      <Sun className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                    )}
-                    <span>Thème {theme === "dark" ? "sombre" : "clair"}</span>
+                  {/* Menu Links with arrow design */}
+                  <div className="space-y-0">
+                    <Link
+                      href="/search"
+                      onClick={handleLinkClick}
+                      className={cn(
+                        "flex items-center justify-between px-4 py-3",
+                        "text-gray-900 dark:text-white",
+                        "hover:bg-gray-100 dark:hover:bg-gray-800",
+                        "transition-colors font-medium",
+                        "border-b border-gray-200/50 dark:border-gray-800/50"
+                      )}
+                    >
+                      <span>Recherche</span>
+                      <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                    </Link>
+                    <Link
+                      href="/#faq"
+                      onClick={handleLinkClick}
+                      className={cn(
+                        "flex items-center justify-between px-4 py-3",
+                        "text-gray-900 dark:text-white",
+                        "hover:bg-gray-100 dark:hover:bg-gray-800",
+                        "transition-colors font-medium",
+                        "border-b border-gray-200/50 dark:border-gray-800/50"
+                      )}
+                    >
+                      <span>FAQs</span>
+                      <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                    </Link>
+                    <Link
+                      href="/#contact"
+                      onClick={handleLinkClick}
+                      className={cn(
+                        "flex items-center justify-between px-4 py-3",
+                        "text-gray-900 dark:text-white",
+                        "hover:bg-gray-100 dark:hover:bg-gray-800",
+                        "transition-colors font-medium",
+                        "border-b border-gray-200/50 dark:border-gray-800/50"
+                      )}
+                    >
+                      <span>Contact</span>
+                      <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                    </Link>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
-                </button>
-              </div>
 
-              <Button
-                onClick={handlePrimaryMobileAction}
-                rightSection={<ArrowRight className="h-4 w-4" />}
-                size="md"
-                fullWidth
-                radius="md"
-                className="w-full h-12 mt-6 rounded-sm bg-teal-500 px-6 font-semibold text-white transition-all "
-              >
-                {isAuthenticated ? "Gérer mes Contributions" : "Ajouter un artisan"}
-              </Button>
+                  {/* Theme Toggle Dropdown */}
+                  <div className="mt-6 space-y-0">
+                    <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Préférences
+                    </div>
+                    <button
+                      onClick={toggleTheme}
+                      className={cn(
+                        "w-full flex items-center justify-between px-4 py-3",
+                        "text-gray-900 dark:text-white",
+                        "hover:bg-gray-100 dark:hover:bg-gray-800",
+                        "transition-colors font-medium",
+                        "border-b border-gray-200/50 dark:border-gray-800/50"
+                      )}
+                      aria-label="Toggle theme"
+                    >
+                      <div className="flex items-center gap-3">
+                        {theme === "dark" ? (
+                          <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                        ) : (
+                          <Sun className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                        )}
+                        <span>Thème {theme === "dark" ? "sombre" : "clair"}</span>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 mt-4">
+
+                    <Button
+                      rightSection={<ArrowRight className="h-4 w-4" />}
+                      size="md"
+                      onClick={onNavbarButtonClick}
+                      radius="md"
+                      fullWidth>
+
+                      Ajouter un artisan
+                    </Button>
+
+                    {isAuthenticated &&
+                      <Button
+                        onClick={handlePrimaryMobileAction}
+                        variant="outline"
+                        size="md"
+                        fullWidth
+                        radius="md"
+                        className="w-full h-12 rounded-sm bg-teal-500 px-6 font-semibold text-white transition-all "
+                      >
+                        Gérer mes Contributions
+                      </Button>}
+                  </div>
+
                 </div>
               </div>
             )}

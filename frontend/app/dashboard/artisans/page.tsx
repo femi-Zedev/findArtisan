@@ -84,7 +84,7 @@ export default function ArtisansPage() {
         />
       ),
       size: "xl",
-      bodyClassName: "p-6 overflow-y-hidden",
+      bodyClassName: "overflow-y-hidden",
     });
   };
 

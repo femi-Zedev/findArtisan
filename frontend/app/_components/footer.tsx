@@ -17,12 +17,7 @@ export function Footer() {
               href="/"
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500">
-                <Wrench className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
-                FindArtisan
-              </span>
+            <img src="/icon.svg" alt="" className="h-8" />
             </Link>
             <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
               Trouvez facilement des artisans locaux fiables au Bénin.

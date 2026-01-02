@@ -102,7 +102,7 @@ export const DrawerProvider = ({ children }: { children: ReactNode }) => {
                   {/* Drawer Body */}
                   <div
                     className={cn(
-                      'p-6 flex flex-col grow overflow-y-scroll',
+                      ' flex flex-col grow overflow-y-scroll',
                       'bg-white dark:bg-gray-900',
                       drawer.bodyClassName,
                     )}
