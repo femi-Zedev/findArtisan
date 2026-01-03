@@ -1,37 +1,46 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { Avatar, Button, Badge, Tooltip } from "@mantine/core";
-import { Phone, MessageCircle, MapPin, Users } from "lucide-react";
+import { Phone, MessageCircle, MapPin, Users, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 import { cn } from "../lib/utils";
+import { navRoutes } from "@/app/lib/navigation-routes";
 
 interface ArtisanCardProps {
   name: string;
   profession: string;
   zone: string | string[];
-  description: string;
+  skills: string;
   phone: string;
   whatsapp?: boolean;
   imageUrl?: string;
   addedByCommunity?: boolean;
   layout?: "vertical" | "horizontal";
+  slug: string;
 }
 
 export function ArtisanCard({
   name,
   profession,
   zone,
-  description,
+  skills,
   phone,
   whatsapp = true,
   imageUrl,
   addedByCommunity = false,
   layout = "vertical",
+  slug,
 }: ArtisanCardProps) {
-  const handleCall = () => {
+  const handleCall = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     window.location.href = `tel:${phone}`;
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     const message = encodeURIComponent(
       `Bonjour ${name}, je suis intéressé(e) par vos services.`
     );
@@ -43,6 +52,69 @@ export function ArtisanCard({
   const displayedZones = zones.slice(0, 2);
   const remainingZones = zones.slice(2);
 
+  // Parse skills from comma-separated string to array
+  const skillsArray = skills
+    ? skills.split(",").map((s) => s.trim()).filter((s) => s.length > 0)
+    : [];
+  
+  // For 2-line display, check if content overflows
+  const skillsContainerRef = useRef<HTMLDivElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const [remainingCount, setRemainingCount] = useState(0);
+
+  useEffect(() => {
+    // Wait for DOM to be ready and layout to be calculated
+    const timer = setTimeout(() => {
+      if (!skillsContainerRef.current || skillsArray.length === 0) {
+        setIsOverflowing(false);
+        setRemainingCount(0);
+        return;
+      }
+
+      const container = skillsContainerRef.current;
+      // Check if content overflows the max height (2 lines)
+      const scrollHeight = container.scrollHeight;
+      const clientHeight = container.clientHeight;
+      
+      if (scrollHeight > clientHeight + 1) { // +1 for rounding errors
+        // Content overflows, need to calculate how many skills are hidden
+        const children = Array.from(container.children) as HTMLElement[];
+        if (children.length === 0) {
+          setIsOverflowing(false);
+          setRemainingCount(0);
+          return;
+        }
+
+        const maxHeight = clientHeight;
+        let visibleCount = 0;
+        const containerTop = container.getBoundingClientRect().top;
+        
+        for (let i = 0; i < children.length; i++) {
+          const child = children[i];
+          const childRect = child.getBoundingClientRect();
+          const childTop = childRect.top - containerTop;
+          const childBottom = childTop + childRect.height;
+          
+          // If the skill is fully visible within the max height
+          if (childBottom <= maxHeight) {
+            visibleCount++;
+          } else {
+            // This skill is partially or fully hidden
+            break;
+          }
+        }
+        
+        setIsOverflowing(true);
+        setRemainingCount(Math.max(0, skillsArray.length - visibleCount));
+      } else {
+        setIsOverflowing(false);
+        setRemainingCount(0);
+      }
+    }, 100); // Small delay to ensure layout is complete
+
+    return () => clearTimeout(timer);
+  }, [skillsArray.length, skillsArray]);
+
   // Horizontal Layout - shows vertical layout on mobile
   if (layout === "horizontal") {
     return (
@@ -52,13 +124,14 @@ export function ArtisanCard({
           {(() => {
             // Render vertical layout for mobile
             return (
-              <div
-                className={cn(
-                  "group relative flex flex-col overflow-hidden rounded-2xl border p-4 transition-all",
-                  "bg-white border-gray-200 hover:border hover:border-teal-500",
-                  "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
-                )}
-              >
+              <Link href={navRoutes.profile(slug)} className="block h-full">
+                <div
+                  className={cn(
+                    "group relative flex flex-col overflow-hidden rounded-2xl border p-4 transition-all cursor-pointer h-full",
+                    "bg-white border-gray-200 hover:border hover:border-teal-500",
+                    "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
+                  )}
+                >
                 {/* Top Section: Avatar + Name + Profession on left, Badge on right */}
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -125,12 +198,48 @@ export function ArtisanCard({
                   </div>
                 </div>
 
-                {/* Description Block - Full width */}
-                <div className="flex-1">
-                  <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
-                    {description}
-                  </p>
-                </div>
+                {/* Skills Block - Full width */}
+                {skillsArray.length > 0 && (
+                  <div className="mb-3 flex-1 min-h-0">
+                    <h4 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">
+                      Services & compétences
+                    </h4>
+                    <div 
+                      ref={skillsContainerRef}
+                      className="relative flex flex-wrap gap-2 max-h-[2.5rem] overflow-hidden"
+                    >
+                      {skillsArray.map((skill, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400"
+                        >
+                          <CheckCircle2 className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                          <span>{skill}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {isOverflowing && remainingCount > 0 && (
+                      <Tooltip
+                        label={
+                          <div className="flex flex-col gap-1.5">
+                            {skillsArray.slice(skillsArray.length - remainingCount).map((skill, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5">
+                                <CheckCircle2 className="h-3 w-3 text-purple-600 dark:text-purple-400 shrink-0" />
+                                <span>{skill}</span>
+                              </div>
+                            ))}
+                          </div>
+                        }
+                        position="top"
+                        withArrow
+                      >
+                        <span className="text-xs font-medium text-purple-600 dark:text-purple-400 cursor-help mt-1 inline-block">
+                          +{remainingCount}
+                        </span>
+                      </Tooltip>
+                    )}
+                  </div>
+                )}
 
                 {/* Community Badge - Right side */}
                 {addedByCommunity && (
@@ -169,18 +278,20 @@ export function ArtisanCard({
                   )}
                 </div>
               </div>
+              </Link>
             );
           })()}
         </div>
 
         {/* Desktop: Horizontal Layout */}
-        <div
-          className={cn(
-            "hidden sm:flex group relative items-start gap-4 overflow-hidden rounded-xl border p-4 transition-all",
-            "bg-white border-gray-200 hover:border hover:border-teal-500",
-            "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
-          )}
-        >
+        <Link href={navRoutes.profile(slug)} className="block h-full">
+          <div
+            className={cn(
+              "hidden sm:flex group relative items-start gap-4 overflow-hidden rounded-xl border p-4 transition-all cursor-pointer h-full",
+              "bg-white border-gray-200 hover:border hover:border-teal-500",
+              "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
+            )}
+          >
           {/* Left: Avatar */}
           <div className="shrink-0 ring-2 ring-teal-500/20 rounded-full">
             <Avatar
@@ -259,9 +370,47 @@ export function ArtisanCard({
                 </div>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
-              {description}
-            </p>
+            {skillsArray.length > 0 && (
+              <div className="mt-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  Services & compétences
+                </h4>
+                <div 
+                  ref={skillsContainerRef}
+                  className="relative flex flex-wrap gap-2 max-h-[3.5rem] overflow-hidden"
+                >
+                  {skillsArray.map((skill, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                      <span>{skill}</span>
+                    </div>
+                  ))}
+                </div>
+                {isOverflowing && remainingCount > 0 && (
+                  <Tooltip
+                    label={
+                      <div className="flex flex-col gap-1.5">
+                        {skillsArray.slice(skillsArray.length - remainingCount).map((skill, idx) => (
+                          <div key={idx} className="flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                            <span>{skill}</span>
+                          </div>
+                        ))}
+                      </div>
+                    }
+                    position="top"
+                    withArrow
+                  >
+                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400 cursor-help mt-2 inline-block">
+                      +{remainingCount}
+                    </span>
+                  </Tooltip>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right: Action Buttons */}
@@ -290,19 +439,21 @@ export function ArtisanCard({
             </Button>
           </div>
         </div>
+        </Link>
       </>
     );
   }
 
   // Vertical Layout (default)
   return (
-    <div
-      className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl shadow-xl shadow-gray-300/20 dark:shadow-gray-700/20 border  p-6 transition-all",
-        "bg-white border-gray-300/60 hover:border hover:border-teal-500",
-        "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
-      )}
-    >
+    <Link href={navRoutes.profile(slug)} className="block h-full">
+      <div
+        className={cn(
+          "group relative flex flex-col overflow-hidden rounded-2xl shadow-xl shadow-gray-300/20 dark:shadow-gray-700/20 border  p-6 transition-all cursor-pointer h-full",
+          "bg-white border-gray-300/60 hover:border hover:border-teal-500",
+          "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
+        )}
+      >
       {/* Top Section: Avatar + Name + Profession on left, Badge on right */}
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -386,12 +537,48 @@ export function ArtisanCard({
         </div>
       </div>
 
-      {/* Description Block - Full width */}
-      <div className="mb-5 flex-1">
-        <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
-          {description}
-        </p>
-      </div>
+      {/* Skills Block - Full width */}
+      {skillsArray.length > 0 && (
+        <div className="mb-5 flex-1 min-h-0">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+            Services & compétences
+          </h4>
+          <div 
+            ref={skillsContainerRef}
+            className="relative flex flex-wrap gap-2 max-h-[3.5rem] overflow-hidden"
+          >
+            {skillsArray.map((skill, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                <span>{skill}</span>
+              </div>
+            ))}
+          </div>
+          {isOverflowing && remainingCount > 0 && (
+            <Tooltip
+              label={
+                <div className="flex flex-col gap-1.5">
+                  {skillsArray.slice(skillsArray.length - remainingCount).map((skill, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                      <span>{skill}</span>
+                    </div>
+                  ))}
+                </div>
+              }
+              position="top"
+              withArrow
+            >
+              <span className="text-sm font-medium text-purple-600 dark:text-purple-400 cursor-help mt-2 inline-block">
+                +{remainingCount}
+              </span>
+            </Tooltip>
+          )}
+        </div>
+      )}
 
       {/* Action Buttons - Bottom */}
       <div className="flex gap-2 border-gray-200 dark:border-gray-800">
@@ -417,5 +604,6 @@ export function ArtisanCard({
         )}
       </div>
     </div>
+    </Link>
   );
 }

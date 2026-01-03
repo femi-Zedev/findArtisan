@@ -125,7 +125,7 @@ export default function SubmissionsPage() {
           id: artisan.id,
           payload: {
             full_name: artisan.fullName,
-            description: artisan.description || '',
+            skills: artisan.skills || '',
             profession: artisan.profession?.slug || '',
             zones: artisan.zones.map(z => z.slug),
             phone_numbers: artisan.phoneNumbers.map(p => ({

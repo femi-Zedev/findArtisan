@@ -16,6 +16,7 @@ import {
 import { Menu } from "@mantine/core";
 import { useUserStore } from "@/stores/userStore";
 import { handleLogout } from "@/app/lib/utils/auth";
+import { navRoutes } from "@/app/lib/navigation-routes";
 
 interface NavItem {
   label: string;
@@ -27,19 +28,19 @@ interface NavItem {
 const adminNavItems: NavItem[] = [
   {
     label: "Tableau de bord",
-    href: "/dashboard",
+    href: navRoutes.dashboard.base,
     icon: LayoutDashboard,
     userTypes: ["admin"],
   },
   {
     label: "Artisans",
-    href: "/dashboard/artisans",
+    href: navRoutes.dashboard.artisans,
     icon: Table,
     userTypes: ["admin"],
   },
   {
     label: "Soumissions",
-    href: "/dashboard/submissions",
+    href: navRoutes.dashboard.submissions,
     icon: FileText,
     userTypes: ["admin"],
   },
@@ -48,13 +49,13 @@ const adminNavItems: NavItem[] = [
 const userNavItems: NavItem[] = [
   {
     label: "Tableau de bord",
-    href: "/dashboard",
+    href: navRoutes.dashboard.base,
     icon: LayoutDashboard,
     userTypes: ["user"],
   },
   {
     label: "Mes Contributions",
-    href: "/dashboard/contributions",
+    href: navRoutes.dashboard.contributions,
     icon: Wrench,
     userTypes: ["user"],
   },
@@ -168,7 +169,7 @@ export function DashboardSidebar({ isMobileOpen, onMobileClose }: DashboardSideb
         {/* Home Button */}
         <div className="px-4 pb-2">
           <Link
-            href="/"
+            href={navRoutes.home}
             onClick={onMobileClose}
             className="cursor-pointer flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >

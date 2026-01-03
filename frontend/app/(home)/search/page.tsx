@@ -2,6 +2,7 @@
 
 import { useState, Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { navRoutes } from "@/app/lib/navigation-routes";
 import { useQueryState, parseAsString, parseAsArrayOf } from "nuqs";
 import { useDebouncedValue, useMediaQuery } from "@mantine/hooks";
 import { ArtisanCard } from "../../_components/artisan-card";
@@ -68,13 +69,14 @@ function SearchContent() {
 
     let artisans = artisansData.data.map((artisan) => ({
       id: artisan.id,
+      slug: artisan.slug,
       name: artisan.fullName,
       profession: artisan.profession?.name || "Non spécifié",
       zone:
         artisan.zones && artisan.zones.length > 0
           ? artisan.zones.map((z) => z.name)
           : ["Non spécifié"],
-      description: artisan.description || "",
+      skills: artisan.skills || "",
       phone: artisan.phoneNumbers?.[0]?.number || "",
       whatsapp: artisan.phoneNumbers?.some((phone) => phone.isWhatsApp) || false,
       imageUrl: artisan.profilePhoto?.url,
@@ -106,7 +108,7 @@ function SearchContent() {
   const activeFiltersCount = [profession, zones.length > 0, hideCommunityAdded].filter(Boolean).length;
 
   const handleBack = () => {
-    router.push("/");
+    router.push(navRoutes.home);
   };
 
   const handleOpenFiltersModal = () => {
@@ -391,10 +393,11 @@ function SearchContent() {
             filteredArtisans.map((artisan) => (
               <ArtisanCard
                 key={artisan.id}
+                slug={artisan.slug}
                 name={artisan.name}
                 profession={artisan.profession}
                 zone={artisan.zone}
-                description={artisan.description}
+                skills={artisan.skills}
                 phone={artisan.phone}
                 whatsapp={artisan.whatsapp}
                 addedByCommunity={artisan.addedByCommunity}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { navRoutes } from "@/app/lib/navigation-routes";
 import { Wrench, Heart } from "lucide-react";
 import { cn } from "../lib/utils";
 
@@ -14,15 +15,10 @@ export function Footer() {
           {/* Brand Section */}
           <div className="space-y-4">
             <Link
-              href="/"
+              href={navRoutes.home}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500">
-                <Wrench className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
-                FindArtisan
-              </span>
+            <img src="/icon.svg" alt="" className="h-8" />
             </Link>
             <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
               Trouvez facilement des artisans locaux fiables au Bénin.
@@ -38,7 +34,7 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="/"
+                  href={navRoutes.home}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                 >
                   Accueil
@@ -46,7 +42,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/search"
+                  href={navRoutes.search}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                 >
                   Rechercher un artisan
@@ -98,7 +94,7 @@ export function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="/#faq"
+                  href={navRoutes.anchors.faq}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                 >
                   Questions fréquentes
@@ -106,7 +102,7 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/#contact"
+                  href={navRoutes.anchors.contact}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                 >
                   Nous contacter

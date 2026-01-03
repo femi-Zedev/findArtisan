@@ -22,7 +22,7 @@ const inter = Inter({
 const theme = createTheme({
   primaryColor: 'teal',
   primaryShade: 6,
-  
+
   colors: {
     teal: [
       "#f0fdfa", // 0 - teal-50
@@ -176,6 +176,23 @@ const theme = createTheme({
 export const metadata: Metadata = {
   title: "FindArtisan - Découvrez les artisans locaux au Bénin",
   description: "Découvrez les artisans locaux au Bénin et contactez-les facilement",
+  applicationName: "FindArtisan",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "FindArtisan",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({
@@ -184,9 +201,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <head>
-        <ThemeScript />
+          <ThemeScript />
       </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <MantineProvider theme={theme} defaultColorScheme="auto">

@@ -9,7 +9,7 @@ export interface Artisan {
   id: number;
   fullName: string;
   slug: string;
-  description: string;
+  skills: string;
   status: string;
   isCommunitySubmitted: boolean;
   profession: {
@@ -38,6 +38,24 @@ export interface Artisan {
     url: string;
     alternativeText: string | null;
   } | null;
+  reviews?: Array<{
+    id: number;
+    ratingCriteria: Record<string, { points: number; label: string }>;
+    finalScore: number;
+    comment: string | null;
+    workPhotos: Array<{
+      id: number;
+      url: string;
+      alternativeText: string | null;
+    }>;
+    submittedByUser: {
+      id: number;
+      username: string;
+      email: string;
+    } | null;
+    submittedAt: string;
+    createdAt: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -158,7 +176,7 @@ export const useGetRecentlyAdded = createQuery({
 // Types for creating artisan
 export interface CreateArtisanPayload {
   full_name: string;
-  description: string;
+  skills: string;
   profession?: string; // Profession slug or name
   zones?: string[]; // Zone slugs
   phone_numbers?: Array<{
@@ -216,7 +234,7 @@ export const useCreateArtisan = createMutation({
     const artisanData = {
       data: {
         full_name: payload.full_name,
-        description: payload.description,
+        skills: payload.skills,
         profession: payload.profession, // Backend will need to resolve this to ID
         zones: payload.zones, // Backend will need to resolve these to IDs
         phone_numbers: payload.phone_numbers?.map((phone) => ({
@@ -251,7 +269,7 @@ export const useCreateArtisan = createMutation({
 // Types for batch creation
 export interface CreateBatchArtisanPayload {
   full_name: string;
-  description?: string;
+  skills?: string;
   profession?: string;
   zones?: string[];
   phone_numbers?: Array<{
@@ -346,7 +364,7 @@ export const useUpdateArtisan = createMutation({
     const artisanData = {
       data: {
         full_name: payload.full_name,
-        description: payload.description,
+        skills: payload.skills,
         profession: payload.profession,
         zones: payload.zones,
         phone_numbers: payload.phone_numbers?.map((phone) => ({

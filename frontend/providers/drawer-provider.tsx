@@ -15,7 +15,7 @@ export interface DrawerContextType {
 const DrawerContext = createContext<DrawerContextType | null>(null);
 
 export const DrawerTitle = ({ title, className }: { title: string; className?: string }) => {
-  return <h2 className={cn('text-xl font-semibold text-gray-700 dark:text-white capitalize', className)}>{title}</h2>;
+  return <h2 className={cn('text-xl font-semibold text-gray-700 dark:text-white', className)}>{title}</h2>;
 };
 
 export const DrawerProvider = ({ children }: { children: ReactNode }) => {
@@ -102,7 +102,7 @@ export const DrawerProvider = ({ children }: { children: ReactNode }) => {
                   {/* Drawer Body */}
                   <div
                     className={cn(
-                      'p-6 flex flex-col grow overflow-y-scroll',
+                      ' flex flex-col grow overflow-y-scroll',
                       'bg-white dark:bg-gray-900',
                       drawer.bodyClassName,
                     )}

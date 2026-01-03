@@ -430,6 +430,211 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiArtisanArtisan extends Struct.CollectionTypeSchema {
+  collectionName: 'artisans';
+  info: {
+    description: 'Registered artisans available in the marketplace';
+    displayName: 'Artisan';
+    pluralName: 'artisans';
+    singularName: 'artisan';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    approved_at: Schema.Attribute.DateTime;
+    approved_by_name: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    full_name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        minLength: 2;
+      }>;
+    import_jobs: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::csv-import-job.csv-import-job'
+    >;
+    is_community_submitted: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::artisan.artisan'
+    > &
+      Schema.Attribute.Private;
+    phone_numbers: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::phone-number.phone-number'
+    >;
+    profession: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::profession.profession'
+    >;
+    profile_photo: Schema.Attribute.Media;
+    publishedAt: Schema.Attribute.DateTime;
+    rejected_reason: Schema.Attribute.Text;
+    reviews: Schema.Attribute.Relation<'oneToMany', 'api::review.review'>;
+    skills: Schema.Attribute.Text & Schema.Attribute.Required;
+    slug: Schema.Attribute.UID<'full_name'> & Schema.Attribute.Required;
+    social_links: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::social-link.social-link'
+    >;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'approved', 'rejected', 'removed']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'approved'>;
+    submission: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::community-submission.community-submission'
+    >;
+    submitted_at: Schema.Attribute.DateTime;
+    submitted_by_email: Schema.Attribute.Email;
+    submitted_by_name: Schema.Attribute.String;
+    submitted_by_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    zones: Schema.Attribute.Relation<'manyToMany', 'api::zone.zone'>;
+  };
+}
+
+export interface ApiCommunitySubmissionCommunitySubmission
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'community_submissions';
+  info: {
+    description: 'Raw artisan submissions from the community';
+    displayName: 'Community Submission';
+    pluralName: 'community-submissions';
+    singularName: 'community-submission';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    artisan: Schema.Attribute.Relation<'oneToOne', 'api::artisan.artisan'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    duplicate_of: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::artisan.artisan'
+    >;
+    import_job: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::csv-import-job.csv-import-job'
+    >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::community-submission.community-submission'
+    > &
+      Schema.Attribute.Private;
+    moderation_status: Schema.Attribute.Enumeration<
+      ['pending', 'approved', 'rejected', 'duplicate']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    notes: Schema.Attribute.Text;
+    publishedAt: Schema.Attribute.DateTime;
+    raw_payload: Schema.Attribute.JSON;
+    source: Schema.Attribute.Enumeration<['form', 'csv']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'form'>;
+    submitted_at: Schema.Attribute.DateTime;
+    submitted_by_email: Schema.Attribute.Email;
+    submitted_by_name: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiCsvImportJobCsvImportJob
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'csv_import_jobs';
+  info: {
+    description: 'Batch CSV uploads for artisan onboarding';
+    displayName: 'CSV Import Job';
+    pluralName: 'csv-import-jobs';
+    singularName: 'csv-import-job';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    artisans: Schema.Attribute.Relation<'manyToMany', 'api::artisan.artisan'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    error_report: Schema.Attribute.Text;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::csv-import-job.csv-import-job'
+    > &
+      Schema.Attribute.Private;
+    processed_at: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    source_file: Schema.Attribute.Media;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'processing', 'completed', 'failed']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    submissions: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::community-submission.community-submission'
+    >;
+    submitted_at: Schema.Attribute.DateTime;
+    submitted_by_email: Schema.Attribute.Email;
+    submitted_by_name: Schema.Attribute.String;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPhoneNumberPhoneNumber extends Struct.CollectionTypeSchema {
+  collectionName: 'phone_numbers';
+  info: {
+    description: 'Phone numbers associated with artisans';
+    displayName: 'Phone Number';
+    pluralName: 'phone-numbers';
+    singularName: 'phone-number';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    artisan: Schema.Attribute.Relation<'manyToOne', 'api::artisan.artisan'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    is_whatsapp: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    label: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::phone-number.phone-number'
+    > &
+      Schema.Attribute.Private;
+    number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiProfessionProfession extends Struct.CollectionTypeSchema {
   collectionName: 'professions';
   info: {
@@ -460,6 +665,130 @@ export interface ApiProfessionProfession extends Struct.CollectionTypeSchema {
       }>;
     publishedAt: Schema.Attribute.DateTime;
     search_keywords: Schema.Attribute.Text;
+    slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiReviewReview extends Struct.CollectionTypeSchema {
+  collectionName: 'reviews';
+  info: {
+    description: 'User reviews and ratings for artisans';
+    displayName: 'Review';
+    pluralName: 'reviews';
+    singularName: 'review';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    artisan: Schema.Attribute.Relation<'manyToOne', 'api::artisan.artisan'>;
+    comment: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    final_score: Schema.Attribute.Decimal;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::review.review'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    rating_criteria: Schema.Attribute.JSON;
+    submitted_at: Schema.Attribute.DateTime;
+    submitted_by_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    work_photos: Schema.Attribute.Media<undefined, true>;
+  };
+}
+
+export interface ApiSocialLinkSocialLink extends Struct.CollectionTypeSchema {
+  collectionName: 'social_links';
+  info: {
+    description: 'Social media links for artisans';
+    displayName: 'Social Link';
+    pluralName: 'social-links';
+    singularName: 'social-link';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    artisan: Schema.Attribute.Relation<'manyToOne', 'api::artisan.artisan'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::social-link.social-link'
+    > &
+      Schema.Attribute.Private;
+    platform: Schema.Attribute.Enumeration<
+      ['facebook', 'instagram', 'tiktok', 'whatsapp', 'website', 'other']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'other'>;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    url: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
+export interface ApiZoneZone extends Struct.CollectionTypeSchema {
+  collectionName: 'zones';
+  info: {
+    description: 'Cities or districts served by artisans';
+    displayName: 'Zone';
+    pluralName: 'zones';
+    singularName: 'zone';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    artisans: Schema.Attribute.Relation<'manyToMany', 'api::artisan.artisan'>;
+    city: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    latitude: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 90;
+          min: -90;
+        },
+        number
+      >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::zone.zone'> &
+      Schema.Attribute.Private;
+    longitude: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 180;
+          min: -180;
+        },
+        number
+      >;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        minLength: 2;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    region: Schema.Attribute.String;
     slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -724,8 +1053,8 @@ export interface PluginUploadFile extends Struct.CollectionTypeSchema {
     };
   };
   attributes: {
-    alternativeText: Schema.Attribute.String;
-    caption: Schema.Attribute.String;
+    alternativeText: Schema.Attribute.Text;
+    caption: Schema.Attribute.Text;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -749,7 +1078,7 @@ export interface PluginUploadFile extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     mime: Schema.Attribute.String & Schema.Attribute.Required;
     name: Schema.Attribute.String & Schema.Attribute.Required;
-    previewUrl: Schema.Attribute.String;
+    previewUrl: Schema.Attribute.Text;
     provider: Schema.Attribute.String & Schema.Attribute.Required;
     provider_metadata: Schema.Attribute.JSON;
     publishedAt: Schema.Attribute.DateTime;
@@ -758,7 +1087,7 @@ export interface PluginUploadFile extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    url: Schema.Attribute.String & Schema.Attribute.Required;
+    url: Schema.Attribute.Text & Schema.Attribute.Required;
     width: Schema.Attribute.Integer;
   };
 }
@@ -977,7 +1306,14 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::artisan.artisan': ApiArtisanArtisan;
+      'api::community-submission.community-submission': ApiCommunitySubmissionCommunitySubmission;
+      'api::csv-import-job.csv-import-job': ApiCsvImportJobCsvImportJob;
+      'api::phone-number.phone-number': ApiPhoneNumberPhoneNumber;
       'api::profession.profession': ApiProfessionProfession;
+      'api::review.review': ApiReviewReview;
+      'api::social-link.social-link': ApiSocialLinkSocialLink;
+      'api::zone.zone': ApiZoneZone;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

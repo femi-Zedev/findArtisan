@@ -3,6 +3,7 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useQueryState, parseAsString, parseAsArrayOf } from "nuqs";
 import { useRouter } from "next/navigation";
+import { navRoutes } from "@/app/lib/navigation-routes";
 import { useModalContext } from "@/providers/modal-provider";
 import { FilterArtisanForm, FilterValues } from "./forms/FilterArtisan.form";
 import { cn } from "../lib/utils";
@@ -32,7 +33,7 @@ export function HeroSearchInput() {
     }
     
     const queryString = params.toString();
-    const searchUrl = `/search${queryString ? `?${queryString}` : ""}`;
+    const searchUrl = `${navRoutes.search}${queryString ? `?${queryString}` : ""}`;
 
     // Close modal first, then navigate
     closeModal();

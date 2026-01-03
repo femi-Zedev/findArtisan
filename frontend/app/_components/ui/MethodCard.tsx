@@ -7,6 +7,7 @@ interface MethodCardProps {
   title: string;
   description: string;
   onClick: () => void;
+  isSelected?: boolean;
 }
 
 export function MethodCard({
@@ -14,17 +15,17 @@ export function MethodCard({
   title,
   description,
   onClick,
+  isSelected = false,
 }: MethodCardProps) {
   return (
     <button
       onClick={onClick}
       className={cn(
         "flex flex-col items-center gap-4 p-6 rounded-xl border-2",
-        "border-gray-200 dark:border-gray-700",
-        "bg-white dark:bg-gray-800",
-        "hover:border-teal-500 dark:hover:border-teal-500",
-        "hover:bg-teal-50/50 dark:hover:bg-teal-900/10",
         "transition-all cursor-pointer group",
+        isSelected
+          ? "border-teal-500 dark:border-teal-500 bg-teal-50 dark:bg-teal-900/20"
+          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-teal-500 dark:hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-900/10",
       )}
       aria-label={`Sélectionner ${title}`}
     >

@@ -7,11 +7,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useDrawerContext } from "@/providers/drawer-provider";
 import { useModalContext } from "@/providers/modal-provider";
 import { useUserStore } from "@/stores/userStore";
-import { AddArtisanSelection } from "../_components/forms/AddArtisanSelection";
 import { GoogleLoginModal } from "../_components/modals/GoogleLoginModal";
 import { PlusIcon } from "lucide-react";
 import { artisanKeys } from "../lib/services/artisan";
 import { notifications } from "@mantine/notifications";
+import { AddArtisan } from "../_components/AddArtisan";
 
 export function RecentlyAddedSection() {
   const { data, isLoading, error } = useGetRecentlyAdded({ variables: 6 });
@@ -23,12 +23,13 @@ export function RecentlyAddedSection() {
   // Transform API data to match ArtisanCard props and limit to 6
   const artisans = (data?.data?.map((artisan) => ({
     id: artisan.id,
+    slug: artisan.slug,
     name: artisan.fullName,
     profession: artisan.profession?.name || "Non spécifié",
     zone: artisan.zones && artisan.zones.length > 0
       ? artisan.zones.map((z) => z.name)
       : ["Non spécifié"],
-    description: artisan.description || "",
+    skills: artisan.skills || "",
     phone: artisan.phoneNumbers?.[0]?.number || "",
     whatsapp: artisan.phoneNumbers?.some((phone) => phone.isWhatsApp) || false,
     imageUrl: artisan.profilePhoto?.url,
@@ -49,24 +50,12 @@ export function RecentlyAddedSection() {
 
     // If authenticated, open drawer with selection screen
     openDrawer({
-      title: "Ajouter un artisan",
       body: (
-        <AddArtisanSelection
-          onSuccess={(values) => {
-            // Invalidate and refetch recently added artisans
-            queryClient.invalidateQueries({ queryKey: artisanKeys.recentlyAdded() });
-            closeDrawer();
-            notifications.show({
-              title: "Artisan ajouté",
-              message: "L'artisan a été ajouté avec succès",
-              color: "green",
-              autoClose: 3000,
-            });
-          }}
-        />
+        <AddArtisan />
       ),
       size: "xl",
-      bodyClassName: "p-6 overflow-y-hidden",
+      asChild: true,
+      bodyClassName: "overflow-y-hidden",
     });
   };
 
@@ -104,10 +93,11 @@ export function RecentlyAddedSection() {
             {artisans.map((artisan) => (
               <ArtisanCard
                 key={artisan.id}
+                slug={artisan.slug}
                 name={artisan.name}
                 profession={artisan.profession}
                 zone={artisan.zone}
-                description={artisan.description}
+                skills={artisan.skills}
                 phone={artisan.phone}
                 whatsapp={artisan.whatsapp}
                 imageUrl={artisan.imageUrl}

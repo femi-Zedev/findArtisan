@@ -17,9 +17,10 @@
     "docs": "yarn docs:generate"
   },
   "dependencies": {
-    "@strapi/plugin-cloud": "5.30.1",
-    "@strapi/plugin-users-permissions": "5.30.1",
-    "@strapi/strapi": "5.30.1",
+    "strapi-provider-cloudflare-r2": "^0.3.0",
+    "@strapi/plugin-cloud": "^5.33.0",
+    "@strapi/plugin-users-permissions": "^5.33.0",
+    "@strapi/strapi": "^5.33.0",
     "better-sqlite3": "11.3.0",
     "pg": "^8.16.3",
     "react": "^18.0.0",
@@ -34,7 +35,7 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=18.0.0 <=22.x.x",
+    "node": ">=18.0.0 <=24.x.x",
     "npm": ">=6.0.0"
   },
   "strapi": {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { navRoutes } from "@/app/lib/navigation-routes";
 import { useAuth } from "@/app/lib/hooks/useAuth";
 import { Loader, Center, Text, Button } from "@mantine/core";
 import { AlertCircle } from "lucide-react";
@@ -49,7 +50,7 @@ export function DashboardAuthGuard({
             Vous devez être authentifié pour accéder au tableau de bord. Veuillez vous connecter pour continuer.
           </Text>
           <Button
-            onClick={() => router.push("/")}
+            onClick={() => router.push(navRoutes.home)}
             color="teal"
             variant="light"
           >
@@ -74,7 +75,7 @@ export function DashboardAuthGuard({
             Vous n'avez pas la permission d'accéder au tableau de bord.
           </Text>
           <Button
-            onClick={() => router.push("/")}
+            onClick={() => router.push(navRoutes.home)}
             color="teal"
             variant="light"
           >
@@ -98,7 +99,7 @@ export function DashboardAuthGuard({
             Votre type de compte ({userType === "admin" ? "Administrateur" : "Utilisateur"}) n'a pas accès à cette section.
             </Text>
             <Button
-              onClick={() => router.push("/dashboard")}
+              onClick={() => router.push(navRoutes.dashboard.base)}
               color="teal"
               variant="light"
             >

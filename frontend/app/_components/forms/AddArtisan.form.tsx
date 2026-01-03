@@ -1,211 +1,67 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea, Switch, Select } from "@mantine/core";
-import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
+import { Button, TextInput, Textarea, TagsInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { Plus, X, Minus, Image } from "lucide-react";
-import { cn } from "@/app/lib/utils";
-import { zones, professions } from "@/constants";
 import { useState, useCallback } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
-import { PhoneInput } from "../ui/PhoneInput";
-import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
-import type { Artisan } from "@/app/lib/services/artisan";
-
-interface PhoneNumber {
-  number: string;
-  isWhatsApp: boolean;
-}
-
-interface SocialMedia {
-  platform: string;
-  link: string;
-}
-
-export interface AddArtisanFormValues {
-  fullName: string;
-  profession: string;
-  zone: string[];
-  phoneNumbers: PhoneNumber[];
-  socialMedia: SocialMedia[];
-  description?: string;
-  photo?: File | null;
-}
+import { PhotoUploadDropzone } from "../ui/PhotoUploadDropzone";
+import { PhoneNumbersSection } from "./PhoneNumbersSection";
+import { SocialMediaSection } from "./SocialMediaSection";
+import { FormArea, ButtonsArea } from "../shared";
+import { useCreateArtisan, useUpdateArtisan, type Artisan, artisanKeys } from "@/app/lib/services/artisan";
+import { notifications } from "@mantine/notifications";
+import { useUserStore } from "@/stores/userStore";
+import { useSession } from "next-auth/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useDrawerContext } from "@/providers/drawer-provider";
+import { professions, zones, suggestedSkills } from "@/constants";
+import {
+  type AddArtisanFormValues,
+  validatePhoneNumber,
+  transformFormValuesToPayload,
+  getInitialFormValues,
+} from "@/app/lib/utils/artisan-form";
 
 interface AddArtisanFormProps {
-  onSuccess?: (values: AddArtisanFormValues) => void;
   artisan?: Artisan;
+  onPrevious?: () => void;
+  onSuccess?: () => void;
+  onNext?: (artisanId: number, artisanName: string) => void; // Callback to navigate to step 3 with artisan ID and name
 }
 
-const socialPlatforms = [
-  { value: "facebook", label: "Facebook" },
-  { value: "tiktok", label: "TikTok" },
-  { value: "instagram", label: "Instagram" },
-];
-
-interface PhotoUploadDropzoneProps {
-  photoPreview: string | null;
-  onDrop: (files: File[]) => void;
-  onRemove: (e: React.MouseEvent) => void;
-  error?: string;
-  showLabel?: boolean;
-}
-
-function PhotoUploadDropzone({
-  photoPreview,
-  onDrop,
-  onRemove,
-  error,
-  showLabel = true,
-}: PhotoUploadDropzoneProps) {
-  return (
-    <div className="flex flex-col">
-      {showLabel && (
-        <label className="mantine-TextInput-label">
-          Photo de profil (optionnel)
-        </label>
-      )}
-      <div className="relative">
-        <Dropzone
-          onDrop={onDrop}
-          accept={IMAGE_MIME_TYPE}
-          multiple={false}
-          classNames={{
-            root: cn(
-              "relative w-52 h-32 rounded-2xl border-2 border-dashed",
-              "flex items-center justify-center cursor-pointer transition-all",
-              "border-gray-300 dark:border-gray-600",
-              "bg-gray-50 dark:bg-gray-800/50",
-              "hover:border-teal-500 dark:hover:border-teal-500",
-              "hover:bg-teal-50/50 dark:hover:bg-teal-900/10",
-              photoPreview && "border-solid border-teal-500 dark:border-teal-400"
-            ),
-            inner: "h-full w-full flex items-center justify-center p-0",
-          }}
-          styles={{
-            root: {
-              padding: 0,
-              width: "208px",
-              height: "128px",
-            },
-            inner: {
-              height: "100%",
-              width: "100%",
-              padding: 0,
-            },
-          }}
-        >
-          {photoPreview ? (
-            <>
-              <img
-                src={photoPreview}
-                alt="Photo preview"
-                className="w-full h-full rounded-2xl object-cover"
-              />
-              <button
-                type="button"
-                onClick={onRemove}
-                className={cn(
-                  "absolute -top-1 -right-1 w-8 h-8 rounded-full z-10",
-                  "flex items-center justify-center",
-                  "bg-red-500 hover:bg-red-600 text-white",
-                  "shadow-lg transition-colors"
-                )}
-                aria-label="Supprimer la photo"
-              >
-                <X size={14} />
-              </button>
-            </>
-          ) : (
-            <div className="flex flex-col items-center gap-2 text-gray-400 dark:text-gray-500 pointer-events-none">
-              <Image className="w-8 h-8" />
-              <span className="text-xs text-center px-2">Cliquez ou glissez-déposez</span>
-            </div>
-          )}
-        </Dropzone>
-      </div>
-      {error && <span className="text-xs text-red-500">{error}</span>}
-    </div>
+export function AddArtisanForm({ artisan, onSuccess, onPrevious, onNext }: AddArtisanFormProps) {
+  const isEditMode = !!artisan;
+  const [hasSocialMedia, setHasSocialMedia] = useState<boolean>(
+    !!(artisan?.socialLinks && artisan.socialLinks.length > 0)
   );
-}
+  const [photoPreview, setPhotoPreview] = useState<string | null>(
+    artisan?.profilePhoto?.url || null
+  );
 
-export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
-  const [hasSocialMedia, setHasSocialMedia] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-
-  const initialValues: AddArtisanFormValues = artisan
-    ? {
-        fullName: artisan.fullName ?? "",
-        profession: artisan.profession?.name ?? "",
-        zone: artisan.zones?.map((z) => z.name) ?? [],
-        phoneNumbers:
-          artisan.phoneNumbers && artisan.phoneNumbers.length > 0
-            ? artisan.phoneNumbers.map((p) => ({
-                number: p.number,
-                isWhatsApp: p.isWhatsApp,
-              }))
-            : [{ number: "", isWhatsApp: false }],
-        socialMedia:
-          artisan.socialLinks?.map((s) => ({
-            platform: s.platform,
-            link: s.link,
-          })) ?? [],
-        description: artisan.description ?? "",
-        photo: null,
-      }
-    : {
-        fullName: "",
-        profession: "",
-        zone: [],
-        phoneNumbers: [{ number: "", isWhatsApp: false }],
-        socialMedia: [],
-        description: "",
-        photo: null,
-      };
+  const initialValues = getInitialFormValues(artisan);
 
   const form = useForm<AddArtisanFormValues>({
     initialValues,
     validate: {
       fullName: (value) => (!value ? "Le nom complet est requis" : null),
-      profession: (value) => (!value ? "La profession est requise" : null),
+      profession: (value) => {
+        if (!value || value.length === 0) {
+          return "Au moins une profession est requise";
+        }
+        if (value.length > 5) {
+          return "Maximum 5 professions autorisées";
+        }
+        return null;
+      },
       zone: (value) => (value.length === 0 ? "Au moins une zone est requise" : null),
       phoneNumbers: {
         number: (value, values, path) => {
-          // Skip validation if field is empty
-          if (!value || value.trim() === "") {
-            const hasOtherValidPhone = values.phoneNumbers.some((p, idx) => {
-              const currentIndex = parseInt(path.split('.')[1]);
-              return idx !== currentIndex && p.number.trim() !== "";
-            });
-            return hasOtherValidPhone ? null : "Au moins un numéro de téléphone est requis";
-          }
-          
-          try {
-            // Check if the number is valid
-            if (!isValidPhoneNumber(value)) {
-              return 'Numéro de téléphone invalide';
-            }
-            
-            return null;
-          } catch {
-            return 'Numéro de téléphone invalide';
-          }
+          const currentIndex = parseInt(path.split('.')[1]);
+          return validatePhoneNumber(value, values.phoneNumbers, currentIndex);
         },
       },
     },
   });
-
-  const addPhoneNumber = () => {
-    if (form.values.phoneNumbers.length < 4) {
-      form.insertListItem("phoneNumbers", { number: "", isWhatsApp: false });
-    }
-  };
-
-  const removePhoneNumber = (index: number) => {
-    if (form.values.phoneNumbers.length > 1) {
-      form.removeListItem("phoneNumbers", index);
-    }
-  };
 
   const toggleSocialMedia = (checked: boolean) => {
     setHasSocialMedia(checked);
@@ -213,17 +69,6 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
       form.setFieldValue("socialMedia", []);
     } else if (form.values.socialMedia.length === 0) {
       form.insertListItem("socialMedia", { platform: "", link: "" });
-    }
-  };
-
-  const addSocialMedia = () => {
-    form.insertListItem("socialMedia", { platform: "", link: "" });
-  };
-
-  const removeSocialMedia = (index: number) => {
-    form.removeListItem("socialMedia", index);
-    if (form.values.socialMedia.length === 1) {
-      setHasSocialMedia(false);
     }
   };
 
@@ -253,240 +98,237 @@ export function AddArtisanForm({ onSuccess, artisan }: AddArtisanFormProps) {
     }
   }, [handlePhotoChange]);
 
-  const handleSubmit = (values: AddArtisanFormValues) => {
-    // TODO: Implement API call to submit artisan
-    console.log("Add Artisan:", values);
-    if (onSuccess) {
-      onSuccess(values);
+  const { isAdmin } = useUserStore();
+  const { data: session } = useSession();
+  const jwt = (session?.user as any)?.strapiJwt || '';
+  const queryClient = useQueryClient();
+  const { closeDrawer } = useDrawerContext();
+
+  const createArtisanMutation = useCreateArtisan({
+    onSuccess: (response) => {
+      notifications.show({
+        title: "Succès",
+        message: "L'artisan a été ajouté avec succès !",
+        color: "teal",
+      });
+      // Invalidate queries to refresh lists
+      queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
+      
+      // If onNext is provided, navigate to step 3 with artisan ID and name
+      if (onNext && response.data?.id) {
+        onNext(response.data.id, response.data.fullName);
+      } else {
+        // Otherwise, close drawer (edit mode or no step 3)
+        form.reset();
+        setPhotoPreview(null);
+        setHasSocialMedia(false);
+        closeDrawer();
+        if (onSuccess) {
+          onSuccess();
+        }
+      }
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: "Erreur",
+        message: error.message || "Une erreur est survenue lors de l'ajout de l'artisan",
+        color: "red",
+      });
+    },
+  });
+
+  const updateArtisanMutation = useUpdateArtisan({
+    onSuccess: () => {
+      notifications.show({
+        title: "Succès",
+        message: "L'artisan a été modifié avec succès !",
+        color: "teal",
+      });
+      // Invalidate queries to refresh lists
+      queryClient.invalidateQueries({ queryKey: artisanKeys.searches() });
+      // Close drawer
+      closeDrawer();
+      if (onSuccess) {
+        onSuccess();
+      }
+    },
+    onError: (error: Error) => {
+      notifications.show({
+        title: "Erreur",
+        message: error.message || "Une erreur est survenue lors de la modification de l'artisan",
+        color: "red",
+      });
+    },
+  });
+
+  const handleSubmit = async (values: AddArtisanFormValues) => {
+    try {
+      const payload = transformFormValuesToPayload(
+        values,
+        isEditMode,
+        isAdmin,
+        artisan
+      );
+
+      if (isEditMode && artisan) {
+        await updateArtisanMutation.mutateAsync({
+          id: artisan.id,
+          payload,
+          jwt,
+        });
+      } else {
+        await createArtisanMutation.mutateAsync({
+          payload,
+          jwt,
+        });
+      }
+    } catch (error) {
+      // Error is handled by onError callback
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} artisan:`, error);
     }
   };
 
   return (
     <form onSubmit={form.onSubmit(handleSubmit)} className="flex flex-col h-full overflow-hidden">
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-visible overflow-x-hidden px-2 py-4">
-        <div className="flex flex-col gap-6 pr-2">
-          {/* Photo and Description - Inline */}
-          <div className="grid grid-cols-1 md:grid-cols-[208px_1fr] gap-6 items-start">
-            {/* Photo Upload */}
-            <PhotoUploadDropzone
-              photoPreview={photoPreview}
-              onDrop={handleDrop}
-              onRemove={handlePhotoRemove}
-              error={form.errors.photo as string | undefined}
-              showLabel={true}
-            />
+      <FormArea className="gap-6">
+        {/* Photo and Skills - Inline */}
+        <div className="flex flex-col md:flex-row gap-8 w-full">
+          {/* Photo Upload */}
+          <PhotoUploadDropzone
+            photoPreview={photoPreview}
+            onDrop={handleDrop}
+            onRemove={handlePhotoRemove}
+            error={form.errors.photo as string | undefined}
+            showLabel={true}
+          />
 
-            {/* Description */}
-            <Textarea
-              label="Description"
-              placeholder="Décrivez les services offerts par cet artisan..."
-              size="lg"
-              rows={4}
-              required
-              classNames={{
-                label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
-                input:
-                  "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-              }}
-              {...form.getInputProps("description")}
-            />
-          </div>
-
-          {/* Full Name */}
-          <TextInput
-            label="Nom complet"
-            placeholder="Ex: Jean Dupont"
-            size="lg"
-            required
+          {/* Skills/Description */}
+          <TagsInput
+            label="Compétences (jusqu'à 15 compétences)"
+            placeholder={`Rechercher une compétence ou ajoutez une nouvelle et appuyez sur "Entré"...`}
+            size="md"
+            data={suggestedSkills}
+            maxTags={15}
+            clearable
+            styles={{
+              wrapper: {
+                minHeight: "128px", // Match PhotoUploadDropzone h-32 (128px)
+              },
+              input: {
+                minHeight: "128px", // Match PhotoUploadDropzone h-32 (128px)
+              },
+            }}
             classNames={{
               label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
               input:
                 "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+              dropdown:
+                "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
+              option:
+                "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
             }}
-            {...form.getInputProps("fullName")}
+            className="w-full"
+            value={form.values.skills || []}
+            onChange={(value) => form.setFieldValue("skills", value)}
+            error={form.errors.skills as string | undefined}
           />
-
-          {/* Profession and Zone - Same Line */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Autocomplete
-              label="Profession"
-              placeholder="Ex: Plombier"
-              size="lg"
-              data={professions}
-              required
-              classNames={{
-                label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
-                input:
-                  "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-                dropdown:
-                  "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
-                option:
-                  "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
-              }}
-              {...form.getInputProps("profession")}
-            />
-            <MultiSelectCompact
-              label="Zone"
-              placeholder="Choisir une ou plusieurs zones"
-              data={zones}
-              value={form.values.zone}
-              onChange={(value) => form.setFieldValue("zone", value)}
-              searchable
-              required
-              error={form.errors.zone as string | undefined}
-              classNames={{
-                label: "text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2",
-                input:
-                  "border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
-                dropdown:
-                  "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
-                option:
-                  "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
-              }}
-            />
-          </div>
-
-          {/* Phone Numbers */}
-          <div className="flex flex-col gap-4">
-
-            {form.values.phoneNumbers.map((phone, index) => (
-              <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
-                <PhoneInput
-                  label="Numéro de téléphone"
-                  placeholder="96 09 69 69"
-                  required
-                  className="flex-1"
-                  value={form.values.phoneNumbers[index].number}
-                  onChange={(value) => form.setFieldValue(`phoneNumbers.${index}.number`, value || '')}
-                  error={form.errors[`phoneNumbers.${index}.number`] as string | undefined}
-                />
-                <div className="flex items-center gap-3 mt-8">
-                  <Switch
-                    label="Numéro dispo sur WhatsApp ?"
-                    size="md"
-                    classNames={{
-                      label: "text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap",
-                      root: "flex items-center gap-2",
-                    }}
-                    {...form.getInputProps(`phoneNumbers.${index}.isWhatsApp`, {
-                      type: "checkbox",
-                    })}
-                  />
-                  {form.values.phoneNumbers.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removePhoneNumber(index)}
-                      className={cn(
-                        "p-2 rounded-lg transition-colors",
-                        "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      )}
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-            {form.values.phoneNumbers.length < 4 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                leftSection={<Plus size={16} />}
-                onClick={addPhoneNumber}
-                className="self-start border-teal-500 text-teal-500 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-900/20"
-              >
-                Ajouter un autre numéro
-              </Button>
-            )}
-            {form.errors.phoneNumbers && (
-              <span className="text-xs text-red-500">{form.errors.phoneNumbers as string}</span>
-            )}
-          </div>
-
-          {/* Social Media - Toggleable */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-
-              <Switch
-                label="Réseaux sociaux (optionnel)"
-                checked={hasSocialMedia}
-                onChange={(e) => toggleSocialMedia(e.currentTarget.checked)}
-                size="md"
-                classNames={{
-                  root: "flex items-center",
-                }}
-              />
-            </div>
-            {hasSocialMedia && (
-              <div className="flex flex-col gap-4">
-                {form.values.socialMedia.map((social, index) => (
-                  <div key={index} className="flex gap-4">
-                    <Select
-                      placeholder="Plateforme"
-                      size="lg"
-                      data={socialPlatforms}
-                      className="flex-1"
-                      classNames={{
-                        input:
-                          "rounded-lg border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
-                        dropdown:
-                          "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
-                        option:
-                          "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
-                      }}
-                      {...form.getInputProps(`socialMedia.${index}.platform`)}
-                    />
-                    <TextInput
-                      placeholder="https://..."
-                      size="lg"
-                      className="flex-1"
-                      classNames={{
-                        input:
-                          "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
-                      }}
-                      {...form.getInputProps(`socialMedia.${index}.link`)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeSocialMedia(index)}
-                      className={cn(
-                        "py-2 px-4 rounded-lg transition-colors flex items-center justify-center",
-                        "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      )}
-                    >
-                      <Minus size={16} />
-                    </button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  leftSection={<Plus size={16} />}
-                  onClick={addSocialMedia}
-                  className="self-start border-teal-500 text-teal-500 hover:bg-teal-50 dark:border-teal-400 dark:text-teal-400 dark:hover:bg-teal-900/20"
-                >
-                  Ajouter un autre réseau social
-                </Button>
-              </div>
-            )}
-          </div>
         </div>
-      </div>
 
-      {/* Fixed Submit Button */}
-      <div className="shrink-0 mt-4">
+        {/* Full Name */}
+        <TextInput
+          label="Nom complet"
+          placeholder="Ex: Dodji COMLAN "
+          size="lg"
+          required
+          classNames={{
+            label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
+            input:
+              "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+          }}
+          {...form.getInputProps("fullName")}
+        />
+
+        {/* Profession and Zone - Same Line */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <MultiSelectCompact
+            label="Métiers (jusqu'à 5 métiers)"
+            placeholder="Ex: Plombier"
+            data={professions}
+            value={form.values.profession}
+            onChange={(value) => {
+              // Limit to 5 professions
+              if (value.length <= 5) {
+                form.setFieldValue("profession", value);
+              }
+            }}
+            searchable
+            required
+            error={form.errors.profession as string | undefined}
+            classNames={{
+              label: "text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2",
+              input:
+                "border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
+              dropdown:
+                "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
+              option:
+                "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
+            }}
+          />
+          <MultiSelectCompact
+            label="Zone"
+            placeholder="Choisir une ou plusieurs zones"
+            data={zones}
+            value={form.values.zone}
+            onChange={(value) => form.setFieldValue("zone", value)}
+            searchable
+            required
+            error={form.errors.zone as string | undefined}
+            classNames={{
+              label: "text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2",
+              input:
+                "border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
+              dropdown:
+                "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
+              option:
+                "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
+            }}
+          />
+        </div>
+
+        {/* Phone Numbers */}
+        <PhoneNumbersSection form={form} />
+
+        {/* Social Media - Toggleable */}
+        <SocialMediaSection
+          form={form}
+          hasSocialMedia={hasSocialMedia}
+          onToggleSocialMedia={toggleSocialMedia}
+        />
+      </FormArea>
+
+      <ButtonsArea>
+        <div className="space-x-4">
+        <Button
+          type="button"
+          variant="outline"
+          size="md"
+          onClick={() => onPrevious?.()}
+        >
+          Retour
+        </Button>
         <Button
           type="submit"
-          size="lg"
-          fullWidth
+          size="md"
+          loading={createArtisanMutation.isPending || updateArtisanMutation.isPending}
+          disabled={createArtisanMutation.isPending || updateArtisanMutation.isPending}
           className="bg-teal-500 hover:bg-teal-600 text-white font-semibold"
         >
-          Ajouter l'artisan
+          {createArtisanMutation.isPending || updateArtisanMutation.isPending
+            ? (isEditMode ? "Modification en cours..." : "Ajout en cours...")
+            : (isEditMode ? "Modifier l'artisan" : "Ajouter l'artisan")}
         </Button>
-      </div>
+        </div>
+      </ButtonsArea>
     </form>
   );
 }
