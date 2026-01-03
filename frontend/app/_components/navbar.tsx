@@ -14,7 +14,7 @@ import { GoogleLoginModal } from "./modals/GoogleLoginModal";
 import { useDrawerContext } from "@/providers/drawer-provider";
 import { AddArtisan } from "./AddArtisan";
 
-export function Navbar() {
+export function Navbar({ className }: { className?: string }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const navbarRef = useRef<HTMLDivElement>(null);
@@ -171,7 +171,7 @@ export function Navbar() {
         `
       }} /> */}
 
-      <nav className="sticky top-0 z-50 w-full top-6" ref={navbarRef}>
+      <nav className={cn("sticky top-0 z-50 w-full top-6", className)} ref={navbarRef}>
         <div className="mx-auto max-w-6xl px-0 px-4 lg:px-8">
           <div
             className={cn(
