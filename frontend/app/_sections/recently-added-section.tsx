@@ -23,6 +23,7 @@ export function RecentlyAddedSection() {
   // Transform API data to match ArtisanCard props and limit to 6
   const artisans = (data?.data?.map((artisan) => ({
     id: artisan.id,
+    slug: artisan.slug,
     name: artisan.fullName,
     profession: artisan.profession?.name || "Non spécifié",
     zone: artisan.zones && artisan.zones.length > 0
@@ -92,6 +93,7 @@ export function RecentlyAddedSection() {
             {artisans.map((artisan) => (
               <ArtisanCard
                 key={artisan.id}
+                slug={artisan.slug}
                 name={artisan.name}
                 profession={artisan.profession}
                 zone={artisan.zone}

@@ -38,6 +38,19 @@ export interface Artisan {
     url: string;
     alternativeText: string | null;
   } | null;
+  reviews?: Array<{
+    id: number;
+    ratingCriteria: Record<string, { points: number; label: string }>;
+    finalScore: number;
+    comment: string | null;
+    workPhotos: Array<{
+      id: number;
+      url: string;
+      alternativeText: string | null;
+    }>;
+    submittedAt: string;
+    createdAt: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }

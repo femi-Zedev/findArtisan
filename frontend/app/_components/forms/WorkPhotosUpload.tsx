@@ -72,12 +72,13 @@ export function WorkPhotosUpload({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex gap-2 items-center">
           Ajoutez des images de la prestation
-        </label>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-          Vous pouvez ajouter jusqu'à {maxPhotos} photos (max {maxSizeMB}MB par image)
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+          (jusqu'à {maxPhotos} photos max {maxSizeMB}MB par image)
         </p>
+        </span>
+        
 
         {photos.length < maxPhotos && (
           <Dropzone
@@ -95,14 +96,13 @@ export function WorkPhotosUpload({
               ),
             }}
           >
-            <div className="flex flex-col items-center gap-3 text-gray-400 dark:text-gray-500">
+            <div className="flex items-center justify-between gap-3 text-gray-400 dark:text-gray-500">
               <div className="flex items-center gap-2">
                 <Image className="w-8 h-8" />
-                <Upload className="w-5 h-5" />
-              </div>
-              <div className="text-center">
+              <div className="">
                 <p className="text-sm font-medium">Cliquez ou glissez-déposez</p>
-                <p className="text-xs mt-1">pour ajouter des photos</p>
+                <p className="text-xs ">pour ajouter des photos</p>
+              </div>
               </div>
               <button
                 type="button"
@@ -127,7 +127,7 @@ export function WorkPhotosUpload({
 
       {/* Photo Preview Grid */}
       {photos.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           {photos.map((photo, index) => (
             <div
               key={index}
@@ -142,7 +142,7 @@ export function WorkPhotosUpload({
                 type="button"
                 onClick={() => handleRemove(index)}
                 className={cn(
-                  "absolute inset-0 w-full h-full flex items-center justify-center",
+                  "absolute inset-0 w-full h-full flex items-center justify-center rounded-lg",
                   "bg-black/60 hover:bg-black/70 text-white",
                   "opacity-0 group-hover:opacity-100 transition-opacity duration-200",
                   "backdrop-blur-sm"

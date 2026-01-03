@@ -68,6 +68,7 @@ function SearchContent() {
 
     let artisans = artisansData.data.map((artisan) => ({
       id: artisan.id,
+      slug: artisan.slug,
       name: artisan.fullName,
       profession: artisan.profession?.name || "Non spécifié",
       zone:
@@ -391,6 +392,7 @@ function SearchContent() {
             filteredArtisans.map((artisan) => (
               <ArtisanCard
                 key={artisan.id}
+                slug={artisan.slug}
                 name={artisan.name}
                 profession={artisan.profession}
                 zone={artisan.zone}

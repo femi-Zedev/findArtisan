@@ -2,6 +2,7 @@
 
 import { Avatar, Button, Badge, Tooltip } from "@mantine/core";
 import { Phone, MessageCircle, MapPin, Users, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
 import { cn } from "../lib/utils";
 
 interface ArtisanCardProps {
@@ -14,6 +15,7 @@ interface ArtisanCardProps {
   imageUrl?: string;
   addedByCommunity?: boolean;
   layout?: "vertical" | "horizontal";
+  slug: string;
 }
 
 export function ArtisanCard({
@@ -26,12 +28,17 @@ export function ArtisanCard({
   imageUrl,
   addedByCommunity = false,
   layout = "vertical",
+  slug,
 }: ArtisanCardProps) {
-  const handleCall = () => {
+  const handleCall = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     window.location.href = `tel:${phone}`;
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     const message = encodeURIComponent(
       `Bonjour ${name}, je suis intéressé(e) par vos services.`
     );
@@ -59,13 +66,14 @@ export function ArtisanCard({
           {(() => {
             // Render vertical layout for mobile
             return (
-              <div
-                className={cn(
-                  "group relative flex flex-col overflow-hidden rounded-2xl border p-4 transition-all",
-                  "bg-white border-gray-200 hover:border hover:border-teal-500",
-                  "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
-                )}
-              >
+              <Link href={`/${slug}`} className="block">
+                <div
+                  className={cn(
+                    "group relative flex flex-col overflow-hidden rounded-2xl border p-4 transition-all cursor-pointer",
+                    "bg-white border-gray-200 hover:border hover:border-teal-500",
+                    "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
+                  )}
+                >
                 {/* Top Section: Avatar + Name + Profession on left, Badge on right */}
                 <div className="mb-4 flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -209,18 +217,20 @@ export function ArtisanCard({
                   )}
                 </div>
               </div>
+              </Link>
             );
           })()}
         </div>
 
         {/* Desktop: Horizontal Layout */}
-        <div
-          className={cn(
-            "hidden sm:flex group relative items-start gap-4 overflow-hidden rounded-xl border p-4 transition-all",
-            "bg-white border-gray-200 hover:border hover:border-teal-500",
-            "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
-          )}
-        >
+        <Link href={`/${slug}`} className="block">
+          <div
+            className={cn(
+              "hidden sm:flex group relative items-start gap-4 overflow-hidden rounded-xl border p-4 transition-all cursor-pointer",
+              "bg-white border-gray-200 hover:border hover:border-teal-500",
+              "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
+            )}
+          >
           {/* Left: Avatar */}
           <div className="shrink-0 ring-2 ring-teal-500/20 rounded-full">
             <Avatar
@@ -365,19 +375,21 @@ export function ArtisanCard({
             </Button>
           </div>
         </div>
+        </Link>
       </>
     );
   }
 
   // Vertical Layout (default)
   return (
-    <div
-      className={cn(
-        "group relative flex flex-col overflow-hidden rounded-2xl shadow-xl shadow-gray-300/20 dark:shadow-gray-700/20 border  p-6 transition-all",
-        "bg-white border-gray-300/60 hover:border hover:border-teal-500",
-        "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
-      )}
-    >
+    <Link href={`/${slug}`} className="block">
+      <div
+        className={cn(
+          "group relative flex flex-col overflow-hidden rounded-2xl shadow-xl shadow-gray-300/20 dark:shadow-gray-700/20 border  p-6 transition-all cursor-pointer",
+          "bg-white border-gray-300/60 hover:border hover:border-teal-500",
+          "dark:bg-gray-900 dark:border-gray-800 dark:hover:border-teal-500"
+        )}
+      >
       {/* Top Section: Avatar + Name + Profession on left, Badge on right */}
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -525,5 +537,6 @@ export function ArtisanCard({
         )}
       </div>
     </div>
+    </Link>
   );
 }

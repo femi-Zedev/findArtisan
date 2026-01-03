@@ -87,11 +87,25 @@ export const useAddItem = createMutation({
 
 ### Usage in Components
 
+**CRITICAL: When using hooks created with `createQuery` from `react-query-kit`, ALWAYS wrap query parameters in a `variables` object.**
+
 ```typescript
-// Query usage
+// ✅ CORRECT: Query usage with variables wrapper
 const { data, isLoading, error } = useGetItems({
   variables: { limit: 10, page: 1, query: searchQuery }
 });
+
+// ❌ INCORRECT: Do NOT pass parameters directly
+const { data, isLoading, error } = useGetItems({ limit: 10, page: 1, query: searchQuery });
+
+// ✅ CORRECT: Example with single parameter
+const { data: reviewsData, isLoading } = useGetReviews({ variables: { artisan: artisan.id } });
+
+// ❌ INCORRECT: Do NOT pass single parameter directly
+const { data: reviewsData, isLoading } = useGetReviews({ artisan: artisan.id });
+```
+
+**Rule**: All query parameters for hooks created with `createQuery` MUST be wrapped in a `variables` object, regardless of whether you're passing one parameter or multiple parameters.
 
 // Mutation usage with callbacks
 const addItemMutation = useAddItem({

@@ -55,6 +55,149 @@ const parseNumberParam = (
 };
 
 export default factories.createCoreController('api::artisan.artisan' as any, ({ strapi }) => ({
+  async findOne(ctx: Context) {
+    try {
+      const { id } = ctx.params;
+
+      // Check if id is numeric (ID) or string (slug)
+      const isNumeric = /^\d+$/.test(String(id));
+      
+      let artisan;
+      if (isNumeric) {
+        // Query by ID
+        artisan = await strapi.entityService.findOne('api::artisan.artisan' as any, Number(id), {
+          populate: {
+            profession: {
+              fields: ['id', 'name', 'slug'],
+            },
+            zones: {
+              fields: ['id', 'name', 'slug', 'city'],
+            },
+            phone_numbers: {
+              fields: ['id', 'number', 'is_whatsapp'],
+            },
+            social_links: {
+              fields: ['id', 'platform', 'url'],
+            },
+            profile_photo: {
+              fields: ['id', 'url', 'alternativeText'],
+            },
+            reviews: {
+              fields: ['id', 'rating_criteria', 'final_score', 'comment', 'submitted_at', 'createdAt'],
+              populate: {
+                work_photos: {
+                  fields: ['id', 'url', 'alternativeText'],
+                },
+              },
+            },
+          },
+        });
+      } else {
+        // Query by slug
+        const artisans = await strapi.entityService.findMany('api::artisan.artisan' as any, {
+          filters: {
+            slug: id,
+          } as any,
+          populate: {
+            profession: {
+              fields: ['id', 'name', 'slug'],
+            },
+            zones: {
+              fields: ['id', 'name', 'slug', 'city'],
+            },
+            phone_numbers: {
+              fields: ['id', 'number', 'is_whatsapp'],
+            },
+            social_links: {
+              fields: ['id', 'platform', 'url'],
+            },
+            profile_photo: {
+              fields: ['id', 'url', 'alternativeText'],
+            },
+            reviews: {
+              fields: ['id', 'rating_criteria', 'final_score', 'comment', 'submitted_at', 'createdAt'],
+              populate: {
+                work_photos: {
+                  fields: ['id', 'url', 'alternativeText'],
+                },
+              },
+            },
+          },
+          limit: 1,
+        });
+        artisan = artisans && artisans.length > 0 ? artisans[0] : null;
+      }
+
+      if (!artisan) {
+        ctx.throw(404, 'Artisan not found');
+      }
+
+      // Transform to match frontend format
+      ctx.body = {
+        data: {
+          id: artisan.id,
+          fullName: artisan.full_name,
+          slug: artisan.slug,
+          skills: artisan.skills,
+          status: artisan.status,
+          isCommunitySubmitted: artisan.is_community_submitted,
+          profession: artisan.profession
+            ? {
+                id: artisan.profession.id,
+                name: artisan.profession.name,
+                slug: artisan.profession.slug,
+              }
+            : null,
+          zones: artisan.zones?.map((zone: any) => ({
+            id: zone.id,
+            name: zone.name,
+            slug: zone.slug,
+            city: zone.city,
+          })) || [],
+          phoneNumbers: artisan.phone_numbers?.map((phone: any) => ({
+            id: phone.id,
+            number: phone.number,
+            isWhatsApp: phone.is_whatsapp,
+          })) || [],
+          socialLinks: artisan.social_links?.map((social: any) => ({
+            id: social.id,
+            platform: social.platform,
+            link: social.url,
+          })) || [],
+          profilePhoto: artisan.profile_photo
+            ? {
+                id: artisan.profile_photo.id,
+                url: artisan.profile_photo.url,
+                alternativeText: artisan.profile_photo.alternativeText,
+              }
+            : null,
+          reviews: artisan.reviews?.map((review: any) => ({
+            id: review.id,
+            ratingCriteria: review.rating_criteria,
+            finalScore: review.final_score,
+            comment: review.comment,
+            workPhotos: review.work_photos?.map((photo: any) => ({
+              id: photo.id,
+              url: photo.url,
+              alternativeText: photo.alternativeText,
+            })) || [],
+            submittedAt: review.submitted_at,
+            createdAt: review.createdAt,
+          })) || [],
+          createdAt: artisan.createdAt,
+          updatedAt: artisan.updatedAt,
+        },
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      strapi.log.error('Artisan findOne error', {
+        message: errorMessage,
+        error,
+      });
+      ctx.throw(500, `Failed to fetch artisan: ${errorMessage}`);
+    }
+  },
+
   async find(ctx: Context) {
     const { profession, zone, q, page, pageSize, submittedBy, isCommunitySubmitted, status } = ctx.query as ArtisanQuery;
 

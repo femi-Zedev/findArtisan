@@ -199,7 +199,7 @@ export function Navbar() {
                 onClick={handleLinkClick}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
-               <img src="/icon.svg" alt="" className="h-8" />
+               <img src="/icon.svg" alt="" className="h-6" />
               </Link>
 
               {/* Desktop Navigation Links */}

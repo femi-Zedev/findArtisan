@@ -1,6 +1,7 @@
-import { createMutation } from 'react-query-kit';
+import { createMutation, createQuery } from 'react-query-kit';
 import { api } from '../api-client';
 import { routes } from '../routes';
+import { paramsBuilder } from '../params-builder';
 
 // Types
 export interface Review {
@@ -10,7 +11,7 @@ export interface Review {
     fullName: string;
     slug: string;
   } | null;
-  ratingCriteria: Record<string, number>; // e.g., { deadlines: 7, professionalism: 10, ... }
+  ratingCriteria: Record<string, { points: number; label: string }>; // e.g., { deadlines: { points: 7, label: 'Léger retard' }, ... }
   finalScore: number;
   comment: string | null;
   workPhotos: Array<{
@@ -25,7 +26,7 @@ export interface Review {
 
 export interface CreateReviewPayload {
   artisan: number; // Artisan ID
-  rating_criteria: Record<string, number>; // Criterion ID -> points
+  rating_criteria: Record<string, { points: number; label: string }>; // Criterion ID -> { points, label }
   final_score: number; // Calculated in frontend
   comment?: string;
   work_photos?: number[]; // Array of uploaded photo IDs
@@ -34,6 +35,38 @@ export interface CreateReviewPayload {
 export interface CreateReviewResponse {
   data: Review;
 }
+
+export interface GetReviewsParams {
+  artisan?: number; // Filter by artisan ID
+}
+
+export interface GetReviewsResponse {
+  data: Review[];
+  meta?: {
+    aggregate?: {
+      totalReviews: number;
+      averageScore: number;
+      criteriaAverages: Record<string, number>;
+    };
+  };
+}
+
+/**
+ * Hook to get reviews (optionally filtered by artisan)
+ */
+export const useGetReviews = createQuery({
+  queryKey: ['reviews'],
+  fetcher: async (params?: GetReviewsParams): Promise<GetReviewsResponse> => {
+    const queryString = paramsBuilder(params || {});
+    const url = queryString ? `${routes.reviews.base}?${queryString}` : routes.reviews.base;
+    const response = await api.get<GetReviewsResponse>(url);
+    return response;
+  },
+  retry: false,
+  staleTime: 1000 * 60 * 5,
+  gcTime: 1000 * 60 * 10,
+  refetchOnWindowFocus: false,
+});
 
 /**
  * Hook to create a review for an artisan

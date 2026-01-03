@@ -14,7 +14,7 @@ export interface SocialMedia {
 
 export interface AddArtisanFormValues {
   fullName: string;
-  profession: string;
+  profession: string[]; // Array of profession slugs (up to 5)
   zone: string[];
   phoneNumbers: PhoneNumber[];
   socialMedia: SocialMedia[];
@@ -75,7 +75,11 @@ export function transformFormValuesToPayload(
     skills: values.skills && values.skills.length > 0 
       ? values.skills.join(", ") 
       : "",
-    profession: values.profession,
+    // TODO: Update backend schema to support multiple professions (manyToMany relation)
+    // For now, send only the first profession to maintain backend compatibility
+    profession: values.profession && values.profession.length > 0 
+      ? values.profession[0] 
+      : undefined,
     zones: values.zone,
     phone_numbers: values.phoneNumbers
       .filter((phone) => phone.number.trim() !== "")
@@ -105,7 +109,11 @@ export function getInitialFormValues(artisan?: Artisan): AddArtisanFormValues {
   if (artisan) {
     return {
       fullName: artisan.fullName ?? "",
-      profession: artisan.profession?.name ?? "",
+      // TODO: Update when backend supports multiple professions
+      // For now, convert single profession to array
+      profession: artisan.profession?.slug 
+        ? [artisan.profession.slug] 
+        : [],
       zone: artisan.zones?.map((z) => z.slug) ?? [],
       phoneNumbers:
         artisan.phoneNumbers && artisan.phoneNumbers.length > 0
@@ -130,7 +138,7 @@ export function getInitialFormValues(artisan?: Artisan): AddArtisanFormValues {
 
   return {
     fullName: "",
-    profession: "",
+    profession: [],
     zone: [],
     phoneNumbers: [{ number: "", isWhatsApp: false }],
     socialMedia: [],

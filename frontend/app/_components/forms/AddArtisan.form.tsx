@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Autocomplete, TextInput, Textarea, TagsInput } from "@mantine/core";
+import { Button, TextInput, Textarea, TagsInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useState, useCallback } from "react";
 import { MultiSelectCompact } from "../ui/MultiSelectCompact";
@@ -44,7 +44,15 @@ export function AddArtisanForm({ artisan, onSuccess, onPrevious, onNext }: AddAr
     initialValues,
     validate: {
       fullName: (value) => (!value ? "Le nom complet est requis" : null),
-      profession: (value) => (!value ? "La profession est requise" : null),
+      profession: (value) => {
+        if (!value || value.length === 0) {
+          return "Au moins une profession est requise";
+        }
+        if (value.length > 5) {
+          return "Maximum 5 professions autorisées";
+        }
+        return null;
+      },
       zone: (value) => (value.length === 0 ? "Au moins une zone est requise" : null),
       phoneNumbers: {
         number: (value, values, path) => {
@@ -196,7 +204,7 @@ export function AddArtisanForm({ artisan, onSuccess, onPrevious, onNext }: AddAr
 
           {/* Skills/Description */}
           <TagsInput
-            label="Compétences"
+            label="Compétences (jusqu'à 15 compétences)"
             placeholder={`Rechercher une compétence ou ajoutez une nouvelle et appuyez sur "Entré"...`}
             size="md"
             data={suggestedSkills}
@@ -242,22 +250,29 @@ export function AddArtisanForm({ artisan, onSuccess, onPrevious, onNext }: AddAr
 
         {/* Profession and Zone - Same Line */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Autocomplete
-            label="Domaine"
+          <MultiSelectCompact
+            label="Métiers (jusqu'à 5 métiers)"
             placeholder="Ex: Plombier"
-            size="lg"
             data={professions}
+            value={form.values.profession}
+            onChange={(value) => {
+              // Limit to 5 professions
+              if (value.length <= 5) {
+                form.setFieldValue("profession", value);
+              }
+            }}
+            searchable
             required
+            error={form.errors.profession as string | undefined}
             classNames={{
-              label: "text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2",
+              label: "text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2",
               input:
-                "rounded-lg border-gray-300 bg-white text-gray-900 placeholder:text-gray-500 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500",
+                "border-gray-300 bg-white text-gray-900 focus:border-teal-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white",
               dropdown:
                 "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-800",
               option:
                 "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-800",
             }}
-            {...form.getInputProps("profession")}
           />
           <MultiSelectCompact
             label="Zone"

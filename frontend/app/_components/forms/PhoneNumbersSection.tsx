@@ -29,7 +29,7 @@ export function PhoneNumbersSection({ form }: PhoneNumbersSectionProps) {
       {form.values.phoneNumbers.map((phone, index) => (
         <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <PhoneInput
-            label="Numéro de téléphone"
+            label="Numéro de téléphone (ajoutez 01 pour le Bénin)"
             placeholder="96 09 69 69"
             required
             className="flex-1"

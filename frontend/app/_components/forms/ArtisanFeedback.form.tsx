@@ -120,12 +120,15 @@ export function ArtisanFeedbackForm({
         workPhotoIds = uploadResults.map((result) => result[0]?.id).filter((id) => id !== undefined) as number[];
       }
 
-      // Prepare rating criteria (only points, not labels)
-      const ratingCriteriaPoints: Record<string, number> = {};
+      // Prepare rating criteria (points and label)
+      const ratingCriteriaPoints: Record<string, { points: number; label: string }> = {};
       ratingCriteria.forEach((criterion) => {
         const selected = values.ratings[criterion.id];
         if (selected) {
-          ratingCriteriaPoints[criterion.id] = selected.points;
+          ratingCriteriaPoints[criterion.id] = {
+            points: selected.points,
+            label: selected.label,
+          };
         }
       });
 

@@ -2,6 +2,105 @@ import { factories } from '@strapi/strapi';
 import type { Context } from 'koa';
 
 export default factories.createCoreController('api::review.review' as any, ({ strapi }) => ({
+  async find(ctx: Context) {
+    try {
+      const { artisan } = ctx.query;
+
+      // Build filters
+      const filters: Record<string, unknown> = {};
+
+      // Filter by artisan if provided
+      if (artisan) {
+        const artisanId = typeof artisan === 'string' ? parseInt(artisan, 10) : artisan;
+        if (!isNaN(artisanId as number)) {
+          filters.artisan = {
+            id: artisanId,
+          };
+        }
+      }
+
+      // Query reviews
+      const reviews = await strapi.entityService.findMany('api::review.review' as any, {
+        filters,
+        populate: {
+          artisan: {
+            fields: ['id', 'full_name', 'slug'],
+          },
+          work_photos: {
+            fields: ['id', 'url', 'alternativeText'],
+          },
+        },
+        sort: { submitted_at: 'desc' },
+      });
+
+      // Calculate aggregate statistics if filtering by artisan
+      let aggregateStats = null;
+      if (artisan && reviews.length > 0) {
+        const totalReviews = reviews.length;
+        const totalScore = reviews.reduce((sum, review) => sum + (review.final_score || 0), 0);
+        const averageScore = totalScore / totalReviews;
+
+        // Calculate average for each criterion
+        const criteriaAverages: Record<string, number> = {};
+        reviews.forEach((review: any) => {
+          if (review.rating_criteria && typeof review.rating_criteria === 'object') {
+            Object.keys(review.rating_criteria).forEach((criterionId) => {
+              if (!criteriaAverages[criterionId]) {
+                criteriaAverages[criterionId] = 0;
+              }
+              criteriaAverages[criterionId] += review.rating_criteria[criterionId];
+            });
+          }
+        });
+
+        Object.keys(criteriaAverages).forEach((criterionId) => {
+          criteriaAverages[criterionId] = Math.round((criteriaAverages[criterionId] / totalReviews) * 10) / 10;
+        });
+
+        aggregateStats = {
+          totalReviews,
+          averageScore: Math.round(averageScore * 10) / 10,
+          criteriaAverages,
+        };
+      }
+
+      // Transform to match frontend format
+      const data = reviews.map((review: any) => ({
+        id: review.id,
+        artisan: review.artisan
+          ? {
+              id: review.artisan.id,
+              fullName: review.artisan.full_name,
+              slug: review.artisan.slug,
+            }
+          : null,
+        ratingCriteria: review.rating_criteria,
+        finalScore: review.final_score,
+        comment: review.comment,
+        workPhotos: review.work_photos?.map((photo: any) => ({
+          id: photo.id,
+          url: photo.url,
+          alternativeText: photo.alternativeText,
+        })) || [],
+        submittedAt: review.submitted_at,
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt,
+      }));
+
+      ctx.body = {
+        data,
+        meta: aggregateStats ? { aggregate: aggregateStats } : undefined,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      strapi.log.error('Review find error', {
+        message: errorMessage,
+        error,
+      });
+      ctx.throw(500, `Failed to fetch reviews: ${errorMessage}`);
+    }
+  },
+
   async create(ctx: Context) {
     try {
       const { data } = ctx.request.body as { data: any };
