@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { Badge, Skeleton, Avatar } from "@mantine/core";
+import { Badge, Skeleton, Avatar, Button } from "@mantine/core";
 import { useGetReviews } from "@/app/lib/services/review";
 import { ratingCriteria } from "@/constants";
 import { cn } from "@/app/lib/utils";
 import type { Artisan } from "@/app/lib/services/artisan";
+import { MessageSquarePlus } from "lucide-react";
 
 interface ReviewsTabProps {
   artisan: Artisan;
@@ -44,11 +45,29 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
 
   if (reviews.length === 0 && (!artisan.reviews || artisan.reviews.length === 0)) {
     return (
-      <div className="text-center py-8 flex flex-col items-center justify-center gap-4">
-        <img src="/empty-state/card_empty.svg" alt="No reviews" width={100} />
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Aucun avis pour cet artisan pour le moment.
-        </p>
+      <div className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+        {/* Header with title and leave review button */}
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Avis (0)
+          </h3>
+          <Button
+            variant="outline"
+            leftSection={<MessageSquarePlus size={16} />}
+            className="cursor-pointer"
+            onClick={() => {
+              // TODO: Implement review form modal
+            }}
+          >
+            Laisser un avis
+          </Button>
+        </div>
+        <div className="text-center py-8 flex flex-col items-center justify-center gap-4">
+          <img src="/empty-state/card_empty.svg" alt="No reviews" width={100} />
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Aucun avis pour cet artisan pour le moment.
+          </p>
+        </div>
       </div>
     );
   }
@@ -75,10 +94,27 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
   }>;
 
   return (
-    <div className="space-y-6">
+    <div className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+      {/* Header with title and leave review button */}
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Avis ({displayStats?.totalReviews || displayReviews.length})
+        </h3>
+        <Button
+          variant="outline"
+          leftSection={<MessageSquarePlus size={16} />}
+          className="cursor-pointer"
+          onClick={() => {
+            // TODO: Implement review form modal
+          }}
+        >
+          Laisser un avis
+        </Button>
+      </div>
+
       {/* Aggregate stats section */}
       {displayStats && (
-        <div className="rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+        <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-300 mb-1">
@@ -125,8 +161,8 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
         </div>
       )}
 
-      {/* Review cards */}
-      <div className="space-y-4">
+      {/* Review cards grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {displayReviews.map((review) => (
           <div
             key={review.id}
