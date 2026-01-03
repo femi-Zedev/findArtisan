@@ -85,13 +85,14 @@ export function ArtisanHeader({ artisan }: ArtisanHeaderProps) {
 
         {/* Locations */}
         {artisan.zones.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap mb-2">
-            <MapPin className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
+          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 flex-wrap mb-2">
+            <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400 shrink-0" />
+            Zones couvertes :
             <div className="flex items-center gap-1 flex-wrap">
               {displayedZones.map((zone, idx) => (
                 <span
                   key={zone.id}
-                  className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="text-sm font-semibold text-gray-700 dark:text-gray-300 capitalize"
                 >
                   {zone.name}
                   {idx < displayedZones.length - 1 && <span className="mx-1">,</span>}
@@ -122,7 +123,7 @@ export function ArtisanHeader({ artisan }: ArtisanHeaderProps) {
         {sinceDate && (
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">{sinceDate}</span>
+            <span className="text-sm text-gray-600 dark:text-gray-400">Ajouté {sinceDate}</span>
           </div>
         )}
       </div>

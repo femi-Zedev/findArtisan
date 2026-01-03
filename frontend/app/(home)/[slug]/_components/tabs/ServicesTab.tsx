@@ -29,9 +29,6 @@ export function ServicesTab({ artisan }: ServicesTabProps) {
 
   return (
     <div>
-      <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">
-        Services & compétences
-      </h3>
       <div className="flex flex-wrap gap-2">
         {skillsArray.map((skill, idx) => (
           <div

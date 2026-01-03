@@ -6,8 +6,11 @@ import { ArtisanBanner } from "./_components/ArtisanBanner";
 import { ArtisanHeader } from "./_components/ArtisanHeader";
 import { ArtisanTabs } from "./_components/ArtisanTabs";
 import { Skeleton, Container } from "@mantine/core";
+import { BackButton } from "@/app/_components/ui/BackButton";
+import { useRouter } from "next/navigation";
 
 export default function ArtisanDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
 
@@ -41,7 +44,8 @@ export default function ArtisanDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen max-w-xl sm:max-w-5xl mx-auto mt-10 sm:mt-12">
+      <BackButton onClick={() => router.back()} label="Retour" />
       <ArtisanBanner artisan={artisan} />
       <Container size="lg" className="py-6">
         <ArtisanHeader artisan={artisan} />
