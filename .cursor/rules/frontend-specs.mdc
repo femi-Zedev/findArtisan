@@ -331,7 +331,76 @@ export const intakeColumns: ColumnDef<IntakeRequest>[] = [
 - Type-safe with generics
 - Custom cell renderers for complex UI
 
-### 5. Confirmation Modal Pattern
+### 5. Modal Provider Pattern
+
+**ALWAYS use the Modal Provider (`useModalContext`) for displaying modals. Do NOT use Mantine's `Modal` component directly.**
+
+The Modal Provider provides a consistent way to display modals across the application:
+
+```typescript
+// In any component
+import { useModalContext } from "@/providers/modal-provider";
+
+export function MyComponent() {
+  const { openModal, closeModal } = useModalContext();
+
+  const handleOpenModal = () => {
+    openModal({
+      title: "Modal Title",
+      subtitle: "Optional subtitle",
+      body: (
+        <YourComponent
+          onSuccess={handleSuccess}
+          onReset={handleReset}
+        />
+      ),
+      size: "md", // "xs" | "sm" | "md" | "lg" | "xl" | "full"
+      modalContentClassName: "p-6", // Optional custom classes
+      withCloseButton: true, // Default: true
+      onClose: () => {
+        // Optional cleanup function
+      },
+    });
+  };
+
+  return (
+    <button onClick={handleOpenModal}>Open Modal</button>
+  );
+}
+```
+
+**Key Points**:
+- Always use `useModalContext()` from `@/providers/modal-provider`
+- Pass the modal content as `body` prop (ReactNode)
+- Use `size` to control modal width (responsive: "full" on mobile, specified size on desktop)
+- Use `modalContentClassName` for custom padding/styling
+- The modal provider handles all modal state management
+- Do NOT use Mantine's `<Modal>` component directly
+
+**Example: Image Gallery with Carousel**:
+```typescript
+import { useModalContext } from "@/providers/modal-provider";
+import Carousel from "@/app/_components/ui/Carousel";
+
+const handlePhotoClick = (index: number) => {
+  openModal({
+    title: "Galerie photos",
+    subtitle: `${index + 1} sur ${photos.length} photos`,
+    body: (
+      <Carousel
+        slides={carouselSlides}
+        currentIndex={index}
+        onSlideChange={setCurrentIndex}
+        buttonPosition="relative"
+      />
+    ),
+    size: "xl",
+    modalContentClassName: "p-6",
+  });
+};
+```
+
+### 6. Confirmation Modal Pattern
 
 For critical actions (deletion, irreversible operations), use the global confirmation modal:
 

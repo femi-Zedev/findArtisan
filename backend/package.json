@@ -17,7 +17,7 @@
     "docs": "yarn docs:generate"
   },
   "dependencies": {
-    "@avorati/strapi-provider-upload-minio": "^1.7.1",
+    "strapi-provider-cloudflare-r2": "^0.3.0",
     "@strapi/plugin-cloud": "^5.33.0",
     "@strapi/plugin-users-permissions": "^5.33.0",
     "@strapi/strapi": "^5.33.0",
@@ -35,7 +35,7 @@
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=18.0.0 <=22.x.x",
+    "node": ">=18.0.0 <=24.x.x",
     "npm": ">=6.0.0"
   },
   "strapi": {

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Modal } from "@mantine/core";
 import NextImage from "next/image";
 import { cn } from "@/app/lib/utils";
+import { useModalContext } from "@/providers/modal-provider";
+import Carousel, { type SlideItem } from "@/app/_components/ui/Carousel";
 import type { Artisan } from "@/app/lib/services/artisan";
 
 interface PhotosTabProps {
@@ -11,19 +12,42 @@ interface PhotosTabProps {
 }
 
 export function PhotosTab({ artisan }: PhotosTabProps) {
-  const [selectedPhoto, setSelectedPhoto] = useState<{
-    url: string;
-    alt: string;
-  } | null>(null);
+  const { openModal } = useModalContext();
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Collect all work photos from reviews
-  const allPhotos = (artisan.reviews || [])
+  // Collect all work photos from reviews and convert to carousel slides format
+  const carouselSlides: SlideItem[] = (artisan.reviews || [])
     .flatMap((review) => review.workPhotos || [])
     .map((photo) => ({
-      id: photo.id,
-      url: photo.url,
-      alt: photo.alternativeText || "Photo du travail",
+      id: String(photo.id),
+      image: photo.url,
+      title: photo.alternativeText || "Photo du travail",
     }));
+
+  // Also create a simple array for grid display
+  const allPhotos = carouselSlides.map((slide) => ({
+    id: slide.id,
+    url: slide.image,
+    alt: slide.title || "Photo du travail",
+  }));
+
+  const handlePhotoClick = (photoIndex: number) => {
+    setCurrentIndex(photoIndex);
+    openModal({
+      title: "Photos des travaux",
+      body: (
+        <Carousel
+          slides={carouselSlides}
+          currentIndex={photoIndex}
+          onSlideChange={setCurrentIndex}
+          buttonPosition="relative"
+        />
+      ),
+      size: "xl",
+      modalContentClassName: "p-4 sm:p-6",
+      withCloseButton: true,
+    });
+  };
 
   if (allPhotos.length === 0) {
     return (
@@ -37,46 +61,24 @@ export function PhotosTab({ artisan }: PhotosTabProps) {
   }
 
   return (
-    <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {allPhotos.map((photo) => (
-          <div
-            key={photo.id}
-            className={cn(
-              "relative aspect-square rounded-lg overflow-hidden",
-              "hover:opacity-90 transition-opacity cursor-pointer"
-            )}
-            onClick={() => setSelectedPhoto(photo)}
-          >
-            <NextImage
-              src={photo.url}
-              alt={photo.alt}
-              fill
-              className="object-cover"
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Lightbox modal */}
-      <Modal
-        opened={selectedPhoto !== null}
-        onClose={() => setSelectedPhoto(null)}
-        size="xl"
-        centered
-        padding={0}
-      >
-        {selectedPhoto && (
-          <div className="relative w-full aspect-video">
-            <NextImage
-              src={selectedPhoto.url}
-              alt={selectedPhoto.alt}
-              fill
-              className="object-contain"
-            />
-          </div>
-        )}
-      </Modal>
-    </>
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {allPhotos.map((photo, index) => (
+        <div
+          key={photo.id}
+          className={cn(
+            "relative aspect-square rounded-lg overflow-hidden",
+            "hover:opacity-90 transition-opacity cursor-pointer"
+          )}
+          onClick={() => handlePhotoClick(index)}
+        >
+          <NextImage
+            src={photo.url}
+            alt={photo.alt}
+            fill
+            className="object-cover"
+          />
+        </div>
+      ))}
+    </div>
   );
 }

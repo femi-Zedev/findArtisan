@@ -271,7 +271,7 @@ export const suggestedSkills = [
 export const ratingCriteria = [
   {
     id: 'price',
-    label: '💸 Prix / Respect du devis',
+    label: '💸 Respect du devis',
     options: [
       { label: 'Devis respecté', points: 10 },
       { label: 'Petite différence de prix', points: 6 },

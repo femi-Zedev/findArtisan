@@ -1,18 +1,41 @@
-  export default {
-    upload: {
-      config: {
-        provider: '@avorati/strapi-provider-upload-minio',
-        providerOptions: {
-          host: process.env.MINIO_ENDPOINT || 'localhost',
-          port: process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : undefined,
-          // If port is not specified, the provider will automatically use the default port based on useSSL (443 for HTTPS, 9000 for HTTP)
-          useSSL: true,
-        //   rejectUnauthorized: process.env.MINIO_REJECT_UNAUTHORIZED !== 'false', // default: true (secure)
-          accessKey: process.env.MINIO_ACCESS_KEY,
-          secretKey: process.env.MINIO_SECRET_KEY,
-          bucket: process.env.MINIO_BUCKET || 'strapi-uploads',
-        //   folder: process.env.MINIO_FOLDER || '', // optional
+export default ({ env }) => ({
+  upload: {
+    config: {
+      provider: 'strapi-provider-cloudflare-r2',
+      providerOptions: {
+        accessKeyId: env('CF_ACCESS_KEY_ID'),
+        secretAccessKey: env('CF_ACCESS_SECRET'),
+        endpoint: env('CF_ENDPOINT'), // e.g., https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+        region: env('CF_REGION', 'us-east-1'),
+        params: {
+          Bucket: env('CF_BUCKET'),
         },
+        cloudflarePublicAccessUrl: env('CF_PUBLIC_ACCESS_URL'),
+        pool: false,
+      },
+      actionOptions: {
+        upload: {},
+        uploadStream: {},
+        delete: {},
+      },
+      security: {
+        sizeLimit: 10 * 1024 * 1024, // 10 MB
+        allowedMimeTypes: [
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'image/gif',
+          'image/webp',
+          'image/svg+xml',
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'text/plain',
+          'text/csv',
+        ],
       },
     },
-  };
+  },
+});

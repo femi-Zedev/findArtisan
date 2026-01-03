@@ -32,6 +32,71 @@ npm run build
 yarn build
 ```
 
+## ⚙️ Environment Variables
+
+### Cloudflare R2 Storage Configuration
+
+The application uses Cloudflare R2 for file storage. Configure the following environment variables:
+
+```env
+# Cloudflare R2 Configuration
+CF_ACCESS_KEY_ID=your_r2_access_key_id
+CF_ACCESS_SECRET=your_r2_secret_access_key
+CF_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+CF_BUCKET=your_bucket_name
+CF_REGION=us-east-1
+CF_PUBLIC_ACCESS_URL=https://your-bucket.your-account-id.r2.dev  # Optional: Public URL for accessing files
+```
+
+**Notes:**
+- `CF_ENDPOINT`: Replace `<ACCOUNT_ID>` with your Cloudflare account ID. Format: `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`
+- `CF_REGION`: Set to `us-east-1` (required for S3 compatibility, R2 doesn't use regions but this is needed)
+- `CF_PUBLIC_ACCESS_URL`: Optional. Can be a custom domain or R2.dev subdomain. If not set, files will still be accessible but URLs will be longer.
+- To get R2 credentials: Cloudflare Dashboard → R2 → Manage R2 API Tokens
+
+### CORS Configuration
+
+**IMPORTANT**: You must configure CORS on your Cloudflare R2 bucket to allow your frontend to access images.
+
+1. Go to **Cloudflare Dashboard → R2 → Your Bucket → Settings**
+2. Scroll to **CORS Policy** section
+3. Click **Add CORS policy**
+4. Add the following JSON configuration:
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "https://your-production-domain.com"
+    ],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+**For Development (Less Secure):**
+```json
+[
+  {
+    "AllowedOrigins": ["*"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+**Important:**
+- Replace `https://your-production-domain.com` with your actual production domain
+- CORS changes can take up to 30 seconds to propagate
+- Ensure `AllowedOrigins` matches exactly (including `http://` vs `https://`, no trailing slashes)
+- For production, avoid using `"*"` and specify exact origins
+
 ## ⚙️ Deployment
 
 Strapi gives you many possible deployment options for your project including [Strapi Cloud](https://cloud.strapi.io). Browse the [deployment section of the documentation](https://docs.strapi.io/dev-docs/deployment) to find the best solution for your use case.

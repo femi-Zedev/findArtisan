@@ -6,4 +6,7 @@ export { MultiSelectCompact } from "./MultiSelectCompact";
 export { PhoneInput } from "./PhoneInput";
 export { PhotoUploadDropzone } from "./PhotoUploadDropzone";
 export { Switch } from "./Switch";
+export { default as Carousel } from "./Carousel";
+export type { SlideItem } from "./Carousel";
+export { default as FallbackImage } from "./FallbackImage";
 

@@ -88,7 +88,7 @@ export function ArtisanBanner({ artisan }: ArtisanBannerProps) {
           size={80}
           variant="filled"
           radius="md"
-          className="md:w-24 md:h-24"
+          className="md:w-24 md:h-24 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
           color="black"
         >
           {artisan.fullName.charAt(0)}
