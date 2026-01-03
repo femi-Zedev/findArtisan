@@ -2,6 +2,7 @@
 
 import { useState, Suspense, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { navRoutes } from "@/app/lib/navigation-routes";
 import { useQueryState, parseAsString, parseAsArrayOf } from "nuqs";
 import { useDebouncedValue, useMediaQuery } from "@mantine/hooks";
 import { ArtisanCard } from "../../_components/artisan-card";
@@ -107,7 +108,7 @@ function SearchContent() {
   const activeFiltersCount = [profession, zones.length > 0, hideCommunityAdded].filter(Boolean).length;
 
   const handleBack = () => {
-    router.push("/");
+    router.push(navRoutes.home);
   };
 
   const handleOpenFiltersModal = () => {

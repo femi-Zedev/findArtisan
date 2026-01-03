@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { Badge, Skeleton } from "@mantine/core";
+import { Badge, Skeleton, Avatar } from "@mantine/core";
 import { useGetReviews } from "@/app/lib/services/review";
 import { ratingCriteria } from "@/constants";
 import { cn } from "@/app/lib/utils";
 import type { Artisan } from "@/app/lib/services/artisan";
-import { Image } from "@mantine/core";
 
 interface ReviewsTabProps {
   artisan: Artisan;
@@ -45,7 +44,8 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
 
   if (reviews.length === 0 && (!artisan.reviews || artisan.reviews.length === 0)) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-8 flex flex-col items-center justify-center gap-4">
+        <img src="/empty-state/card_empty.svg" alt="No reviews" width={100} />
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Aucun avis pour cet artisan pour le moment.
         </p>
@@ -54,7 +54,25 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
   }
 
   // Use reviews from API if available, otherwise fall back to artisan.reviews
-  const displayReviews = reviews.length > 0 ? reviews : artisan.reviews || [];
+  // Type assertion needed because artisan.reviews might not have submittedByUser yet
+  const displayReviews = (reviews.length > 0 ? reviews : (artisan.reviews || [])) as Array<{
+    id: number;
+    ratingCriteria: Record<string, { points: number; label: string }>;
+    finalScore: number;
+    comment: string | null;
+    workPhotos: Array<{
+      id: number;
+      url: string;
+      alternativeText: string | null;
+    }>;
+    submittedByUser?: {
+      id: number;
+      username: string;
+      email: string;
+    } | null;
+    submittedAt: string;
+    createdAt: string;
+  }>;
 
   return (
     <div className="space-y-6">
@@ -117,6 +135,25 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
               "bg-white dark:bg-gray-800 p-4"
             )}
           >
+            {/* Posted by user */}
+            {review.submittedByUser && (
+              <div className="flex items-center gap-2 mb-3">
+                <Avatar
+                  size="md"
+                  radius="xl"
+                  color="initials"
+                  className="border border-gray-200 dark:border-gray-700"
+                >
+                  {review.submittedByUser.username?.charAt(0).toUpperCase() || 
+                   review.submittedByUser.email?.charAt(0).toUpperCase() || 
+                   'U'}
+                </Avatar>
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {review.submittedByUser.username || review.submittedByUser.email}
+                </span>
+              </div>
+            )}
+
             {/* Review header */}
             <div className="flex items-center justify-between mb-3">
               <Badge size="sm" className="bg-teal-500 text-white">
@@ -124,7 +161,7 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
               </Badge>
               {review.submittedAt && (
                 <span className="text-xs text-gray-500 dark:text-gray-500">
-                  {new Date(review.submittedAt).toLocaleDateString("fr-FR", {
+                  Publié le {new Date(review.submittedAt).toLocaleDateString("fr-FR", {
                     year: "numeric",
                     month: "long",
                     day: "numeric",
@@ -160,9 +197,22 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
               </div>
             )}
 
-            {/* Comment */}
+            {/* Comment with quote styling */}
             {review.comment && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{review.comment}</p>
+              <div className={cn(
+                "relative mb-3 p-4 rounded-lg",
+                "bg-gray-50 dark:bg-gray-900/50",
+                "dark:border-teal-400"
+              )}>
+                <div className="flex gap-2">
+                  <p className={cn(
+                    "text-sm text-gray-700 dark:text-gray-300",
+                    "leading-relaxed flex-1"
+                  )}>
+                    {review.comment}
+                  </p>
+                </div>
+              </div>
             )}
 
             {/* Work photos */}

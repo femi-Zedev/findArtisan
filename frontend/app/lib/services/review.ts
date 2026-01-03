@@ -19,6 +19,11 @@ export interface Review {
     url: string;
     alternativeText: string | null;
   }>;
+  submittedByUser: {
+    id: number;
+    username: string;
+    email: string;
+  } | null;
   submittedAt: string;
   createdAt: string;
   updatedAt: string;

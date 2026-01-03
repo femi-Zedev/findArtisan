@@ -13,6 +13,7 @@ import { useUserStore } from "@/stores/userStore";
 import { GoogleLoginModal } from "./modals/GoogleLoginModal";
 import { useDrawerContext } from "@/providers/drawer-provider";
 import { AddArtisan } from "./AddArtisan";
+import { navRoutes } from "@/app/lib/navigation-routes";
 
 export function Navbar({ className }: { className?: string }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -94,7 +95,7 @@ export function Navbar({ className }: { className?: string }) {
     if (isAuthenticated) {
       // Close mobile menu and navigate to dashboard
       setIsMobileMenuOpen(false);
-      router.push("/dashboard");
+      router.push(navRoutes.dashboard.base);
       return;
     }
 
@@ -195,7 +196,7 @@ export function Navbar({ className }: { className?: string }) {
             <div className="relative z-10 flex h-16 w-full items-center justify-between">
               {/* Logo */}
               <Link
-                href="/"
+                href={navRoutes.home}
                 onClick={handleLinkClick}
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
@@ -205,21 +206,21 @@ export function Navbar({ className }: { className?: string }) {
               {/* Desktop Navigation Links */}
               <div className="hidden md:flex items-center gap-6">
                 <Link
-                  href="/search"
+                  href={navRoutes.search}
                   onClick={handleLinkClick}
                   className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                 >
                   Recherche
                 </Link>
                 <Link
-                  href="/#faq"
+                  href={navRoutes.anchors.faq}
                   onClick={handleLinkClick}
                   className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                 >
                   FAQs
                 </Link>
                 <Link
-                  href="/#contact"
+                  href={navRoutes.anchors.contact}
                   onClick={handleLinkClick}
                   className="text-sm font-medium text-gray-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
                 >
@@ -323,7 +324,7 @@ export function Navbar({ className }: { className?: string }) {
                   {/* Menu Links with arrow design */}
                   <div className="space-y-0">
                     <Link
-                      href="/search"
+                      href={navRoutes.search}
                       onClick={handleLinkClick}
                       className={cn(
                         "flex items-center justify-between px-4 py-3",
@@ -337,7 +338,7 @@ export function Navbar({ className }: { className?: string }) {
                       <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                     </Link>
                     <Link
-                      href="/#faq"
+                      href={navRoutes.anchors.faq}
                       onClick={handleLinkClick}
                       className={cn(
                         "flex items-center justify-between px-4 py-3",
@@ -351,7 +352,7 @@ export function Navbar({ className }: { className?: string }) {
                       <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
                     </Link>
                     <Link
-                      href="/#contact"
+                      href={navRoutes.anchors.contact}
                       onClick={handleLinkClick}
                       className={cn(
                         "flex items-center justify-between px-4 py-3",

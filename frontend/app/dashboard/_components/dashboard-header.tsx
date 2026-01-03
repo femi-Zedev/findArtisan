@@ -8,6 +8,7 @@ import { useMantineColorScheme, useComputedColorScheme } from "@mantine/core";
 import { cn } from "@/app/lib/utils";
 import { useThemeStore } from "@/stores/themeStore";
 import { DashboardSidebar } from "./dashboard-sidebar";
+import { navRoutes } from "@/app/lib/navigation-routes";
 
 interface DashboardHeaderProps {
   onMobileMenuToggle: () => void;
@@ -65,7 +66,7 @@ export function DashboardHeader({ onMobileMenuToggle, isMobileMenuOpen }: Dashbo
               <Menu className="h-5 w-5" />
             </button>
             <Link
-              href="/"
+              href={navRoutes.home}
               className="cursor-pointer p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
               aria-label="Retour à l'accueil"
             >

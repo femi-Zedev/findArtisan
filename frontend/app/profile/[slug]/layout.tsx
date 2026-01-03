@@ -28,7 +28,7 @@ export default function ProfileLayout({
     <main className="relative min-h-screen flex flex-col"
     >
       <Suspense fallback={null}>
-        <Navbar className="static"/>
+        <Navbar className="static my-10"/>
         <div className="flex-1">
           {children}
         </div>

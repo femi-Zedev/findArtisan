@@ -4,6 +4,7 @@ import { Avatar, Button, Badge, Tooltip } from "@mantine/core";
 import { Phone, MessageCircle, MapPin, Users, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "../lib/utils";
+import { navRoutes } from "@/app/lib/navigation-routes";
 
 interface ArtisanCardProps {
   name: string;
@@ -66,7 +67,7 @@ export function ArtisanCard({
           {(() => {
             // Render vertical layout for mobile
             return (
-              <Link href={`/${slug}`} className="block">
+              <Link href={navRoutes.profile(slug)} className="block">
                 <div
                   className={cn(
                     "group relative flex flex-col overflow-hidden rounded-2xl border p-4 transition-all cursor-pointer",
@@ -223,7 +224,7 @@ export function ArtisanCard({
         </div>
 
         {/* Desktop: Horizontal Layout */}
-        <Link href={`/${slug}`} className="block">
+        <Link href={navRoutes.profile(slug)} className="block">
           <div
             className={cn(
               "hidden sm:flex group relative items-start gap-4 overflow-hidden rounded-xl border p-4 transition-all cursor-pointer",
@@ -382,7 +383,7 @@ export function ArtisanCard({
 
   // Vertical Layout (default)
   return (
-    <Link href={`/${slug}`} className="block">
+    <Link href={navRoutes.profile(slug)} className="block">
       <div
         className={cn(
           "group relative flex flex-col overflow-hidden rounded-2xl shadow-xl shadow-gray-300/20 dark:shadow-gray-700/20 border  p-6 transition-all cursor-pointer",

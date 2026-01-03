@@ -29,6 +29,9 @@ export default factories.createCoreController('api::review.review' as any, ({ st
           work_photos: {
             fields: ['id', 'url', 'alternativeText'],
           },
+          submitted_by_user: {
+            fields: ['id', 'username', 'email'],
+          },
         },
         sort: { submitted_at: 'desc' },
       });
@@ -82,6 +85,13 @@ export default factories.createCoreController('api::review.review' as any, ({ st
           url: photo.url,
           alternativeText: photo.alternativeText,
         })) || [],
+        submittedByUser: review.submitted_by_user
+          ? {
+              id: review.submitted_by_user.id,
+              username: review.submitted_by_user.username,
+              email: review.submitted_by_user.email,
+            }
+          : null,
         submittedAt: review.submitted_at,
         createdAt: review.createdAt,
         updatedAt: review.updatedAt,
@@ -154,7 +164,7 @@ export default factories.createCoreController('api::review.review' as any, ({ st
         // Create review
         const review = await strapi.entityService.create('api::review.review' as any, {
           data: reviewData,
-          populate: ['artisan', 'work_photos'],
+          populate: ['artisan', 'work_photos', 'submitted_by_user'],
         });
 
         // Restore user in context
@@ -179,6 +189,13 @@ export default factories.createCoreController('api::review.review' as any, ({ st
               url: photo.url,
               alternativeText: photo.alternativeText,
             })) || [],
+            submittedByUser: review.submitted_by_user
+              ? {
+                  id: review.submitted_by_user.id,
+                  username: review.submitted_by_user.username,
+                  email: review.submitted_by_user.email,
+                }
+              : null,
             submittedAt: review.submitted_at,
             createdAt: review.createdAt,
             updatedAt: review.updatedAt,

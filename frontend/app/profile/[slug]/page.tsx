@@ -31,8 +31,9 @@ export default function ArtisanDetailPage() {
   if (error || !artisan) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="text-center flex flex-col items-center justify-center gap-4">
+          <img src="/empty-state/user_empty.svg" alt="Artisan non trouvé" width={100} />
+          <h1 className="text-2xl font-bold text-gray-600 dark:text-white mb-2">
             Artisan non trouvé
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -44,7 +45,7 @@ export default function ArtisanDetailPage() {
   }
 
   return (
-    <div className="min-h-screen max-w-xl sm:max-w-5xl mx-auto mt-10 sm:mt-12">
+    <div className="min-h-screen sm:max-w-5xl mx-4 sm:mx-auto">
       <BackButton onClick={() => router.back()} label="Retour" />
       <ArtisanBanner artisan={artisan} />
       <Container size="lg" className="py-6">

@@ -142,9 +142,6 @@ export function ArtisanTabs({ artisan }: ArtisanTabsProps) {
       <div className="space-y-12">
         {/* Overview Section */}
         <div id="overview" ref={overviewRef} className="scroll-mt-24">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-            Vue d'ensemble
-          </h2>
           <OverviewTab artisan={artisan} />
         </div>
 

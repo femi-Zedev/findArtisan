@@ -62,55 +62,6 @@ export function OverviewTab({ artisan }: OverviewTabProps) {
         </div>
       )}
 
-      {/* Phone numbers */}
-      {artisan.phoneNumbers.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Coordonnées
-          </h3>
-          <div className="space-y-2">
-            {artisan.phoneNumbers.map((phone) => (
-              <div
-                key={phone.id}
-                className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50"
-              >
-                {phone.isWhatsApp ? (
-                  <MessageCircle className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
-                ) : (
-                  <Phone className="h-4 w-4 text-gray-600 dark:text-gray-400 shrink-0" />
-                )}
-                <span className="text-sm text-gray-900 dark:text-white flex-1">
-                  {phone.number}
-                </span>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="xs"
-                    leftSection={<Phone className="h-3 w-3" />}
-                    onClick={() => handleCall(phone.number)}
-                    className={cn(
-                      "border-gray-300 text-gray-700 hover:bg-gray-50",
-                      "dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-                    )}
-                  >
-                    Appeler
-                  </Button>
-                  {phone.isWhatsApp && (
-                    <Button
-                      size="xs"
-                      leftSection={<MessageCircle className="h-3 w-3" />}
-                      onClick={() => handleWhatsApp(phone.number)}
-                      className="bg-green-500 hover:bg-green-600 text-white"
-                    >
-                      WhatsApp
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Social media links */}
       {artisan.socialLinks.length > 0 && (

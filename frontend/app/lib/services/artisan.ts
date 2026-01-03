@@ -48,6 +48,11 @@ export interface Artisan {
       url: string;
       alternativeText: string | null;
     }>;
+    submittedByUser: {
+      id: number;
+      username: string;
+      email: string;
+    } | null;
     submittedAt: string;
     createdAt: string;
   }>;

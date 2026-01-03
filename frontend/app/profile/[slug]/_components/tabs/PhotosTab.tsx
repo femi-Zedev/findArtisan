@@ -27,7 +27,8 @@ export function PhotosTab({ artisan }: PhotosTabProps) {
 
   if (allPhotos.length === 0) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-8 flex flex-col items-center justify-center gap-4">
+        <img src="/empty-state/photos_empty.svg" alt="No photos" width={100} />
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Aucune photo disponible pour cet artisan.
         </p>
