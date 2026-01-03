@@ -178,7 +178,7 @@ export default function Carousel({
 
       {/* Thumbnails */}
       {slides.length > 1 && (
-        <div className="flex gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-6 overflow-x-auto px-2 pb-2 scrollbar-hide">
+        <div className="flex gap-2 sm:gap-3 md:gap-4 mt-4 sm:mt-6 px-2 pb-2 scrollbar-hide">
           {visibleThumbnails.map((_, index) => {
             const globalIndex = slides.indexOf(visibleThumbnails[index]);
             return (

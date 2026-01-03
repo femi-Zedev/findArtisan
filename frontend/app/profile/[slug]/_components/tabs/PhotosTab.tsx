@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import NextImage from "next/image";
 import { cn } from "@/app/lib/utils";
 import { useModalContext } from "@/providers/modal-provider";
-import Carousel, { type SlideItem } from "@/app/_components/ui/Carousel";
+import { CarouselModalContent, type SlideItem } from "@/app/_components/ui";
 import type { Artisan } from "@/app/lib/services/artisan";
 
 interface PhotosTabProps {
@@ -13,41 +13,47 @@ interface PhotosTabProps {
 
 export function PhotosTab({ artisan }: PhotosTabProps) {
   const { openModal } = useModalContext();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [modalCurrentIndex, setModalCurrentIndex] = useState(0);
 
   // Collect all work photos from reviews and convert to carousel slides format
-  const carouselSlides: SlideItem[] = (artisan.reviews || [])
-    .flatMap((review) => review.workPhotos || [])
-    .map((photo) => ({
-      id: String(photo.id),
-      image: photo.url,
-      title: photo.alternativeText || "Photo du travail",
-    }));
+  const carouselSlides: SlideItem[] = useMemo(() => 
+    (artisan.reviews || [])
+      .flatMap((review) => review.workPhotos || [])
+      .map((photo) => ({
+        id: String(photo.id),
+        image: photo.url,
+        title: photo.alternativeText || "Photo du travail",
+      })),
+    [artisan.reviews]
+  );
 
   // Also create a simple array for grid display
-  const allPhotos = carouselSlides.map((slide) => ({
-    id: slide.id,
-    url: slide.image,
-    alt: slide.title || "Photo du travail",
-  }));
+  const allPhotos = useMemo(() => 
+    carouselSlides.map((slide) => ({
+      id: slide.id,
+      url: slide.image,
+      alt: slide.title || "Photo du travail",
+    })),
+    [carouselSlides]
+  );
 
-  const handlePhotoClick = (photoIndex: number) => {
-    setCurrentIndex(photoIndex);
+  // Handle photo click from grid
+  const handlePhotoClick = useCallback((photoIndex: number) => {
+    setModalCurrentIndex(photoIndex);
     openModal({
       title: "Photos des travaux",
       body: (
-        <Carousel
+        <CarouselModalContent
           slides={carouselSlides}
-          currentIndex={photoIndex}
-          onSlideChange={setCurrentIndex}
-          buttonPosition="relative"
+          initialIndex={photoIndex}
+          onIndexChange={setModalCurrentIndex}
         />
       ),
       size: "xl",
       modalContentClassName: "p-4 sm:p-6",
       withCloseButton: true,
     });
-  };
+  }, [carouselSlides, openModal]);
 
   if (allPhotos.length === 0) {
     return (

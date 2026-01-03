@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
-import { Badge, Skeleton, Avatar, Button } from "@mantine/core";
+import { useState, useCallback, useMemo } from "react";
+import { Badge, Skeleton, Avatar, Button, Tooltip } from "@mantine/core";
 import { useGetReviews } from "@/app/lib/services/review";
 import { ratingCriteria } from "@/constants";
 import { cn } from "@/app/lib/utils";
 import type { Artisan } from "@/app/lib/services/artisan";
 import { MessageSquarePlus } from "lucide-react";
+import { useModalContext } from "@/providers/modal-provider";
+import { CarouselModalContent, type SlideItem } from "@/app/_components/ui";
 
 interface ReviewsTabProps {
   artisan: Artisan;
@@ -14,9 +16,23 @@ interface ReviewsTabProps {
 
 export function ReviewsTab({ artisan }: ReviewsTabProps) {
   const { data: reviewsData, isLoading } = useGetReviews({variables: {artisan: artisan.id}});
+  const { openModal } = useModalContext();
+  const [modalCurrentIndex, setModalCurrentIndex] = useState(0);
 
   const reviews = reviewsData?.data || [];
   const aggregateStats = reviewsData?.meta?.aggregate;
+
+  // Collect all work photos from all reviews and convert to carousel slides format
+  const carouselSlides: SlideItem[] = useMemo(() => 
+    (artisan.reviews || [])
+      .flatMap((review) => review.workPhotos || [])
+      .map((photo) => ({
+        id: String(photo.id),
+        image: photo.url,
+        title: photo.alternativeText || "Photo du travail",
+      })),
+    [artisan.reviews]
+  );
 
   // Calculate stats from artisan.reviews if available (fallback)
   const localStats = useMemo(() => {
@@ -208,23 +224,27 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
 
             {/* Rating criteria */}
             {review.ratingCriteria && (
-              <div className="mb-3 space-y-1">
+              <div className="mb-3 space-y-2">
                 {Object.entries(review.ratingCriteria).map(([criterionId, ratingData]) => {
                   const criterion = ratingCriteria.find((c) => c.id === criterionId);
                   // Handle both old format (number) and new format (object with points and label)
                   const points = typeof ratingData === 'number' ? ratingData : ratingData.points;
                   const label = typeof ratingData === 'object' && ratingData.label ? ratingData.label : null;
                   return (
-                    <div key={criterionId} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 dark:text-gray-400">
-                        {criterion?.label || criterionId}
+                    <div key={criterionId} className="flex items-center justify-between gap-2 flex-nowrap min-w-0">
+                      <span className="flex items-center gap-1 min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                          {criterion?.label || criterionId}
+                        </p>
                         {label && (
-                          <span className="text-xs text-gray-500 dark:text-gray-500 ml-2">
-                            ({label})
-                          </span>
+                          <Tooltip label={label} withArrow position="top">
+                            <span className="text-xs text-gray-500 dark:text-gray-500 truncate min-w-0">
+                              ({label})
+                            </span>
+                          </Tooltip>
                         )}
                       </span>
-                      <Badge size="xs" variant="light" className="bg-teal-50 dark:bg-teal-900/20">
+                      <Badge size="xs" variant="light" className="bg-teal-50 dark:bg-teal-900/20 flex-shrink-0">
                         {points}
                       </Badge>
                     </div>
@@ -254,18 +274,43 @@ export function ReviewsTab({ artisan }: ReviewsTabProps) {
             {/* Work photos */}
             {review.workPhotos && review.workPhotos.length > 0 && (
               <div className="grid grid-cols-3 gap-2 mt-3">
-                {review.workPhotos.map((photo) => (
-                  <div
-                    key={photo.id}
-                    className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                  >
-                    <img
-                      src={photo.url}
-                      alt={photo.alternativeText || "Photo du travail"}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
+                {review.workPhotos.map((photo) => {
+                  // Find the index of this photo in the carousel slides
+                  const photoIndex = carouselSlides.findIndex((slide) => slide.id === String(photo.id));
+                  
+                  const handlePhotoClick = () => {
+                    if (photoIndex !== -1) {
+                      setModalCurrentIndex(photoIndex);
+                      openModal({
+                        title: "Photos des travaux",
+                        body: (
+                          <CarouselModalContent
+                            slides={carouselSlides}
+                            initialIndex={photoIndex}
+                            onIndexChange={setModalCurrentIndex}
+                          />
+                        ),
+                        size: "xl",
+                        modalContentClassName: "p-4 sm:p-6",
+                        withCloseButton: true,
+                      });
+                    }
+                  };
+
+                  return (
+                    <div
+                      key={photo.id}
+                      className="relative aspect-square rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={handlePhotoClick}
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.alternativeText || "Photo du travail"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       // Cloudflare R2 public domain (from environment variable)
+      // NOTE: For production, ensure NEXT_PUBLIC_CF_PUBLIC_ACCESS_URL is set
+      // The fallback hardcoded domain has been removed for production safety
       ...(r2Hostname
         ? [
             {
@@ -30,14 +32,6 @@ const nextConfig: NextConfig = {
             },
           ]
         : []),
-      // Fallback: Allow all r2.dev subdomains (if no env var is set)
-      // Note: This is a workaround since Next.js doesn't support wildcards
-      // For production, it's better to use the specific domain from env
-      {
-        protocol: 'https' as const,
-        hostname: 'pub-e251308ffa3948dbaeec64b5d550d1db.r2.dev',
-        pathname: '/**',
-      },
     ],
   },
 };

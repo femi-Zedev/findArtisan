@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Avatar, Button, Menu } from "@mantine/core";
 import { Image, Share2, Copy, Check } from "lucide-react";
 import { cn } from "@/app/lib/utils";
 import type { Artisan } from "@/app/lib/services/artisan";
 import { notifications } from "@mantine/notifications";
 import { navRoutes } from "@/app/lib/navigation-routes";
+import { useModalContext } from "@/providers/modal-provider";
+import { CarouselModalContent, type SlideItem } from "@/app/_components/ui";
 
 interface ArtisanBannerProps {
   artisan: Artisan;
@@ -14,9 +16,22 @@ interface ArtisanBannerProps {
 
 export function ArtisanBanner({ artisan }: ArtisanBannerProps) {
   const [copied, setCopied] = useState(false);
-  const hasPhotos = artisan.reviews && artisan.reviews.some(
-    (review) => review.workPhotos && review.workPhotos.length > 0
+  const { openModal } = useModalContext();
+  const [modalCurrentIndex, setModalCurrentIndex] = useState(0);
+
+  // Collect all work photos from reviews and convert to carousel slides format
+  const carouselSlides: SlideItem[] = useMemo(() => 
+    (artisan.reviews || [])
+      .flatMap((review) => review.workPhotos || [])
+      .map((photo) => ({
+        id: String(photo.id),
+        image: photo.url,
+        title: photo.alternativeText || "Photo du travail",
+      })),
+    [artisan.reviews]
   );
+
+  const hasPhotos = carouselSlides.length > 0;
 
   const profileUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}${navRoutes.profile(artisan.slug)}`
@@ -41,6 +56,23 @@ export function ArtisanBanner({ artisan }: ArtisanBannerProps) {
       });
     }
   };
+
+  const handleViewAllPhotos = useCallback(() => {
+    setModalCurrentIndex(0);
+    openModal({
+      title: "Photos des travaux",
+      body: (
+        <CarouselModalContent
+          slides={carouselSlides}
+          initialIndex={0}
+          onIndexChange={setModalCurrentIndex}
+        />
+      ),
+      size: "xl",
+      modalContentClassName: "p-4 sm:p-6",
+      withCloseButton: true,
+    });
+  }, [carouselSlides, openModal]);
 
   return (
     <div className="relative mx-auto w-full h-64 md:h-80">
@@ -100,7 +132,8 @@ export function ArtisanBanner({ artisan }: ArtisanBannerProps) {
         <Button
           variant="white"
           leftSection={<Image className="h-4 w-4" />}
-          className="bg-white/90 hover:bg-white text-gray-900 dark:bg-gray-800/90 dark:hover:bg-gray-800 dark:text-white"
+          className="bg-white/90 hover:bg-white text-gray-900 dark:bg-gray-800/90 dark:hover:bg-gray-800 dark:text-white cursor-pointer"
+          onClick={handleViewAllPhotos}
         >
           Voir toutes les photos
         </Button>
